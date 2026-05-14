@@ -43,7 +43,7 @@ const ExcerptReader = ({ book }: { book: Book }) => {
       title={!hasExcerpt ? "Bu kitob uchun parcha hali qo'shilmagan" : undefined}
       className={`group relative inline-flex items-center justify-center gap-3 px-10 py-4 sm:px-12 sm:py-5 rounded-lg overflow-hidden border border-white/20 text-[#0A192F] hover:bg-white transition-colors duration-300 w-full sm:w-auto ${
         hasExcerpt && !loading
-          ? "opacity-100 cursor-pointer bg-gradient-to-r from-white via-amber-50 to-white bg-[length:200%_200%] animate-gradient"
+          ? "opacity-100 cursor-pointer bg-white/95"
           : "opacity-40 cursor-not-allowed pointer-events-none bg-white/95"
       }`}
     >
