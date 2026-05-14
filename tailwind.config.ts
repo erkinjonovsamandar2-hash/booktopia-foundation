@@ -108,12 +108,17 @@ export default {
         },
         "shimmer": {
           "100%": { transform: "translateX(150%)" }
+        },
+        "breathe": {
+          "0%, 100%": { boxShadow: "0 0 15px rgba(255,255,255,0.1), 0 0 5px rgba(255,255,255,0.1)", transform: "scale(1)" },
+          "50%": { boxShadow: "0 0 35px rgba(255,255,255,0.5), 0 0 15px rgba(255,255,255,0.4)", transform: "scale(1.02)" }
         }
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up":   "accordion-up 0.2s ease-out",
         "shimmer": "shimmer 2.5s infinite",
+        "breathe": "breathe 3s ease-in-out infinite",
       },
     },
   },

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, BookOpen } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Book } from "@/context/DataContext";
 
@@ -41,16 +41,20 @@ const ExcerptReader = ({ book }: { book: Book }) => {
       onClick={hasExcerpt ? handleOpen : undefined}
       disabled={!hasExcerpt || loading}
       title={!hasExcerpt ? "Bu kitob uchun parcha hali qo'shilmagan" : undefined}
-      className={`group relative inline-flex items-center justify-center gap-3 px-10 py-4 sm:px-12 sm:py-5 rounded-lg overflow-hidden border border-white/20 bg-white/95 text-[#0A192F] hover:bg-white hover:-translate-y-0.5 transition-all duration-300 shadow-[0_8px_30px_rgba(255,255,255,0.12)] hover:shadow-[0_10px_40px_rgba(255,255,255,0.25)] w-full sm:w-auto ${
+      className={`group relative inline-flex items-center justify-center gap-3 px-10 py-4 sm:px-12 sm:py-5 rounded-lg overflow-hidden border border-white/20 bg-white/95 text-[#0A192F] hover:bg-white transition-colors duration-300 w-full sm:w-auto ${
         hasExcerpt && !loading
-          ? "opacity-100 cursor-pointer"
+          ? "opacity-100 cursor-pointer animate-[breathe_3s_ease-in-out_infinite]"
           : "opacity-40 cursor-not-allowed pointer-events-none"
       }`}
     >
       {/* Subtle shine effect on hover */}
-      <span className="absolute inset-0 -translate-x-[150%] bg-gradient-to-r from-transparent via-white/20 to-transparent group-hover:animate-[shimmer_1.5s_infinite]" />
+      <span className="absolute inset-0 -translate-x-[150%] bg-gradient-to-r from-transparent via-white/40 to-transparent group-hover:animate-[shimmer_1.5s_infinite]" />
       <span className="relative flex items-center gap-3 font-sans text-[0.6875rem] font-bold tracking-[0.18em] uppercase">
-        {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+        {loading ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <BookOpen className="h-4 w-4 group-hover:scale-110 transition-transform duration-300 text-gold" />
+        )}
         Parchani o'qish
       </span>
     </button>
