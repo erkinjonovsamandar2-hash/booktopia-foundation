@@ -136,7 +136,7 @@ const BookDetails = () => {
               {/* Left: Book Cover Showcase */}
               <motion.div
                 layoutId={`book-cover-${book.id}`}
-                className="w-full max-w-md mx-auto"
+                className="w-[75vw] max-w-[280px] sm:max-w-[320px] lg:max-w-[380px] mx-auto md:mx-0 md:ml-auto flex justify-center md:justify-end"
               >
                 <BookCover
                   src={book.cover_url}
@@ -196,8 +196,8 @@ const BookDetails = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row gap-5 mt-auto">
-                  <button className="btn-glass px-12 py-5 text-white dark:text-white">
+                <div className="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4 mt-auto w-full">
+                  <button className="btn-glass px-10 py-4 sm:px-12 sm:py-5 text-white dark:text-white w-full sm:w-auto">
                     Xarid qilish
                   </button>
                   <ExcerptReader book={book} />
