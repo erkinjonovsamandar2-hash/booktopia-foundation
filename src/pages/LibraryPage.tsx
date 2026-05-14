@@ -10,6 +10,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import EmptyState from "@/components/EmptyState";
 import librarySeal from "@/assets/design/library-seal.png";
+import { getBookSlug } from "@/lib/slugify";
 
 // ── Local Categories Configuration ────────────────────────────────────────────
 const CATEGORIES = ["all", "jahon", "ilmiy", "new", "amir-temur", "erkin-millat"] as const;
@@ -172,7 +173,7 @@ const LibraryPage = () => {
                 <p className="font-serif text-foreground/80 text-lg md:text-xl mb-8 line-clamp-3 max-w-xl">
                   {featuredBook.description}
                 </p>
-                <Link to={`/book/${featuredBook.id}`} className="btn-glass px-8 py-3.5 mt-2 mb-6 md:mb-0">
+                <Link to={`/book/${getBookSlug(featuredBook)}`} className="btn-glass px-8 py-3.5 mt-2 mb-6 md:mb-0">
                   Kitob haqida
                 </Link>
               </motion.div>
@@ -295,7 +296,7 @@ const LibraryPage = () => {
                     exit={{ opacity: 0, y: 20 }}
                     transition={{ duration: 0.3, delay: i * 0.05 }}
                   >
-                    <Link to={`/book/${book.id}`} className="h-full block">
+                    <Link to={`/book/${getBookSlug(book)}`} className="h-full block">
                       <SpotlightCard className="h-full p-3 md:p-4 group cursor-pointer">
                         <div className="flex flex-col gap-4 h-full">
 

@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { useLang, locField, type Lang } from "@/context/LanguageContext";
 import type { Book } from "@/types/database";
+import { getBookSlug } from "@/lib/slugify";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const INTERVAL_MS = 5000;
@@ -513,7 +514,7 @@ const Hero = () => {
   }, []);
 
   const handleBookClick = useCallback(
-    (book: Book) => navigate(`/book/${book.id}`),
+    (book: Book) => navigate(`/book/${getBookSlug(book)}`),
     [navigate]
   );
 

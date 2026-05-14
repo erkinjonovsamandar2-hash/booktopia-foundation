@@ -9,6 +9,7 @@ import BookCover from "@/components/BookCover";
 import SpotlightCard from "@/components/SpotlightCard";
 import parchmentTexture from "@/assets/design/parchment-texture.png";
 import { postPath } from "@/lib/blog";
+import { getBookSlug } from "@/lib/slugify";
 
 const useIsMobile = () => {
   const [isMobile, setIsMobile] = useState(() =>
@@ -64,7 +65,7 @@ const RelatedBooks = ({ bookIds, allBooks }: { bookIds: string[]; allBooks: Rela
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         {books.map((book) => (
-          <Link key={book.id} to={`/book/${book.id}`} className="h-full block">
+          <Link key={book.id} to={`/book/${getBookSlug(book)}`} className="h-full block">
             <SpotlightCard className="h-full p-3 md:p-4 group cursor-pointer">
               <div className="flex flex-col gap-4 h-full">
                 <BookCover

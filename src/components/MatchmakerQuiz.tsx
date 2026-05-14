@@ -16,6 +16,7 @@ import faylasufImg from "@/assets/quiz/archetypes/faylasuf.webp";
 import kashfiyotchiImg from "@/assets/quiz/archetypes/kashfiyotchi.webp";
 import ovchiImg from "@/assets/quiz/archetypes/ovchi.webp";
 import doktorImg from "@/assets/quiz/archetypes/doktor.webp";
+import { getBookSlug } from "@/lib/slugify";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type ArchetypeKey = "faylasuf" | "kashfiyotchi" | "ovchi" | "doktor";
@@ -769,7 +770,7 @@ const MatchmakerQuiz = () => {
                       <div key={idx}
                         className="flex items-start gap-4 rounded-2xl p-4 transition-all duration-200 cursor-pointer group hover:opacity-90"
                         style={{ background: `${arch.certBorder}08`, border: `1px solid ${arch.certBorder}18` }}
-                        onClick={() => navigate(`/book/${(book as any).id}`)}>
+                        onClick={() => navigate(`/book/${getBookSlug(book)}`)}>
 
                         {/* Book cover */}
                         <div className="shrink-0 w-14 sm:w-16">
@@ -877,7 +878,7 @@ const MatchmakerQuiz = () => {
                         transition={{ delay: i * 0.08, duration: 0.4 }}
                         className="group bg-white/40 dark:bg-black/20 backdrop-blur-xl border border-white/50 dark:border-white/10
                           rounded-2xl p-3 cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-                        onClick={() => navigate(`/book/${(bk as any).id}`)}>
+                        onClick={() => navigate(`/book/${getBookSlug(bk)}`)}>
                         <div className="aspect-[2/3] rounded-md overflow-hidden mb-3 shadow-md group-hover:shadow-lg transition-shadow"
                           style={{ boxShadow: "4px 8px 18px rgba(0,0,0,0.22)" }}>
                           {getImgUrl((bk as any).cover_url)

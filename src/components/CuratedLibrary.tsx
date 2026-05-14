@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useData } from "@/context/DataContext";
 import { useLang, locField } from "@/context/LanguageContext";
 import parchmentTexture from "@/assets/design/parchment-texture.png";
+import { getBookSlug } from "@/lib/slugify";
 
 // ── Local Categories Configuration ───────────────────────────────────────────
 const CATEGORIES = ["all", "jahon", "ilmiy", "new", "amir-temur", "erkin-millat"] as const;
@@ -170,7 +171,7 @@ const CuratedLibrary = () => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 20 }}
                     transition={{ duration: 0.3, delay: i * 0.05 }}
-                    onClick={() => navigate(`/book/${book.id}`)}
+                    onClick={() => navigate(`/book/${getBookSlug(book)}`)}
                     className="group flex flex-col gap-2 max-w-[220px] mx-auto w-full cursor-pointer"
                   >
                     {/* 3D Hardcover Cover */}

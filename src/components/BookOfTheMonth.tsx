@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { useLang, locField } from "@/context/LanguageContext";
 import { LIBRARY_FILTER_MAP } from "@/lib/constants";
+import { getBookSlug } from "@/lib/slugify";
 
 // ── Background image import ───────────────────────────────────────────────────
 let bgUrl: string | undefined;
@@ -196,7 +197,7 @@ const BookOfTheMonth = () => {
             <motion.button
               initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.5 }}
               whileTap={{ scale: 0.985 }}
-              onClick={() => navigate(`/book/${spotlightBook.id}`)}
+              onClick={() => navigate(`/book/${getBookSlug(spotlightBook)}`)}
               className="btn-glass"
             >
               <BookOpen className="h-4 w-4" />

@@ -3,6 +3,7 @@ import { X, BookOpen, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { BOOK_PREVIEW_PAGES } from "@/lib/mockData";
+import { getBookSlug } from "@/lib/slugify";
 
 interface BookFlipModalProps {
   book: { id: string; title: string; author: string } | null;
@@ -183,7 +184,7 @@ const BookFlipModal = ({ book, onClose }: BookFlipModalProps) => {
               <motion.button
                 onClick={() => {
                   onClose();
-                  navigate(`/book/${book.id}`);
+                  navigate(`/book/${getBookSlug(book)}`);
                 }}
                 className="mt-6 px-8 py-3 bg-primary text-foreground font-bold rounded-full hover:scale-105 hover:shadow-[0_0_25px_rgba(251,191,36,0.4)] transition-all"
                 initial={{ opacity: 0 }}

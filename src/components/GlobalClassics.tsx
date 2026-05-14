@@ -10,6 +10,7 @@ import margaritaBg from "../assets/backgrounds/margarita-bg.png";
 import edenBg from "../assets/backgrounds/eden-bg.png";
 import ascanioBg from "../assets/backgrounds/ascanio-bg.png";
 import xukBg from "../assets/backgrounds/xuk-bg.png";
+import { getBookSlug } from "@/lib/slugify";
 
 // ── Per-book tension hooks ────────────────────────────────────────────────────
 const BOOK_HOOKS = [
@@ -312,7 +313,7 @@ export default function GlobalClassics() {
                   <motion.button
                     initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.5 }}
                     whileTap={{ scale: 0.985 }}
-                    onClick={() => navigate(`/book/${activeBook.id}`)}
+                    onClick={() => navigate(`/book/${getBookSlug(activeBook)}`)}
                     className="btn-glass"
                   >
                     <BookOpen className="h-4 w-4" />
@@ -472,7 +473,7 @@ export default function GlobalClassics() {
                   )}
 
                   <button
-                    onClick={() => navigate(`/book/${book.id}`)}
+                    onClick={() => navigate(`/book/${getBookSlug(book)}`)}
                     className="mt-2 btn-glass"
                   >
                     Batafsil

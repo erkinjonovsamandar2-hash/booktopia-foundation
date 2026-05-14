@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { useLang } from "@/context/LanguageContext";
 import EmptyState from "./EmptyState";
+import { getBookSlug } from "@/lib/slugify";
 
 interface SearchModalProps {
   isOpen: boolean;
@@ -97,7 +98,7 @@ const SearchModal = ({ isOpen, onClose }: SearchModalProps) => {
                     {filteredBooks.map((book) => (
                       <Link
                         key={book.id}
-                        to={`/book/${book.id}`}
+                        to={`/book/${getBookSlug(book)}`}
                         onClick={onClose}
                         className="flex items-center gap-4 p-3 rounded-xl hover:bg-primary/5 dark:hover:bg-white/5 transition-colors group"
                       >

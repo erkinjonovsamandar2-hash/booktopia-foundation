@@ -12,6 +12,7 @@ import BookCover from "@/components/BookCover";
 import SpotlightCard from "@/components/SpotlightCard";
 import { useData } from "@/context/DataContext";
 import { useLang, locField, type Lang } from "@/context/LanguageContext";
+import { getBookSlug } from "@/lib/slugify";
 
 // ── Page-level translations (all static text, 3 languages) ───────────────────
 const CONTENT = {
@@ -24,7 +25,7 @@ const CONTENT = {
       "Publishing world literature in Uzbek with licensed rights & expert translation.",
     credLabel: "Rasmiy ma'lumotlar",
     credRows: [
-      { label: "Nomi",   value: '"BOOKTOPIA" MCJ' },
+      { label: "Nomi",   value: '"BOOKTOPIA" MChJ' },
       { label: "Shakl",  value: "Mas'uliyati Cheklangan Jamiyat" },
       { label: "STIR",   value: "308048939" },
       { label: "Manzil", value: "Toshkent, Uchtepa tumani" },
@@ -658,7 +659,7 @@ const BizHaqimizda = () => {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6">
             {publishedBooks.map((book, i) => (
               <Reveal key={(book as any).id} delay={i * 0.06}>
-                <Link to={`/book/${(book as any).id}`} className="h-full block">
+                <Link to={`/book/${getBookSlug(book)}`} className="h-full block">
                   <SpotlightCard className="h-full p-3 md:p-4 group cursor-pointer">
                     <div className="flex flex-col gap-3 h-full">
                       <BookCover

@@ -10,6 +10,7 @@ import { useData } from "@/context/DataContext";
 import { motion, useScroll, useSpring } from "framer-motion";
 import BookCover from "@/components/BookCover";
 import ExcerptReader from "@/components/ExcerptReader";
+import { extractBookId } from "@/lib/slugify";
 
 function ScrollProgress() {
   const { scrollYProgress } = useScroll();
@@ -28,7 +29,8 @@ function ScrollProgress() {
 }
 
 const BookDetails = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id: slugParam } = useParams<{ id: string }>();
+  const id = slugParam ? extractBookId(slugParam) : "";
   const navigate = useNavigate();
   const { lang } = useLang();
   const { books, newBooks } = useData();

@@ -52,7 +52,17 @@
       "Bash(git -C \"c:/Users/user/Documents/GitHub/booktopia-foundation\" add src/pages/LibraryPage.tsx)",
       "Bash(git -C \"c:/Users/user/Documents/GitHub/booktopia-foundation\" add src/components/Hero.tsx)",
       "Bash(git -C \"c:/Users/user/Documents/GitHub/booktopia-foundation\" commit -m \"fix\\(Hero\\): remove slice\\(0,7\\) cap — show all featured books in carousel\")",
-      "Bash(git -C \"c:/Users/user/Documents/GitHub/booktopia-foundation\" commit -m \"fix\\(Hero\\): auto-scroll thumbnail strip to center active book\")"
+      "Bash(git -C \"c:/Users/user/Documents/GitHub/booktopia-foundation\" commit -m \"fix\\(Hero\\): auto-scroll thumbnail strip to center active book\")",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\booktopia-foundation\" -Recurse -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(cd \"/c/Users/user/Documents/GitHub/booktopia-foundation\" && find . -type f -name \"*.tsx\" -o -name \"*.ts\" -o -name \"*.jsx\" -o -name \"*.js\" | head -50)",
+      "Read(//c/c/Users/user/Documents/GitHub/**)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git commit -m 'fix: pass related_book_ids through addArticle and updateArticle *)",
+      "Bash(git commit -m 'fix: use library-style BookCover + SpotlightCard for related books *)",
+      "Bash(grep -E \"\\\\.tsx$\")"
     ]
   }
 }
