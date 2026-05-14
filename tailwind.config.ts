@@ -118,7 +118,7 @@ export default {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up":   "accordion-up 0.2s ease-out",
         "shimmer": "shimmer 2.5s infinite",
-        "breathe": "breathe 3s ease-in-out infinite",
+        "breathe": "breathe 6s ease-in-out infinite",
       },
     },
   },

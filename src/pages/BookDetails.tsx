@@ -115,6 +115,16 @@ const BookDetails = () => {
     ? `20px 20px 60px hsl(${book.bg_color} / 0.4), -10px -10px 40px hsl(${book.bg_color} / 0.2)`
     : "20px 20px 50px rgba(0,0,0,0.5)";
 
+  const categoryLabels: Record<string, string> = {
+    "jahon": "Jahon adabiyoti durdonalari",
+    "ilmiy": "Ilmiy-ommabop",
+    "new": "Yangi nashrlar",
+    "amir-temur": "Tarixiy",
+    "erkin-millat": "Ijtimoiy-siyosiy",
+    "bestseller": "Bestsellerlar"
+  };
+  const categoryDisplay = categoryLabels[book.category] || book.category || "Nashr";
+
   return (
     <PageTransition>
       <ScrollProgress />
@@ -162,7 +172,7 @@ const BookDetails = () => {
                 </div>
 
                 {/* Specs Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mb-12 py-8 border-y border-border/50">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 mb-12 py-8 border-y border-border/50">
                   <div>
                     <p className="font-sans text-[10px] tracking-wider uppercase font-bold text-muted-foreground mb-2">
                       Muqova
@@ -174,15 +184,7 @@ const BookDetails = () => {
                       Kategoriya
                     </p>
                     <p className="font-serif text-lg text-foreground capitalize">
-                      {book.category || "Nashr"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="font-sans text-[10px] tracking-wider uppercase font-bold text-muted-foreground mb-2">
-                      3D Format
-                    </p>
-                    <p className="font-serif text-lg text-foreground">
-                      {book.enable_3d_flip ? "Mavjud" : "Yo'q"}
+                      {categoryDisplay}
                     </p>
                   </div>
                   <div>
