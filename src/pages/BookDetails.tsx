@@ -10,7 +10,7 @@ import { useData } from "@/context/DataContext";
 import { motion, useScroll, useSpring } from "framer-motion";
 import BookCover from "@/components/BookCover";
 import ExcerptReader from "@/components/ExcerptReader";
-import { extractBookId } from "@/lib/slugify";
+
 
 function ScrollProgress() {
   const { scrollYProgress } = useScroll();
@@ -45,11 +45,11 @@ const BookDetails = () => {
     queryKey: ["book", slugParam],
     queryFn: async () => {
       // 1. Try books table by slug
-      let { data } = await supabase.from("books").select("*").eq("slug", slugParam).maybeSingle();
+      let { data } = await (supabase as any).from("books").select("*").eq("slug", slugParam).maybeSingle();
       
       // 2. Try books table by id (fallback for old links)
       if (!data) {
-        const { data: idData } = await supabase.from("books").select("*").eq("id", slugParam).maybeSingle();
+        const { data: idData } = await (supabase as any).from("books").select("*").eq("id", slugParam).maybeSingle();
         data = idData;
       }
 

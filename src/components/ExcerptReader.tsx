@@ -41,10 +41,10 @@ const ExcerptReader = ({ book }: { book: Book }) => {
       onClick={hasExcerpt ? handleOpen : undefined}
       disabled={!hasExcerpt || loading}
       title={!hasExcerpt ? "Bu kitob uchun parcha hali qo'shilmagan" : undefined}
-      className={`group relative inline-flex items-center justify-center gap-3 px-10 py-4 sm:px-12 sm:py-5 rounded-lg overflow-hidden border border-white/20 bg-white/95 text-[#0A192F] hover:bg-white transition-colors duration-300 w-full sm:w-auto ${
+      className={`group relative inline-flex items-center justify-center gap-3 px-10 py-4 sm:px-12 sm:py-5 rounded-lg overflow-hidden border border-white/20 text-[#0A192F] hover:bg-white transition-colors duration-300 w-full sm:w-auto ${
         hasExcerpt && !loading
-          ? "opacity-100 cursor-pointer animate-[breathe_3s_ease-in-out_infinite]"
-          : "opacity-40 cursor-not-allowed pointer-events-none"
+          ? "opacity-100 cursor-pointer bg-gradient-to-r from-white via-amber-50 to-white bg-[length:200%_200%] animate-[gradient_4s_ease_infinite]"
+          : "opacity-40 cursor-not-allowed pointer-events-none bg-white/95"
       }`}
     >
       {/* Subtle shine effect on hover */}
