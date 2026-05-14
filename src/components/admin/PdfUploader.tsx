@@ -45,9 +45,9 @@ const PdfUploader = ({ currentUrl, bookId, onPdfSaved }: PdfUploaderProps) => {
     try {
       // Build a deterministic path that preserves the original filename
       const prefix = bookId ? bookId : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      // Sanitize filename: replace spaces with underscores and remove problematic chars
+      // Put the file inside a folder named after the prefix, so the filename itself is pure
       const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-      const path = `excerpts/${prefix}-${sanitizedName}`;
+      const path = `excerpts/${prefix}/${sanitizedName}`;
 
       setProgress(30);
 
