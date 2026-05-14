@@ -159,9 +159,10 @@ const ExcerptReader = ({ book }: ExcerptReaderProps) => {
               exit={{ opacity: 0, y: 16, scale: 0.98 }}
               transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
               className="
-                fixed inset-x-4 top-[50%] -translate-y-1/2
-                sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2
-                z-[1000] w-full sm:w-[92vw] max-w-5xl
+                fixed inset-4
+                sm:inset-auto sm:left-1/2 sm:-translate-x-1/2 sm:top-1/2 sm:-translate-y-1/2
+                z-[1000]
+                w-full sm:w-[90vw] max-w-5xl
                 flex flex-col
                 rounded-2xl overflow-hidden
                 border border-white/10
@@ -169,7 +170,7 @@ const ExcerptReader = ({ book }: ExcerptReaderProps) => {
               "
               style={{
                 background: "linear-gradient(160deg, #1a1205 0%, #0f0a02 100%)",
-                maxHeight: "90vh",
+                height: "min(92vh, 860px)",
               }}
               role="dialog"
               aria-modal="true"
@@ -207,7 +208,7 @@ const ExcerptReader = ({ book }: ExcerptReaderProps) => {
               </div>
 
               {/* ── Body ── */}
-              <div className="flex-1 overflow-hidden min-h-0 flex flex-col items-center justify-center">
+              <div className={`flex-1 overflow-hidden min-h-0 flex flex-col ${state !== "ready" ? "items-center justify-center" : ""}`}>
 
                 {/* Loading state */}
                 {state === "loading" && (
@@ -268,15 +269,14 @@ const ExcerptReader = ({ book }: ExcerptReaderProps) => {
                   </div>
                 )}
 
-                {/* Desktop iframe reader */}
+                {/* Desktop PDF reader — embed handles cross-origin PDFs correctly */}
                 {state === "ready" && !isMobileDevice() && signedUrl && (
-                  <div className="w-full flex-1 min-h-0" style={{ height: "calc(90vh - 65px)" }}>
-                    <iframe
+                  <div className="w-full flex-1 min-h-0 overflow-hidden">
+                    <embed
                       src={signedUrl}
-                      title={`${book.title} — Parcha`}
+                      type="application/pdf"
                       className="w-full h-full border-0"
-                      sandbox="allow-scripts allow-same-origin"
-                      loading="lazy"
+                      style={{ display: "block", minHeight: 0, height: "100%" }}
                     />
                   </div>
                 )}
