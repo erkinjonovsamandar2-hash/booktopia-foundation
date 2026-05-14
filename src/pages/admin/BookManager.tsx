@@ -4,6 +4,7 @@ import { useData } from "@/context/DataContext";
 import type { Book } from "@/context/DataContext";
 import { Plus, Pencil, Trash2, X, BookOpen } from "lucide-react";
 import ImageCropper from "@/components/admin/ImageCropper";
+import PdfUploader from "@/components/admin/PdfUploader";
 import { LIBRARY_FILTER_KEYS, LIBRARY_FILTER_MAP } from "@/lib/constants";
 
 const getImageUrl = (url: string | null | undefined): string => {
@@ -46,6 +47,7 @@ const emptyBook: Omit<Book, "id" | "created_at" | "updated_at"> = {
   sort_order: 0,
   img_focus_x: 50,
   img_focus_y: 20,
+  excerpt_url: null,
 };
 
 const BookManager = () => {
@@ -143,9 +145,10 @@ const BookManager = () => {
                     </span>
                   </td>
                   <td className="px-4 py-3 hidden lg:table-cell">
-                    <div className="flex gap-1.5">
+                    <div className="flex gap-1.5 flex-wrap">
                       {book.featured && <span className="text-xs bg-primary/10 text-primary/90 rounded px-1.5 py-0.5">Hero</span>}
-                      {book.enable_3d_flip && <span className="text-xs bg-blue-100  text-blue-700  rounded px-1.5 py-0.5">3D</span>}
+                      {book.enable_3d_flip && <span className="text-xs bg-blue-100 text-blue-700 rounded px-1.5 py-0.5">3D</span>}
+                      {book.excerpt_url && <span className="text-xs bg-green-100 text-green-700 rounded px-1.5 py-0.5">Parcha</span>}
                     </div>
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -261,6 +264,15 @@ const BookManager = () => {
                   </div>
                 </div>
               )}
+
+              {/* ── PDF Excerpt Uploader ── */}
+              <div className="rounded-xl border border-gray-200 p-4 bg-gray-50">
+                <PdfUploader
+                  currentUrl={form.excerpt_url ?? null}
+                  bookId={editId}
+                  onPdfSaved={(url) => setForm({ ...form, excerpt_url: url })}
+                />
+              </div>
 
               <Field label="Nomi (UZ)" value={form.title ?? ""} onChange={(v) => setForm({ ...form, title: v })} />
               <Field label="Nomi (EN)" value={form.title_en ?? ""} onChange={(v) => setForm({ ...form, title_en: v || null })} />

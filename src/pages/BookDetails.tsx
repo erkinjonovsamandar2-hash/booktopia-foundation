@@ -9,6 +9,7 @@ import type { Book } from "@/context/DataContext";
 import { useData } from "@/context/DataContext";
 import { motion, useScroll, useSpring } from "framer-motion";
 import BookCover from "@/components/BookCover";
+import ExcerptReader from "@/components/ExcerptReader";
 
 function ScrollProgress() {
   const { scrollYProgress } = useScroll();
@@ -185,9 +186,7 @@ const BookDetails = () => {
                   <button className="btn-glass px-12 py-5 text-white dark:text-white">
                     Xarid qilish
                   </button>
-                  <button className="btn-glass-ghost px-12 py-5">
-                    Parchani o'qish
-                  </button>
+                  <ExcerptReader book={book} />
                 </div>
               </div>
             </div>

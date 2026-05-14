@@ -517,6 +517,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       enable_3d_flip: book.enable_3d_flip,
       featured: book.featured,
       sort_order: book.sort_order,
+      excerpt_url: book.excerpt_url ?? null,
     });
     if (error) {
       console.warn("[DataContext] addBook:", error.message);
@@ -543,6 +544,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     if (data.enable_3d_flip !== undefined) payload.enable_3d_flip = data.enable_3d_flip;
     if (data.featured !== undefined) payload.featured = data.featured;
     if (data.sort_order !== undefined) payload.sort_order = data.sort_order;
+    if (data.excerpt_url !== undefined) payload.excerpt_url = data.excerpt_url;
 
     const { error } = await supabase.from("books").update(payload).eq("id", id);
     if (error) {
@@ -566,6 +568,15 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       if (path) {
         const { error: storageErr } = await supabase.storage.from("books").remove([path]);
         if (storageErr) console.warn("[DataContext] deleteBook storage cleanup:", storageErr.message);
+      }
+    }
+    // Also clean up the PDF excerpt if one exists
+    const bookToDelete = books.find((b) => b.id === id);
+    if (bookToDelete?.excerpt_url) {
+      const excerptPath = extractStoragePath(bookToDelete.excerpt_url, "books");
+      if (excerptPath) {
+        const { error: excerptErr } = await supabase.storage.from("books").remove([excerptPath]);
+        if (excerptErr) console.warn("[DataContext] deleteBook excerpt cleanup:", excerptErr.message);
       }
     }
     await fetchBooks();

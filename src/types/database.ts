@@ -38,6 +38,8 @@ export interface Database {
           img_focus_x: number | null;
           /** Vertical focal point 0–100 for CSS object-position */
           img_focus_y: number | null;
+          /** Path/URL to a PDF excerpt stored in Supabase Storage (books/excerpts/) */
+          excerpt_url: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -61,6 +63,7 @@ export interface Database {
           sort_order?: number | null;
           img_focus_x?: number | null;
           img_focus_y?: number | null;
+          excerpt_url?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -84,6 +87,7 @@ export interface Database {
           sort_order?: number | null;
           img_focus_x?: number | null;
           img_focus_y?: number | null;
+          excerpt_url?: string | null;
           updated_at?: string;
         };
       };
