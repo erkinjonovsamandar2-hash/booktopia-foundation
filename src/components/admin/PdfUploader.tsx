@@ -43,11 +43,11 @@ const PdfUploader = ({ currentUrl, bookId, onPdfSaved }: PdfUploaderProps) => {
     setProgress(10);
 
     try {
-      // Build a deterministic path so re-uploads overwrite the old file
-      const safeName = bookId
-        ? `${bookId}-excerpt.pdf`
-        : `${Date.now()}-${Math.random().toString(36).slice(2)}-excerpt.pdf`;
-      const path = `excerpts/${safeName}`;
+      // Build a deterministic path that preserves the original filename
+      const prefix = bookId ? bookId : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      // Sanitize filename: replace spaces with underscores and remove problematic chars
+      const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+      const path = `excerpts/${prefix}-${sanitizedName}`;
 
       setProgress(30);
 
