@@ -40,6 +40,7 @@ export interface Database {
           img_focus_y: number | null;
           /** Path/URL to a PDF excerpt stored in Supabase Storage (books/excerpts/) */
           excerpt_url: string | null;
+          slug: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -64,6 +65,7 @@ export interface Database {
           img_focus_x?: number | null;
           img_focus_y?: number | null;
           excerpt_url?: string | null;
+          slug?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -88,6 +90,7 @@ export interface Database {
           img_focus_x?: number | null;
           img_focus_y?: number | null;
           excerpt_url?: string | null;
+          slug?: string | null;
           updated_at?: string;
         };
       };
@@ -122,6 +125,7 @@ export interface Database {
           focus_mobile_x: number | null;
           /** Mobile focal point Y 0–100 */
           focus_mobile_y: number | null;
+          slug: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -149,6 +153,7 @@ export interface Database {
           focus_desktop_y?: number | null;
           focus_mobile_x?: number | null;
           focus_mobile_y?: number | null;
+          slug?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -176,6 +181,7 @@ export interface Database {
           focus_desktop_y?: number | null;
           focus_mobile_x?: number | null;
           focus_mobile_y?: number | null;
+          slug?: string | null;
           updated_at?: string;
         };
       };

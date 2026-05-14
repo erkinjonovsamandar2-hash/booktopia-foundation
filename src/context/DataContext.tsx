@@ -498,8 +498,11 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   // ── Mutators — Books ──────────────────────────────────────────────────────
 
   const addBook = useCallback(async (
-    book: Omit<Book, "id" | "created_at" | "updated_at">
+    book: Omit<Book, "id" | "created_at" | "updated_at" | "slug">
   ) => {
+    const baseSlug = (book.title_en || book.title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const uniqueSlug = `${baseSlug}-${Math.random().toString(36).substring(2, 8)}`;
+
     const { error } = await supabase.from("books").insert({
       title: book.title,
       title_en: book.title_en,
@@ -518,6 +521,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       featured: book.featured,
       sort_order: book.sort_order,
       excerpt_url: book.excerpt_url ?? null,
+      slug: uniqueSlug,
     });
     if (error) {
       console.warn("[DataContext] addBook:", error.message);
@@ -590,8 +594,11 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     url && url.trim() !== "" ? url : null;
 
   const addNewBook = useCallback(async (
-    book: Omit<NewBook, "id" | "created_at" | "updated_at">
+    book: Omit<NewBook, "id" | "created_at" | "updated_at" | "slug">
   ) => {
+    const baseSlug = (book.title_en || book.title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const uniqueSlug = `${baseSlug}-${Math.random().toString(36).substring(2, 8)}`;
+
     const { error } = await (supabase as any).from("new_books").insert({
       title: book.title, title_en: book.title_en, title_ru: book.title_ru,
       author: book.author, author_en: book.author_en, author_ru: book.author_ru,
@@ -603,6 +610,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       img_focus_x: book.img_focus_x, img_focus_y: book.img_focus_y,
       focus_desktop_x: book.focus_desktop_x, focus_desktop_y: book.focus_desktop_y,
       focus_mobile_x: book.focus_mobile_x, focus_mobile_y: book.focus_mobile_y,
+      slug: uniqueSlug,
     });
     if (error) { console.warn("[DataContext] addNewBook:", error.message); throw new Error(error.message); }
     await fetchNewBooks();
