@@ -197,7 +197,7 @@ const BookDetails = () => {
 
                 {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4 mt-auto w-full">
-                  <button className="btn-glass px-10 py-4 sm:px-12 sm:py-5 text-white dark:text-white w-full sm:w-auto">
+                  <button className="btn-glass px-10 py-4 sm:px-12 sm:py-5 text-white dark:text-white w-full sm:w-auto justify-center">
                     Xarid qilish
                   </button>
                   <ExcerptReader book={book} />

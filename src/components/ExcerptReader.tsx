@@ -41,7 +41,7 @@ const ExcerptReader = ({ book }: { book: Book }) => {
       onClick={hasExcerpt ? handleOpen : undefined}
       disabled={!hasExcerpt || loading}
       title={!hasExcerpt ? "Bu kitob uchun parcha hali qo'shilmagan" : undefined}
-      className={`group relative inline-flex items-center justify-center gap-3 px-10 py-4 sm:px-12 sm:py-5 rounded-lg overflow-hidden border border-gold/40 bg-gold/5 text-gold hover:bg-gold hover:text-charcoal transition-all duration-300 shadow-[0_0_15px_rgba(213,173,54,0.1)] hover:shadow-[0_0_25px_rgba(213,173,54,0.3)] w-full sm:w-auto ${
+      className={`group relative inline-flex items-center justify-center gap-3 px-10 py-4 sm:px-12 sm:py-5 rounded-lg overflow-hidden border border-white/20 bg-white/95 text-[#0A192F] hover:bg-white hover:-translate-y-0.5 transition-all duration-300 shadow-[0_8px_30px_rgba(255,255,255,0.12)] hover:shadow-[0_10px_40px_rgba(255,255,255,0.25)] w-full sm:w-auto ${
         hasExcerpt && !loading
           ? "opacity-100 cursor-pointer"
           : "opacity-40 cursor-not-allowed pointer-events-none"
