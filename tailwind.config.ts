@@ -114,8 +114,8 @@ export default {
           "50%": { boxShadow: "0 0 35px rgba(255,255,255,0.5), 0 0 15px rgba(255,255,255,0.4)", transform: "scale(1.02)" }
         },
         "gradient": {
-          "0%, 100%": { backgroundPosition: "0% 50%" },
-          "50%": { backgroundPosition: "100% 50%" }
+          "0%": { backgroundPosition: "0% 50%" },
+          "100%": { backgroundPosition: "200% 50%" }
         }
       },
       animation: {
@@ -123,7 +123,7 @@ export default {
         "accordion-up":   "accordion-up 0.2s ease-out",
         "shimmer": "shimmer 2.5s infinite",
         "breathe": "breathe 6s ease-in-out infinite",
-        "gradient": "gradient 4s ease infinite",
+        "gradient": "gradient 8s linear infinite",
       },
     },
   },
