@@ -24,6 +24,7 @@ const BOOK_TAGS: Record<string, string[]> = {
 const UPCOMING_BOOKS_MOCK: NewBook[] = [
   {
     id: "upcoming-1",
+    slug: "murvatli-apelsin",
     title: "Murvatli Apelsin", title_ru: "Заводной апельсин", title_en: "A Clockwork Orange",
     author: "Entoni Byorjess", author_ru: "Энтони Бёрджесс", author_en: "Anthony Burgess",
     description: "37 davlatda taqiqlangan. 100 davlatda nashr etilgan.",
@@ -39,6 +40,7 @@ const UPCOMING_BOOKS_MOCK: NewBook[] = [
   },
   {
     id: "upcoming-3",
+    slug: "ijarachi",
     title: "Ijarachi", title_ru: "Квартирантка", title_en: "The Tenant of Wildfell Hall",
     author: "Enn Bronte", author_ru: "Энн Бронте", author_en: "Anne Brontë",
     description: "Opalar qo'lyozmani yoqib yuborishmoqchi bo'ldi. Baribir nashr ettirildi.",
@@ -54,6 +56,7 @@ const UPCOMING_BOOKS_MOCK: NewBook[] = [
   },
   {
     id: "upcoming-4",
+    slug: "mayoq-sari",
     title: "Mayoq sari", title_ru: "На маяк", title_en: "To the Lighthouse",
     author: "Virdjiniya Vulf", author_ru: "Вирджиния Вулф", author_en: "Virginia Woolf",
     description: "Bir yoz faslida yozildi. Bir asrdan beri o'qitilmoqda.",
@@ -69,6 +72,7 @@ const UPCOMING_BOOKS_MOCK: NewBook[] = [
   },
   {
     id: "upcoming-2",
+    slug: "askanio",
     title: "Askanio", title_ru: "Асканио", title_en: "Ascanio",
     author: "Aleksandr Dyuma", author_ru: "Александр Дюма", author_en: "Alexandre Dumas",
     description: "Uyg'onish davri Italiyasi: bir usta, bir muhabbat, bir sir.",

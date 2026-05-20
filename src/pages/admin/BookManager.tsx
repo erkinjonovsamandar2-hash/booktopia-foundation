@@ -30,6 +30,7 @@ const bgColorOptions = [
 // category defaults to the raw DB key "new", never a translated label
 const emptyBook: Omit<Book, "id" | "created_at" | "updated_at"> = {
   title: "",
+  slug: "",
   title_en: null,
   title_ru: null,
   author: "",

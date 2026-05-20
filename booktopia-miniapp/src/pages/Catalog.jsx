@@ -1,0 +1,112 @@
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
+import { getCategoryLabel, CATEGORIES, haptic } from '../lib/utils';
+import { useLang } from '../context/LangContext';
+import BookCard from '../components/BookCard';
+
+const T = {
+  title:    { uz: 'Katalog',           ru: 'Каталог',    en: 'Catalog' },
+  searchPh: { uz: 'Qidirish...',       ru: 'Поиск...',   en: 'Search...' },
+  empty:    { uz: 'Kitoblar topilmadi', ru: 'Книги не найдены', en: 'No books found' },
+  count:    { uz: 'ta kitob',          ru: 'книг',       en: 'books' },
+};
+
+export default function Catalog() {
+  const navigate = useNavigate();
+  const { lang } = useLang();
+  const [params] = useSearchParams();
+  const initCat = params.get('cat') ?? 'all';
+
+  const [books, setBooks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState(initCat);
+
+  useEffect(() => {
+    supabase.from('books').select('*').order('sort_order', { ascending: true, nullsFirst: false })
+      .then(({ data }) => { if (data) setBooks(data); })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const t = (k) => T[k]?.[lang] ?? T[k]?.uz;
+
+  const filtered = books.filter(b => {
+    const q = search.toLowerCase();
+    const matchQ = !q ||
+      (b.title || '').toLowerCase().includes(q) ||
+      (b[`title_${lang}`] || '').toLowerCase().includes(q) ||
+      (b.author || '').toLowerCase().includes(q);
+    const matchC = category === 'all' || b.category === category;
+    return matchQ && matchC;
+  });
+
+  return (
+    <div className="page">
+      {/* Header */}
+      <div style={{ padding: '16px 16px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h1 style={{ fontSize: 22 }}>{t('title')}</h1>
+        <span style={{ fontSize: 13, color: 'var(--text-3)', fontWeight: 600 }}>
+          {filtered.length} {t('count')}
+        </span>
+      </div>
+
+      {/* Search */}
+      <div className="search-bar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder={t('searchPh')} />
+        {search && <button onClick={() => setSearch('')} style={{ border: 'none', background: 'none', color: 'var(--text-3)', fontSize: 16, cursor: 'pointer' }}>×</button>}
+      </div>
+
+      {/* Category pills */}
+      <div className="h-scroll" style={{ paddingTop: 4 }}>
+        {CATEGORIES.map(cat => (
+          <button
+            key={cat}
+            className={`pill pill--${category === cat ? 'active' : 'idle'}`}
+            onClick={() => { setCategory(cat); haptic('light'); }}
+          >
+            {getCategoryLabel(cat, lang)}
+          </button>
+        ))}
+      </div>
+
+      {/* Grid */}
+      <div style={{ height: 12 }} />
+      {loading ? (
+        <SkeletonGrid />
+      ) : filtered.length === 0 ? (
+        <div className="empty-state">
+          <span className="empty-state__icon">📭</span>
+          <h3 className="empty-state__title">{t('empty')}</h3>
+        </div>
+      ) : (
+        <div className="books-grid">
+          {filtered.map(book => (
+            <BookCard key={book.id} book={book} lang={lang} onNavigate={navigate} />
+          ))}
+        </div>
+      )}
+      <div style={{ height: 20 }} />
+    </div>
+  );
+}
+
+function SkeletonGrid() {
+  return (
+    <div className="books-grid">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} style={{ borderRadius: 14, overflow: 'hidden' }}>
+          <div className="skeleton" style={{ aspectRatio: '3/4', width: '100%' }} />
+          <div style={{ padding: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div className="skeleton" style={{ height: 14, width: '80%' }} />
+            <div className="skeleton" style={{ height: 11, width: '55%' }} />
+            <div className="skeleton" style={{ height: 14, width: '60%', marginTop: 4 }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
