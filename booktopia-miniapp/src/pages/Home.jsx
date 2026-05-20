@@ -150,8 +150,8 @@ export default function Home() {
           </div>
           {loading ? <SkeletonGrid /> : (
             <div className="books-grid" style={{ marginTop: 12 }}>
-              {filtered.map(book => (
-                <BookCard key={book.id} book={book} lang={lang} onNavigate={navigate} />
+              {filtered.map((book, i) => (
+                <BookCard key={book.id} book={book} lang={lang} onNavigate={navigate} index={i} />
               ))}
             </div>
           )}
@@ -177,8 +177,8 @@ export default function Home() {
               </div>
               {loading ? <SkeletonGrid /> : (
                 <div className="books-grid">
-                  {featured.map(book => (
-                    <BookCard key={book.id} book={book} lang={lang} onNavigate={navigate} />
+                  {featured.map((book, i) => (
+                    <BookCard key={book.id} book={book} lang={lang} onNavigate={navigate} index={i} />
                   ))}
                 </div>
               )}
@@ -197,8 +197,8 @@ export default function Home() {
               </div>
               {loading ? <SkeletonGrid /> : (
                 <div className="books-grid">
-                  {newReleases.map(book => (
-                    <BookCard key={book.id} book={book} lang={lang} onNavigate={navigate} />
+                  {newReleases.map((book, i) => (
+                    <BookCard key={book.id} book={book} lang={lang} onNavigate={navigate} index={i} />
                   ))}
                 </div>
               )}
@@ -208,8 +208,8 @@ export default function Home() {
           {/* All books if no featured */}
           {!loading && featured.length === 0 && (
             <div className="books-grid" style={{ marginTop: 12 }}>
-              {books.slice(0, 6).map(book => (
-                <BookCard key={book.id} book={book} lang={lang} onNavigate={navigate} />
+              {books.slice(0, 6).map((book, i) => (
+                <BookCard key={book.id} book={book} lang={lang} onNavigate={navigate} index={i} />
               ))}
             </div>
           )}

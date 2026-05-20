@@ -77,13 +77,19 @@ export default function BookDetail() {
           margin: '12px 0 0',
         }}>
           {book.cover_url ? (
-            <img
-              src={book.cover_url}
-              alt={title}
-              style={{ height: 220, objectFit: 'contain', borderRadius: 8, boxShadow: '0 12px 40px rgba(0,0,0,0.4)' }}
-            />
+            <div className="book-card__cover-wrapper" style={{ height: 240, width: 'auto', aspectRatio: '2/3', margin: '0 auto', boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}>
+              <img
+                src={book.cover_url}
+                alt={title}
+                className="book-card__cover"
+              />
+              <div className="book-card__spine" />
+            </div>
           ) : (
-            <div style={{ height: 220, width: 150, background: 'rgba(255,255,255,0.1)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 48 }}>📚</div>
+            <div className="book-card__cover-wrapper" style={{ height: 240, width: 'auto', aspectRatio: '2/3', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 48, boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}>
+              📚
+              <div className="book-card__spine" />
+            </div>
           )}
         </div>
 

@@ -9,7 +9,7 @@ const T = {
   noPrice:     { uz: 'Narx yo\'q',          ru: 'Цена не указана',     en: 'No price' },
 };
 
-export default function BookCard({ book, lang = 'uz', onNavigate }) {
+export default function BookCard({ book, lang = 'uz', onNavigate, index = 0 }) {
   const { addItem } = useCart();
   const [showSheet, setShowSheet] = useState(false);
 
@@ -28,18 +28,21 @@ export default function BookCard({ book, lang = 'uz', onNavigate }) {
 
   return (
     <>
-      <div className="book-card" onClick={() => onNavigate?.(`/book/${book.id}`)}>
+      <div className="book-card animate-slide-up" style={{ animationDelay: `${index * 0.05}s` }} onClick={() => onNavigate?.(`/book/${book.id}`)}>
         {/* Cover */}
-        {book.cover_url ? (
-          <img
-            className="book-card__cover"
-            src={book.cover_url}
-            alt={title}
-            loading="lazy"
-          />
-        ) : (
-          <div className="book-card__cover-placeholder">📚</div>
-        )}
+        <div className="book-card__cover-wrapper">
+          {book.cover_url ? (
+            <img
+              className="book-card__cover"
+              src={book.cover_url}
+              alt={title}
+              loading="lazy"
+            />
+          ) : (
+            <div className="book-card__cover-placeholder">📚</div>
+          )}
+          <div className="book-card__spine" />
+        </div>
 
         {/* Badge */}
         {isNew && !isSoon && <span className="badge badge--new">New</span>}

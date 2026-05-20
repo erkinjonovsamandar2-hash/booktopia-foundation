@@ -84,8 +84,8 @@ export default function Catalog() {
         </div>
       ) : (
         <div className="books-grid">
-          {filtered.map(book => (
-            <BookCard key={book.id} book={book} lang={lang} onNavigate={navigate} />
+          {filtered.map((book, i) => (
+            <BookCard key={book.id} book={book} lang={lang} onNavigate={navigate} index={i} />
           ))}
         </div>
       )}

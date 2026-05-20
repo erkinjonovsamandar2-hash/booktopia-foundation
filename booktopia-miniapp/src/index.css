@@ -169,17 +169,49 @@ h1, h2, h3, h4 {
   box-shadow: 0 1px 6px rgba(10, 25, 47, 0.06);
 }
 
+.book-card__cover-wrapper {
+  position: relative;
+  aspect-ratio: 2/3;
+  width: 100%;
+  overflow: hidden;
+  background: var(--surface-2);
+  border-radius: 3px 8px 8px 3px;
+  box-shadow: 
+    inset 2px 0 5px rgba(255,255,255,0.15),
+    inset -3px 0 8px rgba(0,0,0,0.45),
+    -6px 0 16px rgba(0,0,0,0.55),
+    8px 10px 20px rgba(0,0,0,0.25);
+  transition: all 0.5s ease;
+}
+
+.book-card:active .book-card__cover-wrapper {
+  transform: translateY(-3px) rotate(-1deg);
+  box-shadow: 
+    inset 2px 0 5px rgba(255,255,255,0.15),
+    inset -3px 0 8px rgba(0,0,0,0.45),
+    -6px 0 16px rgba(0,0,0,0.55),
+    10px 14px 28px rgba(0,0,0,0.30);
+}
+
 .book-card__cover {
   width: 100%;
-  aspect-ratio: 3/4;
+  height: 100%;
   object-fit: cover;
-  background: var(--surface-2);
   display: block;
+}
+
+.book-card__spine {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 10px;
+  pointer-events: none;
+  z-index: 10;
+  background: linear-gradient(to right, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.08) 1px, rgba(0,0,0,0.28) 3px, rgba(0,0,0,0.65) 6px, transparent 10px);
 }
 
 .book-card__cover-placeholder {
   width: 100%;
-  aspect-ratio: 3/4;
+  height: 100%;
   background: linear-gradient(135deg, var(--blue-800) 0%, var(--blue-600) 100%);
   display: flex;
   align-items: center;
@@ -283,8 +315,8 @@ h1, h2, h3, h4 {
   box-shadow: 0 1px 4px rgba(0,0,0,0.12);
   transition: transform 0.15s ease;
 }
-.wish-btn:active { transform: scale(0.85); }
-.wish-btn svg { width: 15px; height: 15px; }
+.wish-btn:active { animation: heartBounce 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.wish-btn svg { width: 15px; height: 15px; transition: fill 0.2s, stroke 0.2s; }
 
 /* ── Category pill ──────────────────────────────────────────────────────────── */
 .pill {
@@ -409,9 +441,10 @@ h1, h2, h3, h4 {
   width: 100%;
   max-width: 480px;
   height: calc(var(--nav-h) + var(--safe-bottom));
-  background: var(--nav-bg);
-  box-shadow: var(--shadow-nav);
-  border-top: 1px solid #EEF2F7;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 -1px 0 rgba(10, 25, 47, 0.04), 0 -8px 24px rgba(10, 25, 47, 0.03);
   display: flex;
   align-items: flex-start;
   padding-top: 8px;
@@ -478,10 +511,11 @@ h1, h2, h3, h4 {
 .sheet-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(10, 25, 47, 0.45);
+  background: rgba(10, 25, 47, 0.55);
   z-index: 200;
-  backdrop-filter: blur(2px);
-  animation: fadeIn 0.2s ease;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: fadeIn 0.25s ease;
 }
 
 .sheet {
@@ -687,6 +721,34 @@ h1, h2, h3, h4 {
 @keyframes slideUp   { from { transform: translateX(-50%) translateY(100%); } to { transform: translateX(-50%) translateY(0); } }
 @keyframes toastIn   { from { opacity: 0; transform: translateX(-50%) translateY(12px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
 @keyframes toastOut  { from { opacity: 1; } to { opacity: 0; } }
+
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes heartBounce {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(0.7); }
+  100% { transform: scale(1.1); }
+}
+
+@keyframes checkmarkDraw {
+  0% { stroke-dashoffset: 48; opacity: 0; }
+  10% { opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 1; }
+}
+
+@keyframes checkmarkCircle {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-slide-up {
+  opacity: 0;
+  animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
 
 /* ── Divider ─────────────────────────────────────────────────────────────────── */
 .divider {

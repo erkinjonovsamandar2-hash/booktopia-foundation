@@ -113,7 +113,12 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
         <div className="sheet__body">
           {done ? (
             <div className="success-screen" style={{ minHeight: 'auto', padding: '24px 0' }}>
-              <div className="success-screen__icon">✅</div>
+              <div className="success-screen__icon" style={{ background: 'transparent' }}>
+                <svg width="80" height="80" viewBox="0 0 52 52" style={{ animation: 'checkmarkCircle 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards' }}>
+                  <circle cx="26" cy="26" r="25" fill="#EBF8F0" />
+                  <path d="M15 27.2l7.1 7.2 15.7-15.8" fill="none" stroke="#38A169" strokeWidth="4" strokeLinecap="round" strokeDasharray="48" strokeDashoffset="48" style={{ animation: 'checkmarkDraw 0.4s ease 0.3s forwards' }} />
+                </svg>
+              </div>
               <h2 style={{ fontSize: 20 }}>{t('success')}</h2>
               <p style={{ color: 'var(--text-2)', fontSize: 14, lineHeight: 1.5 }}>{t('successDesc')}</p>
               <button className="btn-primary" style={{ marginTop: 8 }} onClick={onClose}>
