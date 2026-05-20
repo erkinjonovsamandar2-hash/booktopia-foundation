@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useLang } from '../context/LangContext';
 import { formatPrice, haptic } from '../lib/utils';
@@ -29,9 +30,9 @@ export default function Cart() {
           <span className="empty-state__icon">🛒</span>
           <h2 className="empty-state__title">{t('empty')}</h2>
           <p className="empty-state__desc">{t('emptyDesc')}</p>
-          <a href="/catalog" style={{ textDecoration: 'none' }}>
+          <Link to="/catalog" style={{ textDecoration: 'none' }}>
             <button className="btn-primary" style={{ marginTop: 8 }}>{t('browse')}</button>
-          </a>
+          </Link>
         </div>
       </div>
     );

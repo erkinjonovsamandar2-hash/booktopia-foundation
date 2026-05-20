@@ -1,5 +1,6 @@
 import { useLang } from '../context/LangContext';
 import { useCart } from '../context/CartContext';
+import { Link } from 'react-router-dom';
 import { tg } from '../lib/utils';
 
 const T = {
@@ -95,9 +96,9 @@ export default function Profile() {
 }
 
 function MenuItem({ icon, label, sub, href, external }) {
-  const Tag = href ? (external ? 'a' : 'a') : 'div';
+  const Tag = href ? (external ? 'a' : Link) : 'div';
   const props = href
-    ? { href, ...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {}) }
+    ? (external ? { href, target: '_blank', rel: 'noopener noreferrer' } : { to: href })
     : {};
 
   return (

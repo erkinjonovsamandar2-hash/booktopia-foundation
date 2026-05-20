@@ -9,6 +9,8 @@ import Catalog from './pages/Catalog';
 import BookDetail from './pages/BookDetail';
 import Cart from './pages/Cart';
 import Profile from './pages/Profile';
+import Wishlist from './pages/Wishlist';
+import Orders from './pages/Orders';
 
 import './index.css';
 
@@ -31,6 +33,8 @@ function AppRoutes() {
         <Route path="/book/:id"    element={<BookDetail />} />
         <Route path="/cart"        element={<Cart />} />
         <Route path="/profile"     element={<Profile />} />
+        <Route path="/wishlist"    element={<Wishlist />} />
+        <Route path="/orders"      element={<Orders />} />
         <Route path="*"            element={<Navigate to="/" replace />} />
       </Routes>
       <BottomNav lang={lang} />
