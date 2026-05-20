@@ -155,24 +155,9 @@ const Lazy = ({
   </Suspense>
 );
 
-// ── Global app-level loading splash ─────────────────────────────────────────
 // Shows LoadingSplash on first load of ANY page, fades out when data is ready.
-// sessionStorage ensures it only shows once per browser session.
 const AppLoader = ({ children }: { children: React.ReactNode }) => {
   const { loading, siteSettings } = useData();
-  const [shown, setShown] = useState(
-    () => sessionStorage.getItem("splashShown") === "true"
-  );
-
-  useEffect(() => {
-    if (!loading && !shown) {
-      const t = setTimeout(() => {
-        sessionStorage.setItem("splashShown", "true");
-        setShown(true);
-      }, 80);
-      return () => clearTimeout(t);
-    }
-  }, [loading, shown]);
 
   // Apply primary color override via data attribute
   useEffect(() => {
@@ -180,7 +165,7 @@ const AppLoader = ({ children }: { children: React.ReactNode }) => {
     document.documentElement.dataset.primary = color;
   }, [siteSettings.theme?.primary_color]);
 
-  if (loading && !shown) return <LoadingSplash />;
+  if (loading) return <LoadingSplash />;
   return <>{children}</>;
 };
 
