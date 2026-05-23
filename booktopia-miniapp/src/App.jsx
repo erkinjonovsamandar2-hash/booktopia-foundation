@@ -1,5 +1,6 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { BrowserRouter } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
 import { CartProvider } from './context/CartContext';
 import { LangProvider, useLang } from './context/LangContext';
 import BottomNav from './components/BottomNav';
@@ -18,25 +19,27 @@ import './index.css';
 if (window.Telegram?.WebApp) {
   window.Telegram.WebApp.ready();
   window.Telegram.WebApp.expand();
-  // Match app background to Telegram
   document.body.style.background = 'var(--bg)';
 }
 
 function AppRoutes() {
   const { lang } = useLang();
+  const location = useLocation();
 
   return (
     <>
-      <Routes>
-        <Route path="/"            element={<Home />} />
-        <Route path="/catalog"     element={<Catalog />} />
-        <Route path="/book/:id"    element={<BookDetail />} />
-        <Route path="/cart"        element={<Cart />} />
-        <Route path="/profile"     element={<Profile />} />
-        <Route path="/wishlist"    element={<Wishlist />} />
-        <Route path="/orders"      element={<Orders />} />
-        <Route path="*"            element={<Navigate to="/" replace />} />
-      </Routes>
+      <AnimatePresence mode="wait" initial={false}>
+        <Routes location={location} key={location.pathname}>
+          <Route path="/"            element={<Home />} />
+          <Route path="/catalog"     element={<Catalog />} />
+          <Route path="/book/:id"    element={<BookDetail />} />
+          <Route path="/cart"        element={<Cart />} />
+          <Route path="/profile"     element={<Profile />} />
+          <Route path="/wishlist"    element={<Wishlist />} />
+          <Route path="/orders"      element={<Orders />} />
+          <Route path="*"            element={<Navigate to="/" replace />} />
+        </Routes>
+      </AnimatePresence>
       <BottomNav lang={lang} />
     </>
   );

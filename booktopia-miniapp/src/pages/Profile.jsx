@@ -1,7 +1,9 @@
 import { useLang } from '../context/LangContext';
 import { useCart } from '../context/CartContext';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { tg } from '../lib/utils';
+import PageTransition from '../components/PageTransition';
 
 const T = {
   title:       { uz: 'Profil',              ru: 'Профиль',         en: 'Profile' },
@@ -31,6 +33,7 @@ export default function Profile() {
   const userHandle = user?.username ? `@${user.username}` : null;
 
   return (
+    <PageTransition>
     <div className="page">
       {/* Profile header */}
       <div style={{
@@ -92,6 +95,7 @@ export default function Profile() {
         Booktopia Miniapp v1.0
       </p>
     </div>
+    </PageTransition>
   );
 }
 

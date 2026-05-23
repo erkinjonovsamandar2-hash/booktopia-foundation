@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { getCategoryLabel, CATEGORIES, haptic } from '../lib/utils';
 import { useLang } from '../context/LangContext';
 import BookCard from '../components/BookCard';
+import PageTransition from '../components/PageTransition';
 
 const T = {
   title:    { uz: 'Katalog',           ru: 'Каталог',    en: 'Catalog' },
@@ -42,6 +44,7 @@ export default function Catalog() {
   });
 
   return (
+    <PageTransition>
     <div className="page">
       {/* Header */}
       <div style={{ padding: '16px 16px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -63,13 +66,15 @@ export default function Catalog() {
       {/* Category pills */}
       <div className="h-scroll" style={{ paddingTop: 4 }}>
         {CATEGORIES.map(cat => (
-          <button
+          <motion.button
             key={cat}
             className={`pill pill--${category === cat ? 'active' : 'idle'}`}
             onClick={() => { setCategory(cat); haptic('light'); }}
+            whileTap={{ scale: 0.93 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
           >
             {getCategoryLabel(cat, lang)}
-          </button>
+          </motion.button>
         ))}
       </div>
 
@@ -91,6 +96,7 @@ export default function Catalog() {
       )}
       <div style={{ height: 20 }} />
     </div>
+    </PageTransition>
   );
 }
 

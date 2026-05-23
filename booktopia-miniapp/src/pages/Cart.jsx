@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useCart } from '../context/CartContext';
 import { useLang } from '../context/LangContext';
 import { formatPrice, haptic } from '../lib/utils';
 import CheckoutSheet from '../components/CheckoutSheet';
+import PageTransition from '../components/PageTransition';
 
 const T = {
   title:      { uz: 'Savat',           ru: 'Корзина',    en: 'Cart' },
@@ -25,6 +27,7 @@ export default function Cart() {
 
   if (items.length === 0) {
     return (
+      <PageTransition>
       <div className="page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '70dvh' }}>
         <div className="empty-state">
           <span className="empty-state__icon">🛒</span>
@@ -35,10 +38,12 @@ export default function Cart() {
           </Link>
         </div>
       </div>
+      </PageTransition>
     );
   }
 
   return (
+    <PageTransition>
     <>
       <div className="page">
         {/* Header */}
@@ -107,13 +112,19 @@ export default function Cart() {
         </div>
 
         <div style={{ padding: '16px 16px 8px' }}>
-          <button className="btn-primary" onClick={() => { haptic('medium'); setShowSheet(true); }}>
+          <motion.button
+            className="btn-primary"
+            onClick={() => { haptic('medium'); setShowSheet(true); }}
+            whileTap={{ scale: 0.97, y: 1 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+          >
             {t('checkout')}
-          </button>
+          </motion.button>
         </div>
       </div>
 
       {showSheet && <CheckoutSheet lang={lang} onClose={() => setShowSheet(false)} />}
     </>
+    </PageTransition>
   );
 }

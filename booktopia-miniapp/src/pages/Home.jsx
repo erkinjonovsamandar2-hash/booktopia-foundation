@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { locField, formatPrice, getCategoryLabel, CATEGORIES, haptic } from '../lib/utils';
 import { useLang } from '../context/LangContext';
 import BookCard from '../components/BookCard';
+import PageTransition from '../components/PageTransition';
 
 // ── Translations ──────────────────────────────────────────────────────────────
 const T = {
@@ -80,6 +82,7 @@ export default function Home() {
   const showingFiltered = search || activeCategory !== 'all';
 
   return (
+    <PageTransition>
     <div className="page" style={{ paddingTop: 0 }}>
 
       {/* ── Hero banner ───────────────────────────────────────────────────────── */}
@@ -132,13 +135,15 @@ export default function Home() {
       {/* ── Category pills ────────────────────────────────────────────────────── */}
       <div className="h-scroll" style={{ paddingTop: 0 }}>
         {CATEGORIES.map(cat => (
-          <button
+          <motion.button
             key={cat}
             className={`pill pill--${activeCategory === cat ? 'active' : 'idle'}`}
             onClick={() => { setActiveCategory(cat); haptic('light'); }}
+            whileTap={{ scale: 0.93 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
           >
             {getCategoryLabel(cat, lang)}
-          </button>
+          </motion.button>
         ))}
       </div>
 
@@ -218,6 +223,7 @@ export default function Home() {
 
       <div style={{ height: 20 }} />
     </div>
+    </PageTransition>
   );
 }
 

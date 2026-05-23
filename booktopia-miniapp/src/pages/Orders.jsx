@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useLang } from '../context/LangContext';
 import { formatPrice, tg } from '../lib/utils';
+import PageTransition from '../components/PageTransition';
 
 const T = {
   title:      { uz: 'Mening Kutubxonam', ru: 'Моя библиотека', en: 'My Library' },
@@ -92,6 +93,7 @@ export default function Orders() {
   };
 
   return (
+    <PageTransition>
     <div className="page" style={{ paddingBottom: 90 }}>
       {/* Header */}
       <div style={{ padding: '16px 16px 0', display: 'flex', alignItems: 'center' }}>
@@ -188,5 +190,6 @@ export default function Orders() {
         </div>
       )}
     </div>
+    </PageTransition>
   );
 }

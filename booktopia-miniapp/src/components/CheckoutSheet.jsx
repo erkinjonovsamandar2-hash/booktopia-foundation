@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../context/CartContext';
 import { formatPrice, haptic, tg } from '../lib/utils';
 import { supabase } from '../lib/supabase';
@@ -39,6 +40,10 @@ const T = {
   total:        { uz: 'Jami:',               ru: 'Итого:',              en: 'Total:' },
 };
 
+// Spring configs
+const sheetSpring   = { type: 'spring', stiffness: 420, damping: 38 };
+const overlayFade   = { duration: 0.22 };
+
 export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
   const { items, totalPrice, clearCart, addItem } = useCart();
   const [name, setName] = useState('');
@@ -57,13 +62,11 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
     }
   }, []);
 
-  // If opened from book card (quick buy), ensure that book is counted
   const orderItems = book
     ? (items.find(i => i.id === book.id) ? items : [...items, { ...book, qty: 1 }])
     : items;
 
   const total = orderItems.reduce((s, i) => s + (i.price || 0) * i.qty, 0);
-
   const canSubmit = phone.trim().length >= 9 && !loading;
 
   const handleConfirm = async () => {
@@ -96,7 +99,6 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
       setDone(true);
     } catch (err) {
       console.error('[Checkout]', err);
-      // Still show success for demo — order may have saved
       setDone(true);
     } finally {
       setLoading(false);
@@ -107,114 +109,165 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
 
   return (
     <>
-      <div className="sheet-overlay" onClick={onClose} />
-      <div className="sheet">
+      {/* Backdrop */}
+      <motion.div
+        className="sheet-overlay"
+        onClick={onClose}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={overlayFade}
+      />
+
+      {/* Sheet — slides up with spring, drag down to dismiss */}
+      <motion.div
+        className="sheet"
+        drag="y"
+        dragConstraints={{ top: 0 }}
+        dragElastic={{ top: 0, bottom: 0.4 }}
+        onDragEnd={(_, info) => {
+          if (info.offset.y > 120 || info.velocity.y > 600) {
+            haptic('light');
+            onClose();
+          }
+        }}
+        initial={{ y: '100%' }}
+        animate={{ y: 0 }}
+        exit={{ y: '100%' }}
+        transition={sheetSpring}
+        style={{ touchAction: 'none' }}
+      >
         <div className="sheet__handle" />
         <div className="sheet__body">
-          {done ? (
-            <div className="success-screen" style={{ minHeight: 'auto', padding: '24px 0' }}>
-              <div className="success-screen__icon" style={{ background: 'transparent' }}>
-                <svg width="80" height="80" viewBox="0 0 52 52" style={{ animation: 'checkmarkCircle 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards' }}>
-                  <circle cx="26" cy="26" r="25" fill="#EBF8F0" />
-                  <path d="M15 27.2l7.1 7.2 15.7-15.8" fill="none" stroke="#38A169" strokeWidth="4" strokeLinecap="round" strokeDasharray="48" strokeDashoffset="48" style={{ animation: 'checkmarkDraw 0.4s ease 0.3s forwards' }} />
-                </svg>
-              </div>
-              <h2 style={{ fontSize: 20 }}>{t('success')}</h2>
-              <p style={{ color: 'var(--text-2)', fontSize: 14, lineHeight: 1.5 }}>{t('successDesc')}</p>
-              <button className="btn-primary" style={{ marginTop: 8 }} onClick={onClose}>
-                {t('close')}
-              </button>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <h2 style={{ fontSize: 18, marginBottom: 4 }}>{t('title')}</h2>
-
-              {/* Order summary */}
-              <div style={{ background: 'var(--surface-2)', borderRadius: 12, padding: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {orderItems.map(item => (
-                  <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 600 }}>
-                    <span style={{ color: 'var(--text-1)' }}>{item[`title_${lang}`] || item.title} × {item.qty}</span>
-                    <span className="price" style={{ fontSize: 13 }}>{formatPrice((item.price || 0) * item.qty)}</span>
-                  </div>
-                ))}
-                {total > 0 && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, borderTop: '1px solid #DDE3EC', fontWeight: 800 }}>
-                    <span>{t('total')}</span>
-                    <span className="price" style={{ color: 'var(--blue-500)' }}>{formatPrice(total)}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Name */}
-              <div className="input-group">
-                <label className="input-label">{t('name')}</label>
-                <input
-                  className="input"
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                  placeholder="Ismoil Karimov"
-                />
-              </div>
-
-              {/* Phone */}
-              <div className="input-group">
-                <label className="input-label">{t('phone')}</label>
-                <input
-                  className="input"
-                  type="tel"
-                  inputMode="tel"
-                  value={phone}
-                  onChange={e => setPhone(e.target.value)}
-                  placeholder={t('phonePh')}
-                  autoFocus
-                />
-              </div>
-
-              {/* Address */}
-              <div className="input-group">
-                <label className="input-label">{t('address')}</label>
-                <input
-                  className="input"
-                  value={address}
-                  onChange={e => setAddress(e.target.value)}
-                  placeholder={t('addressPh')}
-                />
-              </div>
-
-              {/* Payment */}
-              <div>
-                <p className="input-label" style={{ marginBottom: 8 }}>{t('payment')}</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {PAYMENT_OPTIONS.map(opt => (
-                    <button
-                      key={opt.id}
-                      className={`pay-option${payment === opt.id ? ' selected' : ''}`}
-                      onClick={() => { setPayment(opt.id); haptic('light'); }}
-                    >
-                      <span className="pay-option__icon">{opt.icon}</span>
-                      <div>
-                        <div className="pay-option__label">{opt.label[lang]}</div>
-                        <div className="pay-option__sub">{opt.sub[lang]}</div>
-                      </div>
-                      {payment === opt.id && (
-                        <span style={{ marginLeft: 'auto', color: 'var(--blue-500)' }}>✓</span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <button
-                className="btn-primary"
-                onClick={handleConfirm}
-                disabled={!canSubmit}
+          <AnimatePresence mode="wait">
+            {done ? (
+              /* ── Success state ── */
+              <motion.div
+                key="success"
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ type: 'spring', stiffness: 350, damping: 26 }}
+                className="success-screen"
+                style={{ minHeight: 'auto', padding: '24px 0' }}
               >
-                {loading ? '...' : t('confirm')}
-              </button>
-            </div>
-          )}
+                <div className="success-screen__icon" style={{ background: 'transparent' }}>
+                  <svg width="80" height="80" viewBox="0 0 52 52">
+                    <motion.circle
+                      cx="26" cy="26" r="25" fill="#EBF8F0"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+                    />
+                    <motion.path
+                      d="M15 27.2l7.1 7.2 15.7-15.8"
+                      fill="none" stroke="#38A169" strokeWidth="4" strokeLinecap="round"
+                      initial={{ pathLength: 0, opacity: 0 }}
+                      animate={{ pathLength: 1, opacity: 1 }}
+                      transition={{ duration: 0.5, delay: 0.2, ease: 'easeOut' }}
+                    />
+                  </svg>
+                </div>
+                <h2 style={{ fontSize: 20 }}>{t('success')}</h2>
+                <p style={{ color: 'var(--text-2)', fontSize: 14, lineHeight: 1.5 }}>{t('successDesc')}</p>
+                <motion.button
+                  className="btn-primary"
+                  style={{ marginTop: 8 }}
+                  onClick={onClose}
+                  whileTap={{ scale: 0.96, y: 1 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                >
+                  {t('close')}
+                </motion.button>
+              </motion.div>
+            ) : (
+              /* ── Form ── */
+              <motion.div
+                key="form"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
+              >
+                <h2 style={{ fontSize: 18, marginBottom: 4 }}>{t('title')}</h2>
+
+                {/* Order summary */}
+                <div style={{ background: 'var(--surface-2)', borderRadius: 12, padding: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {orderItems.map(item => (
+                    <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 600 }}>
+                      <span style={{ color: 'var(--text-1)' }}>{item[`title_${lang}`] || item.title} × {item.qty}</span>
+                      <span className="price" style={{ fontSize: 13 }}>{formatPrice((item.price || 0) * item.qty)}</span>
+                    </div>
+                  ))}
+                  {total > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, borderTop: '1px solid #DDE3EC', fontWeight: 800 }}>
+                      <span>{t('total')}</span>
+                      <span className="price" style={{ color: 'var(--blue-500)' }}>{formatPrice(total)}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Name */}
+                <div className="input-group">
+                  <label className="input-label">{t('name')}</label>
+                  <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Ismoil Karimov" />
+                </div>
+
+                {/* Phone */}
+                <div className="input-group">
+                  <label className="input-label">{t('phone')}</label>
+                  <input className="input" type="tel" inputMode="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder={t('phonePh')} autoFocus />
+                </div>
+
+                {/* Address */}
+                <div className="input-group">
+                  <label className="input-label">{t('address')}</label>
+                  <input className="input" value={address} onChange={e => setAddress(e.target.value)} placeholder={t('addressPh')} />
+                </div>
+
+                {/* Payment */}
+                <div>
+                  <p className="input-label" style={{ marginBottom: 8 }}>{t('payment')}</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {PAYMENT_OPTIONS.map(opt => (
+                      <motion.button
+                        key={opt.id}
+                        className={`pay-option${payment === opt.id ? ' selected' : ''}`}
+                        onClick={() => { setPayment(opt.id); haptic('light'); }}
+                        whileTap={{ scale: 0.97 }}
+                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      >
+                        <span className="pay-option__icon">{opt.icon}</span>
+                        <div>
+                          <div className="pay-option__label">{opt.label[lang]}</div>
+                          <div className="pay-option__sub">{opt.sub[lang]}</div>
+                        </div>
+                        {payment === opt.id && (
+                          <motion.span
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            style={{ marginLeft: 'auto', color: 'var(--blue-500)' }}
+                          >✓</motion.span>
+                        )}
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+
+                <motion.button
+                  className="btn-primary"
+                  onClick={handleConfirm}
+                  disabled={!canSubmit}
+                  whileTap={canSubmit ? { scale: 0.97, y: 1 } : {}}
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                >
+                  {loading ? '...' : t('confirm')}
+                </motion.button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-      </div>
+      </motion.div>
     </>
   );
 }

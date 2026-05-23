@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { formatPrice, haptic } from '../lib/utils';
 import { useLang } from '../context/LangContext';
 import { useCart } from '../context/CartContext';
 import CheckoutSheet from '../components/CheckoutSheet';
+import PageTransition from '../components/PageTransition';
 
 const T = {
   back:     { uz: '← Orqaga',   ru: '← Назад',    en: '← Back' },
@@ -58,6 +60,7 @@ export default function BookDetail() {
   const isLong = desc.length > 200;
 
   return (
+    <PageTransition>
     <>
       <div className="page" style={{ paddingBottom: 90 }}>
         {/* Back button */}
@@ -157,11 +160,16 @@ export default function BookDetail() {
           background: 'linear-gradient(to top, var(--bg) 80%, transparent)',
           zIndex: 99,
         }}>
-          <button className="btn-primary" onClick={handleBuy}>
+          <motion.button
+            className="btn-primary"
+            onClick={handleBuy}
+            whileTap={{ scale: 0.97, y: 1 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+          >
             {inCart
               ? (lang === 'ru' ? '✓ Оформить заказ' : lang === 'en' ? '✓ Place order' : '✓ Buyurtma berish')
               : t('buy')} &nbsp;·&nbsp; {formatPrice(book.price)}
-          </button>
+          </motion.button>
         </div>
       )}
 
@@ -169,6 +177,7 @@ export default function BookDetail() {
         <CheckoutSheet book={book} lang={lang} onClose={() => setShowSheet(false)} />
       )}
     </>
+    </PageTransition>
   );
 }
 

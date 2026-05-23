@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useLang } from '../context/LangContext';
 import BookCard from '../components/BookCard';
 import { haptic, tg } from '../lib/utils';
+import PageTransition from '../components/PageTransition';
 
 const T = {
   title:      { uz: 'Saqlanganlar',    ru: 'Избранное',       en: 'Wishlist' },
@@ -60,6 +61,7 @@ export default function Wishlist() {
   const t = (k) => T[k]?.[lang] ?? T[k]?.uz;
 
   return (
+    <PageTransition>
     <div className="page" style={{ paddingBottom: 90 }}>
       {/* Header */}
       <div style={{ padding: '16px 16px 0', display: 'flex', alignItems: 'center' }}>
@@ -101,5 +103,6 @@ export default function Wishlist() {
         </div>
       )}
     </div>
+    </PageTransition>
   );
 }

@@ -1,4 +1,5 @@
 import { useLocation, Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useCart } from '../context/CartContext';
 
 const NAV = [
@@ -62,11 +63,17 @@ export default function BottomNav({ lang = 'uz' }) {
             to={item.path}
             className={`nav-item${active ? ' active' : ''}`}
           >
+          <motion.div
+            whileTap={{ scale: 0.82 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 28 }}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}
+          >
             {item.icon(active)}
             <span>{item.label[lang] ?? item.label.uz}</span>
             {item.hasCart && totalCount > 0 && (
               <span className="nav-badge">{totalCount > 9 ? '9+' : totalCount}</span>
             )}
+          </motion.div>
           </Link>
         );
       })}

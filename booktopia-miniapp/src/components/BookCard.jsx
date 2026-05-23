@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { useCart } from '../context/CartContext';
 import { formatPrice, haptic } from '../lib/utils';
 import CheckoutSheet from './CheckoutSheet';
+import PageTransition from './PageTransition';
 
 const T = {
   addedToCart: { uz: 'Savatga qo\'shildi!', ru: 'Добавлено в корзину!', en: 'Added to cart!' },
@@ -28,46 +30,64 @@ export default function BookCard({ book, lang = 'uz', onNavigate, index = 0 }) {
 
   return (
     <>
-      <div className="book-card animate-slide-up" style={{ animationDelay: `${index * 0.05}s` }} onClick={() => onNavigate?.(`/book/${book.id}`)}>
-        {/* Cover */}
-        <div className="book-card__cover-wrapper">
-          {book.cover_url ? (
-            <img
-              className="book-card__cover"
-              src={book.cover_url}
-              alt={title}
-              loading="lazy"
-            />
-          ) : (
-            <div className="book-card__cover-placeholder">📚</div>
-          )}
-          <div className="book-card__spine" />
-        </div>
-
-        {/* Badge */}
-        {isNew && !isSoon && <span className="badge badge--new">New</span>}
-        {isSoon && <span className="badge badge--soon">Tez kunda</span>}
-
-        {/* Wishlist */}
-        <WishBtn bookId={book.id} />
-
-        {/* Body */}
-        <div className="book-card__body">
-          <p className="book-card__title">{title}</p>
-          <p className="book-card__author">{author}</p>
-          <div className="book-card__price-row">
-            {price
-              ? <span className="price" style={{ fontSize: 14 }}>{formatPrice(price)}</span>
-              : <span style={{ fontSize: 13, color: 'var(--text-3)' }}>{T.noPrice[lang]}</span>
-            }
+      {/* Staggered fade-up on initial render */}
+      <motion.div
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 28, delay: index * 0.06 }}
+      >
+        {/* Tap feedback: spring scale + slight y push */}
+        <motion.div
+          className="book-card"
+          whileTap={{ scale: 0.96, y: 2 }}
+          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+          onClick={() => onNavigate?.(`/book/${book.id}`)}
+        >
+          {/* Cover */}
+          <div className="book-card__cover-wrapper">
+            {book.cover_url ? (
+              <img
+                className="book-card__cover"
+                src={book.cover_url}
+                alt={title}
+                loading="lazy"
+              />
+            ) : (
+              <div className="book-card__cover-placeholder">📚</div>
+            )}
+            <div className="book-card__spine" />
           </div>
-          {!isSoon && price && (
-            <button className="book-card__btn" onClick={handleBuy}>
-              🛒 {lang === 'ru' ? 'Купить' : lang === 'en' ? 'Buy' : 'Sotib olish'}
-            </button>
-          )}
-        </div>
-      </div>
+
+          {/* Badge */}
+          {isNew && !isSoon && <span className="badge badge--new">New</span>}
+          {isSoon && <span className="badge badge--soon">Tez kunda</span>}
+
+          {/* Wishlist */}
+          <WishBtn bookId={book.id} />
+
+          {/* Body */}
+          <div className="book-card__body">
+            <p className="book-card__title">{title}</p>
+            <p className="book-card__author">{author}</p>
+            <div className="book-card__price-row">
+              {price
+                ? <span className="price" style={{ fontSize: 14 }}>{formatPrice(price)}</span>
+                : <span style={{ fontSize: 13, color: 'var(--text-3)' }}>{T.noPrice[lang]}</span>
+              }
+            </div>
+            {!isSoon && price && (
+              <motion.button
+                className="book-card__btn"
+                onClick={handleBuy}
+                whileTap={{ scale: 0.94, y: 1 }}
+                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+              >
+                🛒 {lang === 'ru' ? 'Купить' : lang === 'en' ? 'Buy' : 'Sotib olish'}
+              </motion.button>
+            )}
+          </div>
+        </motion.div>
+      </motion.div>
 
       {showSheet && (
         <CheckoutSheet
@@ -102,10 +122,17 @@ function WishBtn({ bookId }) {
   };
 
   return (
-    <button className="wish-btn" onClick={toggle} aria-label="Saqlash">
+    <motion.button
+      className="wish-btn"
+      onClick={toggle}
+      aria-label="Saqlash"
+      whileTap={{ scale: 0.75 }}
+      animate={liked ? { scale: [1, 1.3, 1] } : {}}
+      transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+    >
       <svg viewBox="0 0 24 24" fill={liked ? '#E53E3E' : 'none'} stroke={liked ? '#E53E3E' : '#9BAAB8'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
       </svg>
-    </button>
+    </motion.button>
   );
 }
