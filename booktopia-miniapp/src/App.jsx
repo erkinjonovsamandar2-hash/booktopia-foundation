@@ -12,6 +12,7 @@ import Cart from './pages/Cart';
 import Profile from './pages/Profile';
 import Wishlist from './pages/Wishlist';
 import Orders from './pages/Orders';
+import Discover from './pages/Discover';
 
 import './index.css';
 
@@ -34,6 +35,7 @@ function AppRoutes() {
           <Route path="/catalog"     element={<Catalog />} />
           <Route path="/book/:id"    element={<BookDetail />} />
           <Route path="/cart"        element={<Cart />} />
+          <Route path="/discover"    element={<Discover />} />
           <Route path="/profile"     element={<Profile />} />
           <Route path="/wishlist"    element={<Wishlist />} />
           <Route path="/orders"      element={<Orders />} />

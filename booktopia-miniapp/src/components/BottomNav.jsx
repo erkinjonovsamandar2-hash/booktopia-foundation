@@ -38,6 +38,16 @@ const NAV = [
     hasCart: true,
   },
   {
+    path: '/discover',
+    label: { uz: 'Kashfiyot', ru: 'Открытия', en: 'Discover' },
+    icon: (active) => (
+      <svg viewBox="0 0 24 24" fill="none" stroke={active ? '#265999' : '#9BAAB8'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill={active ? '#265999' : 'none'} stroke={active ? '#265999' : '#9BAAB8'} />
+      </svg>
+    ),
+  },
+  {
     path: '/profile',
     label: { uz: 'Profil', ru: 'Профиль', en: 'Profile' },
     icon: (active) => (
