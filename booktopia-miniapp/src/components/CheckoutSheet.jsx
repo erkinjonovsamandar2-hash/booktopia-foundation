@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import confetti from 'canvas-confetti';
 import { useCart } from '../context/CartContext';
 import { formatPrice, haptic, tg } from '../lib/utils';
 import { supabase } from '../lib/supabase';
@@ -97,6 +98,15 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
       clearCart();
       haptic('success');
       setDone(true);
+      
+      // Fire confetti celebration
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#38A169', '#00CDFE', '#D5AD36']
+      });
+      
     } catch (err) {
       console.error('[Checkout]', err);
       setDone(true);

@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useLang } from '../context/LangContext';
 import { formatPrice, tg } from '../lib/utils';
 import PageTransition from '../components/PageTransition';
+import ReaderModal from '../components/ReaderModal';
 
 const T = {
   title:      { uz: 'Mening Kutubxonam', ru: 'Моя библиотека', en: 'My Library' },
@@ -26,6 +27,7 @@ export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [purchasedBooks, setPurchasedBooks] = useState({});
   const [loading, setLoading] = useState(true);
+  const [readingBook, setReadingBook] = useState(null);
 
   useEffect(() => {
     const loadOrders = async () => {
@@ -161,18 +163,16 @@ export default function Orders() {
                           
                           {/* "My Library" Digital Experience */}
                           {bookInfo?.excerpt_url && (
-                             <a
-                               href={bookInfo.excerpt_url}
-                               target="_blank"
-                               rel="noopener noreferrer"
+                             <button
+                               onClick={() => setReadingBook(bookInfo)}
                                style={{ 
                                  display: 'inline-block', marginTop: 8, padding: '6px 12px', 
                                  background: 'var(--blue-100)', color: 'var(--blue-500)', 
-                                 fontSize: 11, fontWeight: 800, borderRadius: 20, textDecoration: 'none' 
+                                 fontSize: 11, fontWeight: 800, borderRadius: 20, border: 'none', cursor: 'pointer' 
                                }}
                              >
                                {t('readExcerpt')}
-                             </a>
+                             </button>
                           )}
                         </div>
                       </div>
@@ -188,6 +188,10 @@ export default function Orders() {
             );
           })}
         </div>
+      )}
+      
+      {readingBook && (
+        <ReaderModal book={readingBook} lang={lang} onClose={() => setReadingBook(null)} />
       )}
     </div>
     </PageTransition>
