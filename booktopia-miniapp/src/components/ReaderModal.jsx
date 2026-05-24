@@ -89,23 +89,26 @@ export default function ReaderModal({ book, onClose, lang = 'uz' }) {
               key={idx}
               style={{
                 minWidth: '100%',
+                height: '100%',
                 flexShrink: 0,
                 scrollSnapAlign: 'start',
-                padding: '32px 24px',
-                display: 'flex',
-                flexDirection: 'column',
-                overflowY: 'auto'
+                padding: '24px 24px 80px 24px', // extra bottom padding for scrolling
+                overflowY: 'auto',
+                WebkitOverflowScrolling: 'touch'
               }}
             >
-              <p style={{
-                fontSize: 18,
-                lineHeight: 1.8,
-                fontFamily: 'serif',
-                color: '#CBD5E1',
-                textIndent: '2em'
-              }}>
-                {text}
-              </p>
+              <div style={{ paddingBottom: '40px' }}>
+                <p style={{
+                  fontSize: 18,
+                  lineHeight: 1.8,
+                  fontFamily: 'serif',
+                  color: '#CBD5E1',
+                  textIndent: '2em',
+                  margin: 0
+                }}>
+                  {text}
+                </p>
+              </div>
             </div>
           ))}
         </div>
