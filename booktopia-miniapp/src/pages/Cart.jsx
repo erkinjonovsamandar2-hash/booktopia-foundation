@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
 import { useCart } from '../context/CartContext';
 import { useLang } from '../context/LangContext';
 import { formatPrice, haptic } from '../lib/utils';
@@ -58,51 +58,17 @@ export default function Cart() {
         </div>
 
         {/* Items */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: 'var(--surface)' }}>
-          {items.map(item => {
-            const title = item[`title_${lang}`] || item.title || '—';
-            const author = item[`author_${lang}`] || item.author || '—';
-            return (
-              <div key={item.id} style={{
-                display: 'flex', gap: 12, padding: '14px 16px',
-                borderBottom: '1px solid var(--surface-2)',
-                alignItems: 'center',
-              }}>
-                {/* Cover */}
-                {item.cover_url ? (
-                  <img src={item.cover_url} alt={title} style={{ width: 52, height: 72, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} />
-                ) : (
-                  <div style={{ width: 52, height: 72, background: 'var(--blue-800)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>📚</div>
-                )}
-
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.3, marginBottom: 2 }}>{title}</p>
-                  <p style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 600 }}>{author}</p>
-                  {item.price && (
-                    <p className="price" style={{ fontSize: 14, marginTop: 6 }}>
-                      {formatPrice(item.price * item.qty)}
-                    </p>
-                  )}
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
-                  {/* Qty stepper */}
-                  <div className="qty-stepper">
-                    <button className="qty-btn" onClick={() => { haptic('light'); updateQty(item.id, item.qty - 1); }}>−</button>
-                    <span className="qty-num">{item.qty}</span>
-                    <button className="qty-btn" onClick={() => { haptic('light'); updateQty(item.id, item.qty + 1); }}>+</button>
-                  </div>
-                  {/* Remove */}
-                  <button
-                    onClick={() => { haptic('light'); removeItem(item.id); }}
-                    style={{ border: 'none', background: 'none', color: 'var(--text-3)', fontSize: 12, cursor: 'pointer', padding: 0, fontFamily: 'Nunito, sans-serif', fontWeight: 600 }}
-                  >
-                    {t('remove')}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+        <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--surface)' }}>
+          {items.map(item => (
+            <SwipeableCartItem
+              key={item.id}
+              item={item}
+              lang={lang}
+              onRemove={() => { haptic('light'); removeItem(item.id); }}
+              onQtyUp={() => { haptic('light'); updateQty(item.id, item.qty + 1); }}
+              onQtyDown={() => { haptic('light'); updateQty(item.id, item.qty - 1); }}
+            />
+          ))}
         </div>
 
         {/* Summary */}
@@ -123,8 +89,89 @@ export default function Cart() {
         </div>
       </div>
 
-      {showSheet && <CheckoutSheet lang={lang} onClose={() => setShowSheet(false)} />}
+        {showSheet && <CheckoutSheet lang={lang} onClose={() => setShowSheet(false)} />}
     </>
     </PageTransition>
   );
 }
+
+// ── Swipeable Cart Item (iOS-style swipe-to-delete) ────────────────────────────
+function SwipeableCartItem({ item, lang, onRemove, onQtyUp, onQtyDown }) {
+  const title  = item[`title_${lang}`] || item.title  || '—';
+  const author = item[`author_${lang}`] || item.author || '—';
+  const x = useMotionValue(0);
+  const deleteOpacity = useTransform(x, [-80, -40], [1, 0]);
+  const itemOpacity   = useTransform(x, [-80, 0], [0.6, 1]);
+
+  const handleDragEnd = (_, info) => {
+    if (info.offset.x < -70) {
+      haptic('warning');
+      // Snap to reveal delete button
+      animate(x, -80, { type: 'spring', stiffness: 500, damping: 40 });
+    } else {
+      // Snap back
+      animate(x, 0, { type: 'spring', stiffness: 500, damping: 40 });
+    }
+  };
+
+  return (
+    <div style={{ position: 'relative', overflow: 'hidden', borderBottom: '1px solid var(--surface-2)' }}>
+      {/* Red delete zone revealed under the item */}
+      <motion.div
+        style={{
+          position: 'absolute', right: 0, top: 0, bottom: 0,
+          width: 80,
+          background: 'var(--discount)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          opacity: deleteOpacity,
+        }}
+      >
+        <button
+          onClick={onRemove}
+          style={{ background: 'none', border: 'none', color: '#fff', fontSize: 22, cursor: 'pointer' }}
+        >
+          🗑
+        </button>
+      </motion.div>
+
+      {/* The draggable item row */}
+      <motion.div
+        drag="x"
+        dragConstraints={{ left: -80, right: 0 }}
+        dragElastic={{ left: 0.1, right: 0.1 }}
+        onDragEnd={handleDragEnd}
+        style={{ x, opacity: itemOpacity, touchAction: 'pan-y', background: 'var(--surface)' }}
+      >
+        <div style={{ display: 'flex', gap: 12, padding: '14px 16px', alignItems: 'center' }}>
+          {/* Cover thumbnail */}
+          {item.cover_url ? (
+            <img src={item.cover_url} alt={title}
+              style={{ width: 52, height: 72, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} />
+          ) : (
+            <div style={{ width: 52, height: 72, background: 'var(--blue-800)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>📚</div>
+          )}
+
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.3, marginBottom: 2 }}>{title}</p>
+            <p style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 600 }}>{author}</p>
+            {item.price && (
+              <p className="price" style={{ fontSize: 14, marginTop: 6 }}>
+                {formatPrice(item.price * item.qty)}
+              </p>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+            <div className="qty-stepper">
+              <button className="qty-btn" onClick={onQtyDown}>−</button>
+              <span className="qty-num">{item.qty}</span>
+              <button className="qty-btn" onClick={onQtyUp}>+</button>
+            </div>
+            <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>← swipe</span>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
