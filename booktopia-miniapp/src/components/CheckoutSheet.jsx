@@ -119,25 +119,30 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
         transition={overlayFade}
       />
 
-      {/* Sheet — slides up with spring, drag down to dismiss */}
+      {/* Sheet — slides up with spring, drag handle to dismiss */}
       <motion.div
         className="sheet"
-        drag="y"
-        dragConstraints={{ top: 0 }}
-        dragElastic={{ top: 0, bottom: 0.4 }}
-        onDragEnd={(_, info) => {
-          if (info.offset.y > 120 || info.velocity.y > 600) {
-            haptic('light');
-            onClose();
-          }
-        }}
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={sheetSpring}
-        style={{ touchAction: 'none' }}
       >
-        <div className="sheet__handle" />
+        {/* Drag handle — ONLY this element handles drag-to-dismiss */}
+        <motion.div
+          drag="y"
+          dragConstraints={{ top: 0 }}
+          dragElastic={{ top: 0, bottom: 0.5 }}
+          onDragEnd={(_, info) => {
+            if (info.offset.y > 100 || info.velocity.y > 500) {
+              haptic('light');
+              onClose();
+            }
+          }}
+          style={{ touchAction: 'none', paddingTop: 12, paddingBottom: 4, cursor: 'grab' }}
+        >
+          <div className="sheet__handle" style={{ margin: '0 auto' }} />
+        </motion.div>
+
         <div className="sheet__body">
           <AnimatePresence mode="wait">
             {done ? (
