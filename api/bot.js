@@ -52,35 +52,27 @@ async function handleStart(ctx) {
   const user = ctx.from;
   await saveUser(user);
 
-  // 1. First wipe any old Reply Keyboard (e.g. from Robosell) silently
+  // Step 1: Remove any old Reply Keyboard (Robosell etc.) with a plain text message.
+  // We do NOT try to delete it — just send it and move on immediately.
   await fetch(`${API}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       chat_id: user.id,
-      text: '.',
+      text: '👋',
       reply_markup: { remove_keyboard: true },
     }),
-  }).then(async r => {
-    // Delete that "." message immediately so user doesn't see it
-    const data = await r.json();
-    if (data.ok) {
-      await fetch(`${API}/deleteMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: user.id, message_id: data.result.message_id }),
-      });
-    }
   });
 
+  // Step 2: Send the real welcome message with inline buttons
   const name = user.first_name || 'kitobxon';
   const text =
-    `Assalomu alaykum, <b>${name}</b>! 👋\n\n` +
-    `<b>📚 Booktopia</b> — Uzbekiston bo'ylab kitob yetkazib berish xizmati.\n\n` +
-    `✅ 500+ buyurtma bajarilgan\n` +
+    `Assalomu alaykum, <b>${name}</b>! 📚\n\n` +
+    `<b>Booktopia</b> — Uzbekiston bo'ylab kitob yetkazib berish xizmati.\n\n` +
+    `✅ 500+ muvaffaqiyatli buyurtma\n` +
     `⚡️ 24 soat ichida yetkazib beramiz\n` +
     `💳 Payme, Click va naqd to'lov\n\n` +
-    `Kitoblarni ko'rish va buyurtma berish uchun quyidagi tugmani bosing 👇`;
+    `Quyidagi tugmani bosib kitoblarni ko'ring 👇`;
 
   await sendMessage(user.id, text, {
     reply_markup: {
@@ -93,6 +85,7 @@ async function handleStart(ctx) {
     },
   });
 }
+
 
 async function handleHelp(chatId) {
   const text =
