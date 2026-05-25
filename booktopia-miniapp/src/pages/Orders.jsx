@@ -5,6 +5,7 @@ import { useLang } from '../context/LangContext';
 import { formatPrice, tg } from '../lib/utils';
 import PageTransition from '../components/PageTransition';
 import ReaderModal from '../components/ReaderModal';
+import { Package, FileText } from '@phosphor-icons/react';
 
 const T = {
   title:      { uz: 'Mening Kutubxonam', ru: 'Моя библиотека', en: 'My Library' },
@@ -17,7 +18,7 @@ const T = {
     delivered: { uz: 'Yetkazib berildi', ru: 'Доставлен',   en: 'Delivered' },
     cancelled: { uz: 'Bekor qilindi', ru: 'Отменен',       en: 'Cancelled' }
   },
-  readExcerpt: { uz: '📄 Namuna o\'qish', ru: '📄 Читать фрагмент', en: '📄 Read Excerpt' },
+  readExcerpt: { uz: 'Namuna o\'qish', ru: 'Читать фрагмент', en: 'Read Excerpt' },
 };
 
 export default function Orders() {
@@ -114,7 +115,7 @@ export default function Orders() {
         <div style={{ padding: '0 16px' }}><div className="skeleton" style={{ height: 150, width: '100%', borderRadius: 12 }} /></div>
       ) : orders.length === 0 ? (
         <div className="empty-state" style={{ marginTop: 40 }}>
-          <span className="empty-state__icon">📦</span>
+          <div className="empty-state__icon"><Package size={56} weight="thin" color="var(--text-3)" /></div>
           <h3 className="empty-state__title">{t('empty')}</h3>
           <p className="empty-state__desc">{t('emptyDesc')}</p>
           <button className="btn-primary" style={{ marginTop: 16 }} onClick={() => navigate('/catalog')}>

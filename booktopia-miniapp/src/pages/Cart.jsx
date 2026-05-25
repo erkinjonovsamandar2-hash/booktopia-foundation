@@ -6,6 +6,7 @@ import { useLang } from '../context/LangContext';
 import { formatPrice, haptic } from '../lib/utils';
 import CheckoutSheet from '../components/CheckoutSheet';
 import PageTransition from '../components/PageTransition';
+import { ShoppingCart } from '@phosphor-icons/react';
 
 const T = {
   title:      { uz: 'Savat',           ru: 'Корзина',    en: 'Cart' },
@@ -30,7 +31,7 @@ export default function Cart() {
       <PageTransition>
       <div className="page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '70dvh' }}>
         <div className="empty-state">
-          <span className="empty-state__icon">🛒</span>
+          <div className="empty-state__icon"><ShoppingCart size={56} weight="thin" color="var(--text-3)" /></div>
           <h2 className="empty-state__title">{t('empty')}</h2>
           <p className="empty-state__desc">{t('emptyDesc')}</p>
           <Link to="/catalog" style={{ textDecoration: 'none' }}>

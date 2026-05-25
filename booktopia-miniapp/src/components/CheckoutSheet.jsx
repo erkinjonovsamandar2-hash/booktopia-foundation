@@ -4,23 +4,24 @@ import confetti from 'canvas-confetti';
 import { useCart } from '../context/CartContext';
 import { formatPrice, haptic, tg } from '../lib/utils';
 import { supabase } from '../lib/supabase';
+import { CreditCard, DeviceMobile, Money } from '@phosphor-icons/react';
 
 const PAYMENT_OPTIONS = [
   {
     id: 'payme',
-    icon: '💳',
+    icon: <CreditCard size={22} weight="duotone" color="#265999" />,
     label: { uz: 'Payme', ru: 'Payme', en: 'Payme' },
     sub: { uz: 'Onlayn to\'lov', ru: 'Онлайн оплата', en: 'Online payment' },
   },
   {
     id: 'click',
-    icon: '📱',
+    icon: <DeviceMobile size={22} weight="duotone" color="#38A169" />,
     label: { uz: 'Click', ru: 'Click', en: 'Click' },
     sub: { uz: 'Onlayn to\'lov', ru: 'Онлайн оплата', en: 'Online payment' },
   },
   {
     id: 'cash',
-    icon: '💵',
+    icon: <Money size={22} weight="duotone" color="#D5AD36" />,
     label: { uz: 'Naqd pul', ru: 'Наличными', en: 'Cash' },
     sub: { uz: 'Yetkazib berganda', ru: 'При доставке', en: 'On delivery' },
   },

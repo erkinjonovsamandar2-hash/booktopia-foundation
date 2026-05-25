@@ -5,6 +5,7 @@ import { useLang } from '../context/LangContext';
 import BookCard from '../components/BookCard';
 import { haptic, tg } from '../lib/utils';
 import PageTransition from '../components/PageTransition';
+import { Heart, Export } from '@phosphor-icons/react';
 
 const T = {
   title:      { uz: 'Saqlanganlar',    ru: 'Избранное',       en: 'Wishlist' },
@@ -80,7 +81,7 @@ export default function Wishlist() {
         <div style={{ padding: '0 16px' }}><div className="skeleton" style={{ height: 200, width: '100%', borderRadius: 12 }} /></div>
       ) : books.length === 0 ? (
         <div className="empty-state" style={{ marginTop: 40 }}>
-          <span className="empty-state__icon">❤️</span>
+          <div className="empty-state__icon"><Heart size={56} weight="thin" color="var(--text-3)" /></div>
           <h3 className="empty-state__title">{t('empty')}</h3>
           <p className="empty-state__desc">{t('emptyDesc')}</p>
         </div>
@@ -96,7 +97,7 @@ export default function Wishlist() {
                 className="btn-secondary"
                 style={{ marginTop: 8, padding: '8px', fontSize: 13, gap: 4 }}
               >
-                <span>↗️</span> {t('share')}
+                <Export size={14} weight="bold" /> {t('share')}
               </button>
             </div>
           ))}

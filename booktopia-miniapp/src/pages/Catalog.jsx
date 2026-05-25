@@ -6,6 +6,7 @@ import { getCategoryLabel, CATEGORIES, haptic } from '../lib/utils';
 import { useLang } from '../context/LangContext';
 import BookCard from '../components/BookCard';
 import PageTransition from '../components/PageTransition';
+import { MagnifyingGlass, Package } from '@phosphor-icons/react';
 
 const T = {
   title:    { uz: 'Katalog',           ru: 'Каталог',    en: 'Catalog' },
@@ -56,9 +57,7 @@ export default function Catalog() {
 
       {/* Search */}
       <div className="search-bar">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-        </svg>
+        <MagnifyingGlass size={16} weight="regular" color="var(--text-3)" />
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder={t('searchPh')} />
         {search && <button onClick={() => setSearch('')} style={{ border: 'none', background: 'none', color: 'var(--text-3)', fontSize: 16, cursor: 'pointer' }}>×</button>}
       </div>
@@ -84,7 +83,9 @@ export default function Catalog() {
         <SkeletonGrid />
       ) : filtered.length === 0 ? (
         <div className="empty-state">
-          <span className="empty-state__icon">📭</span>
+          <div className="empty-state__icon">
+            <Package size={56} weight="thin" color="var(--text-3)" />
+          </div>
           <h3 className="empty-state__title">{t('empty')}</h3>
         </div>
       ) : (

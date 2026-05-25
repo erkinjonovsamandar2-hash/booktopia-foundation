@@ -6,6 +6,7 @@ import { formatPrice, haptic, tg } from '../lib/utils';
 import { useLang } from '../context/LangContext';
 import CheckoutSheet from '../components/CheckoutSheet';
 import PageTransition from '../components/PageTransition';
+import { Books, ShoppingCart, RocketLaunch, Flame, Eye, PenNib, Star } from '@phosphor-icons/react';
 
 // ── Translations ───────────────────────────────────────────────────────────────
 const T = {
@@ -39,9 +40,9 @@ const T = {
 };
 
 const STEPS = [
-  { emoji: '📚', tKey: 'step1t', dKey: 'step1d', color: '#265999', light: '#E8F4FD' },
-  { emoji: '🛒', tKey: 'step2t', dKey: 'step2d', color: '#D5AD36', light: '#FBF6E3' },
-  { emoji: '🚀', tKey: 'step3t', dKey: 'step3d', color: '#38A169', light: '#EBF8F0' },
+  { Icon: Books,        tKey: 'step1t', dKey: 'step1d', color: '#265999', light: '#E8F4FD' },
+  { Icon: ShoppingCart, tKey: 'step2t', dKey: 'step2d', color: '#D5AD36', light: '#FBF6E3' },
+  { Icon: RocketLaunch, tKey: 'step3t', dKey: 'step3d', color: '#38A169', light: '#EBF8F0' },
 ];
 
 export default function Home() {
@@ -233,7 +234,7 @@ export default function Home() {
                   background: step.light,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 18, margin: '0 auto 8px',
-                }}>{step.emoji}</div>
+                }}><step.Icon size={22} weight="duotone" color={step.color} /></div>
                 <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-1)', lineHeight: 1.25 }}>
                   {t(step.tKey)}
                 </p>
