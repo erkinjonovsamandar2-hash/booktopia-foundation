@@ -4,7 +4,7 @@
 import { Redis } from '@upstash/redis';
 
 const TOKEN = process.env.BOT_TOKEN;
-const WEBAPP_URL = process.env.WEBAPP_URL || 'https://www.booktopia.uz';
+const WEBAPP_URL = process.env.WEBAPP_URL || 'https://booktopia-miniapp.vercel.app';
 const API = `https://api.telegram.org/bot${TOKEN}`;
 
 // ── Upstash Redis — gracefully skip if not configured ────────────────────────
