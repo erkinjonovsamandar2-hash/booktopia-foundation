@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { formatPrice, haptic, tg } from '../lib/utils';
 import { useLang } from '../context/LangContext';
 import { useCart } from '../context/CartContext';
+import { useToast } from '../context/ToastContext';
 import PageTransition from '../components/PageTransition';
 import { Books, ShoppingCart, RocketLaunch, Package, CaretDown, CaretUp, ArrowRight } from '@phosphor-icons/react';
 
@@ -56,6 +57,7 @@ export default function Home() {
   const navigate = useNavigate();
   const { lang } = useLang();
   const { addItem } = useCart();
+  const { showToast } = useToast();
   const [books, setBooks]               = useState([]);
   const [articles, setArticles]         = useState([]);
   const [myOrders, setMyOrders]         = useState([]);
@@ -143,19 +145,10 @@ export default function Home() {
   const handleAddToCart = (book) => {
     haptic('success');
     addItem(book);
-    try {
-      if (window.Telegram?.WebApp?.showPopup) {
-        window.Telegram.WebApp.showPopup({
-          title: T.addedToCart[lang] || T.addedToCart.uz,
-          message: T.addedDesc[lang] || T.addedDesc.uz,
-          buttons: [{ type: 'ok' }]
-        });
-      } else {
-        alert((T.addedToCart[lang] || T.addedToCart.uz) + "\n" + (T.addedDesc[lang] || T.addedDesc.uz));
-      }
-    } catch (err) {
-      alert((T.addedToCart[lang] || T.addedToCart.uz));
-    }
+    showToast(
+      T.addedToCart[lang] || T.addedToCart.uz,
+      T.addedDesc[lang] || T.addedDesc.uz
+    );
   };
 
   return (

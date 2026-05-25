@@ -3,6 +3,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { CartProvider } from './context/CartContext';
 import { LangProvider, useLang } from './context/LangContext';
+import { ToastProvider } from './context/ToastContext';
 import BottomNav from './components/BottomNav';
 
 import Home from './pages/Home';
@@ -52,7 +53,9 @@ export default function App() {
     <BrowserRouter>
       <LangProvider>
         <CartProvider>
-          <AppRoutes />
+          <ToastProvider>
+            <AppRoutes />
+          </ToastProvider>
         </CartProvider>
       </LangProvider>
     </BrowserRouter>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useCart } from '../context/CartContext';
+import { useToast } from '../context/ToastContext';
 import { formatPrice, haptic } from '../lib/utils';
 import PageTransition from './PageTransition';
 import { ShoppingCart } from '@phosphor-icons/react';
@@ -14,6 +15,7 @@ const T = {
 
 export default function BookCard({ book, lang = 'uz', onNavigate, index = 0 }) {
   const { addItem } = useCart();
+  const { showToast } = useToast();
 
   const title  = book[`title_${lang}`]  || book.title  || '—';
   const author = book[`author_${lang}`] || book.author || '—';
@@ -26,20 +28,11 @@ export default function BookCard({ book, lang = 'uz', onNavigate, index = 0 }) {
     haptic('success');
     addItem(book);
     
-    // Show Telegram popup if available
-    try {
-      if (window.Telegram?.WebApp?.showPopup) {
-        window.Telegram.WebApp.showPopup({
-          title: T.addedToCart[lang] || T.addedToCart.uz,
-          message: T.addedDesc[lang] || T.addedDesc.uz,
-          buttons: [{ type: 'ok' }]
-        });
-      } else {
-        alert((T.addedToCart[lang] || T.addedToCart.uz) + "\n" + (T.addedDesc[lang] || T.addedDesc.uz));
-      }
-    } catch (err) {
-      alert((T.addedToCart[lang] || T.addedToCart.uz));
-    }
+    // Show beautiful custom in-app toast
+    showToast(
+      T.addedToCart[lang] || T.addedToCart.uz,
+      T.addedDesc[lang] || T.addedDesc.uz
+    );
   };
 
   return (
