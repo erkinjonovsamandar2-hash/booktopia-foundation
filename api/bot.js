@@ -4,7 +4,7 @@
 import { Redis } from '@upstash/redis';
 
 const TOKEN = process.env.BOT_TOKEN;
-const WEBAPP_URL = process.env.WEBAPP_URL || 'https://booktopia-miniapp.vercel.app';
+const WEBAPP_URL = process.env.WEBAPP_URL || 'https://booktopia-miniapp.vercel.app/';
 const API = `https://api.telegram.org/bot${TOKEN}`;
 
 // ── Upstash Redis — gracefully skip if not configured ────────────────────────
@@ -77,7 +77,7 @@ async function handleStart(ctx) {
   await sendMessage(user.id, text, {
     reply_markup: {
       inline_keyboard: [[
-        { text: "📖 Kitoblarni ko'rish", url: WEBAPP_URL },
+        { text: "📖 Kitoblarni ko'rish", web_app: { url: WEBAPP_URL } },
       ], [
         { text: "📦 Buyurtmalarim", callback_data: "my_orders" },
         { text: "❓ Yordam", callback_data: "help" },
