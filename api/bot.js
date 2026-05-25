@@ -77,7 +77,7 @@ async function handleStart(ctx) {
   await sendMessage(user.id, text, {
     reply_markup: {
       inline_keyboard: [[
-        { text: "📖 Kitoblarni ko'rish", web_app: { url: WEBAPP_URL } },
+        { text: "📖 Kitoblarni ko'rish", url: WEBAPP_URL },
       ], [
         { text: "📦 Buyurtmalarim", callback_data: "my_orders" },
         { text: "❓ Yordam", callback_data: "help" },
