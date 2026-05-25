@@ -427,16 +427,16 @@ function PathCard({ path, books, purchased, lang, t, onNavigate, index }) {
                   {/* Cover thumb */}
                   {book.cover_url ? (
                     <img src={book.cover_url} alt={btitle} style={{
-                      width: 34, height: 50, objectFit: 'cover',
-                      borderRadius: '2px 5px 5px 2px', flexShrink: 0,
-                      boxShadow: '-2px 2px 6px rgba(0,0,0,0.2)',
-                      opacity: done ? 0.5 : 1, transition: 'opacity 0.2s',
+                      width: 48, height: 68, objectFit: 'cover',
+                      borderRadius: '2px 7px 7px 2px', flexShrink: 0,
+                      boxShadow: '-3px 3px 10px rgba(0,0,0,0.28), inset -2px 0 5px rgba(0,0,0,0.35)',
+                      opacity: done ? 0.45 : 1, transition: 'opacity 0.2s',
                     }} />
                   ) : (
                     <div style={{
-                      width: 34, height: 50, borderRadius: 5, flexShrink: 0,
+                      width: 48, height: 68, borderRadius: 7, flexShrink: 0,
                       background: path.colorLight,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
                     }}>📚</div>
                   )}
 

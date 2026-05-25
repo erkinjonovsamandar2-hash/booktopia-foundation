@@ -2,244 +2,370 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
-import { locField, formatPrice, getCategoryLabel, CATEGORIES, haptic } from '../lib/utils';
+import { formatPrice, haptic, tg } from '../lib/utils';
 import { useLang } from '../context/LangContext';
-import BookCard from '../components/BookCard';
+import CheckoutSheet from '../components/CheckoutSheet';
 import PageTransition from '../components/PageTransition';
 
-// ── Translations ──────────────────────────────────────────────────────────────
+// ── Translations ───────────────────────────────────────────────────────────────
 const T = {
-  welcome:    { uz: 'Xush kelibsiz',   ru: 'Добро пожаловать', en: 'Welcome' },
-  subtitle:   { uz: 'Qanday kitob qidiryapsiz?', ru: 'Что ищем сегодня?', en: 'What are you looking for?' },
-  searchPh:   { uz: 'Kitob yoki muallif qidirish...', ru: 'Поиск книги или автора...', en: 'Search book or author...' },
-  featured:   { uz: '⭐ Tavsiya etilgan',  ru: '⭐ Рекомендуем',   en: '⭐ Featured' },
-  newBooks:   { uz: '✨ Yangi nashrlar',   ru: '✨ Новинки',        en: '✨ New Releases' },
-  seeAll:     { uz: 'Barchasi',            ru: 'Все',              en: 'All' },
-  loading:    { uz: 'Yuklanmoqda...',      ru: 'Загрузка...',      en: 'Loading...' },
+  greeting:    { uz: 'Assalomu alaykum',  ru: 'Добрый день',       en: 'Hello' },
+  hero1:       { uz: 'Eng yaxshi kitoblar', ru: 'Лучшие книги',    en: 'The best books' },
+  hero2:       { uz: '— uyingizga 24 soatda', ru: '— домой за 24 часа', en: '— at your door in 24h' },
+  heroSub:     { uz: 'Toshkent bo\'ylab yetkazib beramiz', ru: 'Доставляем по всему Ташкенту', en: 'Delivered across Tashkent' },
+  howTitle:    { uz: 'Qanday ishlaydi?',  ru: 'Как это работает?', en: 'How it works?' },
+  step1t:      { uz: 'Kitob tanlang',     ru: 'Выберите книгу',    en: 'Choose a book' },
+  step1d:      { uz: 'Katalogdan',        ru: 'Из каталога',       en: 'From catalog' },
+  step2t:      { uz: 'Buyurtma bering',   ru: 'Оформите заказ',    en: 'Place order' },
+  step2d:      { uz: '30 sekund',         ru: '30 секунд',         en: '30 seconds' },
+  step3t:      { uz: 'Qo\'lingizda',      ru: 'В ваших руках',     en: 'In your hands' },
+  step3d:      { uz: '24 soat ichida',    ru: 'В течение 24 часов', en: 'Within 24 hours' },
+  featured:    { uz: '📚 Tanlangan kitoblar', ru: '📚 Избранные книги', en: '📚 Featured Books' },
+  newBooks:    { uz: '✨ Yangi nashrlar',  ru: '✨ Новинки',         en: '✨ New Releases' },
+  seeAll:      { uz: 'Barchasini ko\'rish →', ru: 'Смотреть все →', en: 'See all →' },
+  catalogCta:  { uz: 'Butun katalogni ko\'rish', ru: 'Открыть каталог', en: 'Open catalog' },
+  buy:         { uz: 'Sotib olish',       ru: 'Купить',             en: 'Buy' },
 };
 
-const HERO_SLIDES = [
-  {
-    eyebrow: { uz: 'Booktopia Kutubxonasi', ru: 'Библиотека Booktopia', en: 'Booktopia Library' },
-    title:   { uz: 'O\'qish — eng yaxshi\nsarmoya', ru: 'Чтение — лучшая\nинвестиция', en: 'Reading is the\nbest investment' },
-    bg:      'linear-gradient(135deg, #0A192F 0%, #265999 100%)',
-    accent:  '#00CDFE',
-  },
-  {
-    eyebrow: { uz: 'Yangi nashrlar', ru: 'Новинки', en: 'New Arrivals' },
-    title:   { uz: 'Yangi kitoblar\nsizni kutmoqda', ru: 'Новые книги\nуже здесь', en: 'New books\nawaiting you' },
-    bg:      'linear-gradient(135deg, #132D55 0%, #4488BF 100%)',
-    accent:  '#D5AD36',
-  },
+const STEPS = [
+  { emoji: '📚', tKey: 'step1t', dKey: 'step1d', color: '#265999', light: '#E8F4FD' },
+  { emoji: '🛒', tKey: 'step2t', dKey: 'step2d', color: '#D5AD36', light: '#FBF6E3' },
+  { emoji: '🚀', tKey: 'step3t', dKey: 'step3d', color: '#38A169', light: '#EBF8F0' },
 ];
 
 export default function Home() {
   const navigate = useNavigate();
   const { lang } = useLang();
-  const [books, setBooks] = useState([]);
+  const [books, setBooks]     = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [slide, setSlide] = useState(0);
-  const [activeCategory, setActiveCategory] = useState('all');
+  const [sheetBook, setSheetBook] = useState(null);
 
-  useEffect(() => {
-    loadBooks();
-    const timer = setInterval(() => setSlide(s => (s + 1) % HERO_SLIDES.length), 4000);
-    return () => clearInterval(timer);
-  }, []);
+  // Get Telegram user name
+  const user      = tg()?.initDataUnsafe?.user;
+  const firstName = user?.first_name ?? '';
+
+  const t = (k) => T[k]?.[lang] ?? T[k]?.uz ?? k;
+
+  useEffect(() => { loadBooks(); }, []);
 
   const loadBooks = async () => {
     try {
       const { data } = await supabase
-        .from('books')
-        .select('*')
+        .from('books').select('*')
         .order('sort_order', { ascending: true, nullsFirst: false });
       if (data) setBooks(data);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
   };
 
-  const t = (k) => T[k]?.[lang] ?? T[k]?.uz ?? k;
+  // De-duplicate same book across language editions
+  const uniqueBooks = books.reduce((acc, b) => {
+    const key = (b.author || '').toLowerCase().replace(/\s/g, '') +
+                (b.title  || '').toLowerCase().slice(0, 12);
+    if (!acc.seen.has(key)) { acc.seen.add(key); acc.list.push(b); }
+    return acc;
+  }, { seen: new Set(), list: [] }).list;
 
-  // Filter by search + category
-  const filtered = books.filter(b => {
-    const q = search.toLowerCase();
-    const matchSearch = !q ||
-      (b.title || '').toLowerCase().includes(q) ||
-      (b[`title_${lang}`] || '').toLowerCase().includes(q) ||
-      (b.author || '').toLowerCase().includes(q);
-    const matchCat = activeCategory === 'all' || b.category === activeCategory;
-    return matchSearch && matchCat;
-  });
-
-  const featured = books.filter(b => b.featured).slice(0, 6);
-  const newReleases = books.filter(b => b.category === 'new').slice(0, 6);
-  const hero = HERO_SLIDES[slide];
-
-  const showingFiltered = search || activeCategory !== 'all';
+  const featured    = uniqueBooks.filter(b => b.featured).slice(0, 8);
+  const newReleases = uniqueBooks.filter(b => b.category === 'new').slice(0, 6);
 
   return (
     <PageTransition>
-    <div className="page" style={{ paddingTop: 0 }}>
+      <div className="page" style={{ paddingTop: 0, paddingBottom: 100 }}>
 
-      {/* ── Hero banner ───────────────────────────────────────────────────────── */}
-      {!showingFiltered && (
-        <div
-          className="hero-banner"
-          style={{ background: hero.bg, margin: '12px 16px', minHeight: 170 }}
-          onClick={() => navigate('/catalog')}
-        >
-          <div className="hero-banner__content">
-            <p className="hero-banner__eyebrow" style={{ color: hero.accent }}>
-              {hero.eyebrow[lang] ?? hero.eyebrow.uz}
-            </p>
-            <h1 className="hero-banner__title" style={{ whiteSpace: 'pre-line', fontSize: 22 }}>
-              {hero.title[lang] ?? hero.title.uz}
-            </h1>
-            <button className="hero-banner__cta" style={{ background: hero.accent, color: '#0A192F' }}>
-              {t('seeAll')} →
-            </button>
+        {/* ── 1. HERO ──────────────────────────────────────────────────────────── */}
+        <div style={{
+          background: 'linear-gradient(160deg, #0A192F 0%, #132D55 55%, #265999 100%)',
+          padding: '28px 20px 32px',
+          position: 'relative',
+          overflow: 'hidden',
+        }}>
+          {/* Dot-grid texture */}
+          <div style={{
+            position: 'absolute', inset: 0, pointerEvents: 'none',
+            backgroundImage: 'radial-gradient(rgba(0,205,254,0.1) 1px, transparent 1px)',
+            backgroundSize: '22px 22px',
+          }} />
+          {/* Gold glow */}
+          <div style={{
+            position: 'absolute', top: -60, right: -60,
+            width: 220, height: 220, borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(213,173,54,0.15) 0%, transparent 70%)',
+            pointerEvents: 'none',
+          }} />
+
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            {firstName ? (
+              <motion.p
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', fontWeight: 600, marginBottom: 8 }}
+              >
+                {t('greeting')}{firstName ? `, ${firstName}` : ''}! 👋
+              </motion.p>
+            ) : null}
+
+            <motion.h1
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15, type: 'spring', stiffness: 300, damping: 28 }}
+              style={{ fontSize: 28, fontWeight: 900, color: '#fff', lineHeight: 1.2, margin: 0 }}
+            >
+              {t('hero1')}<br />
+              <span style={{ color: '#00CDFE' }}>{t('hero2')}</span>
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginTop: 10, fontWeight: 600 }}
+            >
+              📍 {t('heroSub')}
+            </motion.p>
+
+            <motion.button
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => { haptic('light'); navigate('/catalog'); }}
+              style={{
+                marginTop: 20, padding: '10px 22px',
+                background: '#00CDFE', color: '#0A192F',
+                border: 'none', borderRadius: 50,
+                fontSize: 13, fontWeight: 900, cursor: 'pointer',
+              }}
+            >
+              {t('seeAll')}
+            </motion.button>
           </div>
-          {/* Slide dots */}
-          <div style={{ position: 'absolute', bottom: 14, right: 16, display: 'flex', gap: 5 }}>
-            {HERO_SLIDES.map((_, i) => (
-              <span key={i} style={{
-                width: i === slide ? 18 : 6, height: 6,
-                borderRadius: 4,
-                background: i === slide ? '#fff' : 'rgba(255,255,255,0.4)',
-                transition: 'width 0.3s ease',
-              }} />
+        </div>
+
+        {/* ── 2. HOW IT WORKS ──────────────────────────────────────────────────── */}
+        <div style={{ padding: '24px 16px 20px' }}>
+          <h2 style={{ fontSize: 16, fontWeight: 800, marginBottom: 16, color: 'var(--text-1)' }}>
+            {t('howTitle')}
+          </h2>
+          <div style={{ display: 'flex', gap: 10 }}>
+            {STEPS.map((step, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 + i * 0.08, type: 'spring', stiffness: 300, damping: 28 }}
+                style={{
+                  flex: 1,
+                  background: 'var(--surface)',
+                  borderRadius: 16,
+                  padding: '14px 10px',
+                  textAlign: 'center',
+                  boxShadow: 'var(--shadow-card)',
+                  position: 'relative',
+                }}
+              >
+                {/* Arrow connector — not on last */}
+                {i < STEPS.length - 1 && (
+                  <div style={{
+                    position: 'absolute', right: -8, top: '50%',
+                    transform: 'translateY(-50%)',
+                    fontSize: 12, color: 'var(--text-3)', zIndex: 2,
+                    fontWeight: 800,
+                  }}>›</div>
+                )}
+                <div style={{
+                  width: 40, height: 40, borderRadius: 12,
+                  background: step.light,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 18, margin: '0 auto 8px',
+                }}>{step.emoji}</div>
+                <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-1)', lineHeight: 1.25 }}>
+                  {t(step.tKey)}
+                </p>
+                <p style={{ fontSize: 10, fontWeight: 700, color: step.color, marginTop: 3 }}>
+                  {t(step.dKey)}
+                </p>
+              </motion.div>
             ))}
           </div>
         </div>
-      )}
 
-      {/* ── Search ────────────────────────────────────────────────────────────── */}
-      <div className="search-bar">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-        </svg>
-        <input
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder={t('searchPh')}
-        />
-        {search && (
-          <button onClick={() => setSearch('')} style={{ border: 'none', background: 'none', color: 'var(--text-3)', fontSize: 16, cursor: 'pointer' }}>×</button>
-        )}
-      </div>
+        <div className="divider" />
 
-      {/* ── Category pills ────────────────────────────────────────────────────── */}
-      <div className="h-scroll" style={{ paddingTop: 0 }}>
-        {CATEGORIES.map(cat => (
-          <motion.button
-            key={cat}
-            className={`pill pill--${activeCategory === cat ? 'active' : 'idle'}`}
-            onClick={() => { setActiveCategory(cat); haptic('light'); }}
-            whileTap={{ scale: 0.93 }}
-            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-          >
-            {getCategoryLabel(cat, lang)}
-          </motion.button>
-        ))}
-      </div>
-
-      {/* ── Filtered results ──────────────────────────────────────────────────── */}
-      {showingFiltered ? (
-        <div>
-          <div style={{ padding: '12px 16px 0', color: 'var(--text-2)', fontSize: 13, fontWeight: 600 }}>
-            {filtered.length} {lang === 'ru' ? 'книг' : lang === 'en' ? 'books' : 'ta kitob'}
+        {/* ── 3. FEATURED BOOKS — horizontal portrait strip ─────────────────────── */}
+        {(loading || featured.length > 0) && (
+          <div style={{ paddingTop: 20, paddingBottom: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px 14px' }}>
+              <h2 style={{ fontSize: 16, fontWeight: 800 }}>{t('featured')}</h2>
+              <button
+                onClick={() => navigate('/catalog')}
+                style={{ fontSize: 12, fontWeight: 800, color: 'var(--blue-500)', background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                {t('seeAll')}
+              </button>
+            </div>
+            <div className="h-scroll" style={{ paddingBottom: 12 }}>
+              {loading
+                ? Array.from({ length: 5 }).map((_, i) => <PortraitSkeleton key={i} />)
+                : featured.map((book, i) => (
+                    <PortraitCard
+                      key={book.id} book={book} lang={lang} index={i}
+                      onNavigate={navigate}
+                      onBuy={() => { haptic('light'); setSheetBook(book); }}
+                    />
+                  ))
+              }
+            </div>
           </div>
-          {loading ? <SkeletonGrid /> : (
-            <div className="books-grid" style={{ marginTop: 12 }}>
-              {filtered.map((book, i) => (
-                <BookCard key={book.id} book={book} lang={lang} onNavigate={navigate} index={i} />
-              ))}
+        )}
+
+        {/* ── 4. NEW RELEASES — horizontal portrait strip ───────────────────────── */}
+        {(loading || newReleases.length > 0) && (
+          <div style={{ paddingBottom: 8 }}>
+            <div className="divider" />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 16px 14px' }}>
+              <h2 style={{ fontSize: 16, fontWeight: 800 }}>{t('newBooks')}</h2>
+              <button
+                onClick={() => navigate('/catalog?cat=new')}
+                style={{ fontSize: 12, fontWeight: 800, color: 'var(--blue-500)', background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                {t('seeAll')}
+              </button>
             </div>
-          )}
-          {!loading && filtered.length === 0 && (
-            <div className="empty-state">
-              <span className="empty-state__icon">🔍</span>
-              <h3 className="empty-state__title">
-                {lang === 'ru' ? 'Ничего не найдено' : lang === 'en' ? 'Nothing found' : 'Hech narsa topilmadi'}
-              </h3>
+            <div className="h-scroll" style={{ paddingBottom: 12 }}>
+              {loading
+                ? Array.from({ length: 4 }).map((_, i) => <PortraitSkeleton key={i} />)
+                : newReleases.map((book, i) => (
+                    <PortraitCard
+                      key={book.id} book={book} lang={lang} index={i}
+                      onNavigate={navigate}
+                      onBuy={() => { haptic('light'); setSheetBook(book); }}
+                    />
+                  ))
+              }
             </div>
-          )}
+          </div>
+        )}
+
+        {/* ── 5. CATALOG CTA ───────────────────────────────────────────────────── */}
+        <div style={{ padding: '12px 16px 0' }}>
+          <motion.button
+            className="btn-primary"
+            onClick={() => { haptic('medium'); navigate('/catalog'); }}
+            whileTap={{ scale: 0.97, y: 1 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+            style={{ background: 'linear-gradient(135deg, #265999, #4488BF)' }}
+          >
+            {t('catalogCta')}
+          </motion.button>
         </div>
-      ) : (
-        <>
-          {/* Featured */}
-          {featured.length > 0 && (
-            <div>
-              <div className="section-header">
-                <h2>{t('featured')}</h2>
-                <button className="section-header__more" onClick={() => navigate('/catalog')}>
-                  {t('seeAll')} →
-                </button>
-              </div>
-              {loading ? <SkeletonGrid /> : (
-                <div className="books-grid">
-                  {featured.map((book, i) => (
-                    <BookCard key={book.id} book={book} lang={lang} onNavigate={navigate} index={i} />
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
 
-          {/* New Releases */}
-          {newReleases.length > 0 && (
-            <div style={{ marginTop: 8 }}>
-              <div className="divider" />
-              <div className="section-header">
-                <h2>{t('newBooks')}</h2>
-                <button className="section-header__more" onClick={() => navigate('/catalog?cat=new')}>
-                  {t('seeAll')} →
-                </button>
-              </div>
-              {loading ? <SkeletonGrid /> : (
-                <div className="books-grid">
-                  {newReleases.map((book, i) => (
-                    <BookCard key={book.id} book={book} lang={lang} onNavigate={navigate} index={i} />
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+      </div>
 
-          {/* All books if no featured */}
-          {!loading && featured.length === 0 && (
-            <div className="books-grid" style={{ marginTop: 12 }}>
-              {books.slice(0, 6).map((book, i) => (
-                <BookCard key={book.id} book={book} lang={lang} onNavigate={navigate} index={i} />
-              ))}
-            </div>
-          )}
-        </>
+      {sheetBook && (
+        <CheckoutSheet book={sheetBook} lang={lang} onClose={() => setSheetBook(null)} />
       )}
-
-      <div style={{ height: 20 }} />
-    </div>
     </PageTransition>
   );
 }
 
-function SkeletonGrid() {
+// ── Portrait Book Card (for horizontal strips) ─────────────────────────────────
+function PortraitCard({ book, lang, index, onNavigate, onBuy }) {
+  const title  = book[`title_${lang}`] || book.title  || '—';
+  const author = book[`author_${lang}`] || book.author || '—';
+
   return (
-    <div className="books-grid" style={{ marginTop: 8 }}>
-      {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} style={{ borderRadius: 14, overflow: 'hidden' }}>
-          <div className="skeleton" style={{ aspectRatio: '3/4', width: '100%' }} />
-          <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <div className="skeleton" style={{ height: 14, width: '80%' }} />
-            <div className="skeleton" style={{ height: 11, width: '55%' }} />
-            <div className="skeleton" style={{ height: 14, width: '60%', marginTop: 4 }} />
-          </div>
-        </div>
-      ))}
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: index * 0.06, type: 'spring', stiffness: 300, damping: 28 }}
+      style={{ width: 130, flexShrink: 0, cursor: 'pointer' }}
+    >
+      {/* Cover */}
+      <div
+        onClick={() => onNavigate(`/book/${book.id}`)}
+        style={{
+          position: 'relative',
+          width: 130, height: 185,
+          borderRadius: '3px 12px 12px 3px',
+          overflow: 'hidden',
+          boxShadow: '-6px 4px 18px rgba(0,0,0,0.35), inset -3px 0 8px rgba(0,0,0,0.4)',
+          background: 'var(--surface-2)',
+        }}
+      >
+        {book.cover_url ? (
+          <img
+            src={book.cover_url}
+            alt={title}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            loading="lazy"
+          />
+        ) : (
+          <div style={{
+            width: '100%', height: '100%',
+            background: `linear-gradient(135deg, #0A192F, #265999)`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'rgba(255,255,255,0.4)', fontSize: 36,
+          }}>📚</div>
+        )}
+        {/* Spine highlight */}
+        <div style={{
+          position: 'absolute', inset: '0 auto 0 0', width: 10,
+          background: 'linear-gradient(to right, rgba(255,255,255,0.4), rgba(255,255,255,0.05) 2px, rgba(0,0,0,0.3) 5px, rgba(0,0,0,0.6) 8px, transparent)',
+          pointerEvents: 'none',
+        }} />
+        {/* New badge */}
+        {book.category === 'new' && (
+          <div style={{
+            position: 'absolute', top: 8, right: 8,
+            background: '#FF6B35', color: '#fff',
+            fontSize: 9, fontWeight: 900, padding: '2px 7px',
+            borderRadius: 20, letterSpacing: '0.05em',
+          }}>NEW</div>
+        )}
+      </div>
+
+      {/* Info */}
+      <div style={{ padding: '8px 2px 0' }}>
+        <p style={{
+          fontSize: 12, fontWeight: 700, lineHeight: 1.3, color: 'var(--text-1)',
+          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+        }}>{title}</p>
+        <p style={{ fontSize: 10, color: 'var(--text-3)', fontWeight: 600, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {author}
+        </p>
+        {book.price ? (
+          <motion.button
+            onClick={onBuy}
+            whileTap={{ scale: 0.93 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+            style={{
+              marginTop: 7, width: '100%', padding: '6px 0',
+              background: 'var(--blue-500)', color: '#fff',
+              border: 'none', borderRadius: 8,
+              fontSize: 11, fontWeight: 800, cursor: 'pointer',
+              fontFamily: 'Nunito, sans-serif',
+            }}
+          >
+            {formatPrice(book.price)}
+          </motion.button>
+        ) : null}
+      </div>
+    </motion.div>
+  );
+}
+
+// ── Portrait Skeleton ──────────────────────────────────────────────────────────
+function PortraitSkeleton() {
+  return (
+    <div style={{ width: 130, flexShrink: 0 }}>
+      <div className="skeleton" style={{ width: 130, height: 185, borderRadius: 12 }} />
+      <div style={{ padding: '8px 2px 0', display: 'flex', flexDirection: 'column', gap: 5 }}>
+        <div className="skeleton" style={{ height: 12, width: '90%', borderRadius: 4 }} />
+        <div className="skeleton" style={{ height: 10, width: '60%', borderRadius: 4 }} />
+        <div className="skeleton" style={{ height: 28, width: '100%', borderRadius: 8, marginTop: 2 }} />
+      </div>
     </div>
   );
 }
