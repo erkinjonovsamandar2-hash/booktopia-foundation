@@ -27,14 +27,18 @@ export default function BookCard({ book, lang = 'uz', onNavigate, index = 0 }) {
     addItem(book);
     
     // Show Telegram popup if available
-    if (window.Telegram?.WebApp?.showPopup) {
-      window.Telegram.WebApp.showPopup({
-        title: T.addedToCart[lang] || T.addedToCart.uz,
-        message: T.addedDesc[lang] || T.addedDesc.uz,
-        buttons: [{ type: 'ok' }]
-      });
-    } else {
-      alert((T.addedToCart[lang] || T.addedToCart.uz) + "\n" + (T.addedDesc[lang] || T.addedDesc.uz));
+    try {
+      if (window.Telegram?.WebApp?.showPopup) {
+        window.Telegram.WebApp.showPopup({
+          title: T.addedToCart[lang] || T.addedToCart.uz,
+          message: T.addedDesc[lang] || T.addedDesc.uz,
+          buttons: [{ type: 'ok' }]
+        });
+      } else {
+        alert((T.addedToCart[lang] || T.addedToCart.uz) + "\n" + (T.addedDesc[lang] || T.addedDesc.uz));
+      }
+    } catch (err) {
+      alert((T.addedToCart[lang] || T.addedToCart.uz));
     }
   };
 

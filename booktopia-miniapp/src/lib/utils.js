@@ -37,5 +37,13 @@ export const getCategoryLabel = (key, lang = 'uz') =>
 export const tg = () => window.Telegram?.WebApp ?? null;
 
 export const haptic = (type = 'light') => {
-  tg()?.HapticFeedback?.impactOccurred(type);
+  try {
+    if (['success', 'warning', 'error'].includes(type)) {
+      tg()?.HapticFeedback?.notificationOccurred(type);
+    } else {
+      tg()?.HapticFeedback?.impactOccurred(type);
+    }
+  } catch (e) {
+    console.error('Haptic error:', e);
+  }
 };
