@@ -1,0 +1,143 @@
+// api/bot.js — Vercel Serverless Webhook for @Booktopiapress_bot
+// Architecture: Vercel (webhook) + Upstash Redis (user store + broadcast)
+
+import { Redis } from '@upstash/redis';
+
+const TOKEN = process.env.BOT_TOKEN;
+const WEBAPP_URL = process.env.WEBAPP_URL || 'https://booktopia-foundation.vercel.app';
+const API = `https://api.telegram.org/bot${TOKEN}`;
+
+// Upstash Redis client — reads UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN from env
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN,
+});
+
+// ── Telegram helper ──────────────────────────────────────────────────────────
+async function sendMessage(chatId, text, extra = {}) {
+  await fetch(`${API}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML', ...extra }),
+  });
+}
+
+// ── Save user to Redis set (for broadcasts) ──────────────────────────────────
+async function saveUser(user) {
+  const key = `booktopia:users`;
+  await redis.sadd(key, String(user.id));
+  // Also store user profile for personalisation
+  await redis.hset(`booktopia:user:${user.id}`, {
+    id: user.id,
+    first_name: user.first_name || '',
+    username: user.username || '',
+    lang: user.language_code || 'uz',
+    joined: Date.now(),
+  });
+}
+
+// ── Handlers ─────────────────────────────────────────────────────────────────
+async function handleStart(ctx) {
+  const user = ctx.from;
+  await saveUser(user);
+
+  const name = user.first_name || 'kitobxon';
+  const text =
+    `Assalomu alaykum, <b>${name}</b>! 👋\n\n` +
+    `<b>📚 Booktopia</b> — Uzbekiston bo'ylab kitob yetkazib berish xizmati.\n\n` +
+    `✅ 500+ buyurtma bajarilgan\n` +
+    `⚡️ 24 soat ichida yetkazib beramiz\n` +
+    `💳 Payme, Click va naqd to'lov\n\n` +
+    `Kitoblarni ko'rish va buyurtma berish uchun quyidagi tugmani bosing 👇`;
+
+  await sendMessage(user.id, text, {
+    reply_markup: {
+      inline_keyboard: [[
+        { text: "📖 Kitoblarni ko'rish", web_app: { url: WEBAPP_URL } },
+      ], [
+        { text: "📦 Buyurtmalarim", callback_data: "my_orders" },
+        { text: "❓ Yordam", callback_data: "help" },
+      ]],
+    },
+  });
+}
+
+async function handleHelp(chatId) {
+  const text =
+    `<b>Booktopia yordam markazi</b> 📞\n\n` +
+    `❓ Savol yoki muammo bo'lsa:\n` +
+    `👉 @booktopia_support bilan bog'laning\n\n` +
+    `🕐 Ish vaqti: Har kuni 9:00 — 21:00`;
+
+  await sendMessage(chatId, text, {
+    reply_markup: {
+      inline_keyboard: [[
+        { text: "🏠 Bosh sahifa", callback_data: "home" }
+      ]]
+    }
+  });
+}
+
+async function handleCallbackQuery(update) {
+  const query = update.callback_query;
+  const chatId = query.message.chat.id;
+  const data = query.data;
+
+  // Acknowledge the callback immediately
+  await fetch(`${API}/answerCallbackQuery`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ callback_query_id: query.id }),
+  });
+
+  if (data === 'help') {
+    await handleHelp(chatId);
+  } else if (data === 'home' || data === 'my_orders') {
+    await sendMessage(chatId, "Ilovani oching 👇", {
+      reply_markup: {
+        inline_keyboard: [[
+          { text: "📖 Ilovani ochish", web_app: { url: WEBAPP_URL } }
+        ]]
+      }
+    });
+  }
+}
+
+// ── Main webhook handler ──────────────────────────────────────────────────────
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(200).json({ ok: true, message: 'Booktopia Bot Webhook' });
+  }
+
+  try {
+    const update = req.body;
+
+    if (update.message) {
+      const msg = update.message;
+      const text = msg.text || '';
+
+      if (text === '/start') {
+        await handleStart({ from: msg.from });
+      } else {
+        // Any other message — nudge them to the app
+        await sendMessage(msg.chat.id,
+          "Salom! Kitoblarni ko'rish uchun ilovani oching 👇",
+          {
+            reply_markup: {
+              inline_keyboard: [[
+                { text: "📖 Kitoblarni ko'rish", web_app: { url: WEBAPP_URL } }
+              ]]
+            }
+          }
+        );
+      }
+    } else if (update.callback_query) {
+      await handleCallbackQuery(update);
+    }
+
+    res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error('[Bot Webhook Error]', err);
+    res.status(200).json({ ok: true }); // Always 200 to Telegram
+  }
+}
