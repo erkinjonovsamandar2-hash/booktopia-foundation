@@ -4,36 +4,47 @@
 import { Redis } from '@upstash/redis';
 
 const TOKEN = process.env.BOT_TOKEN;
-const WEBAPP_URL = process.env.WEBAPP_URL || 'https://booktopia-foundation.vercel.app';
+const WEBAPP_URL = process.env.WEBAPP_URL || 'https://www.booktopia.uz';
 const API = `https://api.telegram.org/bot${TOKEN}`;
 
-// Upstash Redis client — reads UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN from env
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN,
-});
+// ── Upstash Redis — gracefully skip if not configured ────────────────────────
+let redis = null;
+try {
+  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+    redis = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    });
+  }
+} catch (e) {
+  console.warn('[Redis] Failed to initialize:', e.message);
+}
 
 // ── Telegram helper ──────────────────────────────────────────────────────────
 async function sendMessage(chatId, text, extra = {}) {
-  await fetch(`${API}/sendMessage`, {
+  const res = await fetch(`${API}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML', ...extra }),
   });
+  return res.json();
 }
 
-// ── Save user to Redis set (for broadcasts) ──────────────────────────────────
+// ── Save user to Redis — never throws ───────────────────────────────────────
 async function saveUser(user) {
-  const key = `booktopia:users`;
-  await redis.sadd(key, String(user.id));
-  // Also store user profile for personalisation
-  await redis.hset(`booktopia:user:${user.id}`, {
-    id: user.id,
-    first_name: user.first_name || '',
-    username: user.username || '',
-    lang: user.language_code || 'uz',
-    joined: Date.now(),
-  });
+  if (!redis) return;
+  try {
+    await redis.sadd('booktopia:users', String(user.id));
+    await redis.hset(`booktopia:user:${user.id}`, {
+      id: user.id,
+      first_name: user.first_name || '',
+      username: user.username || '',
+      lang: user.language_code || 'uz',
+      joined: Date.now(),
+    });
+  } catch (e) {
+    console.warn('[Redis] saveUser failed:', e.message);
+  }
 }
 
 // ── Handlers ─────────────────────────────────────────────────────────────────
