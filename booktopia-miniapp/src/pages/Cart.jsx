@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
 import { useCart } from '../context/CartContext';
 import { useLang } from '../context/LangContext';
@@ -17,9 +17,11 @@ const T = {
   clear:      { uz: 'Tozalash',        ru: 'Очистить',   en: 'Clear' },
   remove:     { uz: 'O\'chirish',      ru: 'Удалить',    en: 'Remove' },
   browse:     { uz: 'Katalogga o\'tish', ru: 'В каталог', en: 'Go to catalog' },
+  addMore:    { uz: '+ Yana kitob qo\'shish', ru: '+ Добавить еще книгу', en: '+ Add another book' },
 };
 
 export default function Cart() {
+  const navigate = useNavigate();
   const { items, removeItem, updateQty, clearCart, totalPrice, totalCount } = useCart();
   const { lang } = useLang();
   const [showSheet, setShowSheet] = useState(false);
@@ -78,7 +80,7 @@ export default function Cart() {
           <span className="price" style={{ fontSize: 22, color: 'var(--blue-500)' }}>{formatPrice(totalPrice)}</span>
         </div>
 
-        <div style={{ padding: '16px 16px 8px' }}>
+        <div style={{ padding: '16px 16px 8px', display: 'flex', flexDirection: 'column', gap: 10 }}>
           <motion.button
             className="btn-primary"
             onClick={() => { haptic('medium'); setShowSheet(true); }}
@@ -86,6 +88,26 @@ export default function Cart() {
             transition={{ type: 'spring', stiffness: 500, damping: 30 }}
           >
             {t('checkout')}
+          </motion.button>
+          
+          <motion.button
+            onClick={() => { haptic('light'); navigate('/catalog'); }}
+            whileTap={{ scale: 0.97 }}
+            style={{
+              padding: '12px',
+              background: 'var(--surface-2)',
+              color: 'var(--text-1)',
+              border: 'none',
+              borderRadius: 12,
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center'
+            }}
+          >
+            {t('addMore')}
           </motion.button>
         </div>
       </div>

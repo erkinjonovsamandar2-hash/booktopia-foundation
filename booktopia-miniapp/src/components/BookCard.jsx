@@ -2,19 +2,18 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useCart } from '../context/CartContext';
 import { formatPrice, haptic } from '../lib/utils';
-import CheckoutSheet from './CheckoutSheet';
 import PageTransition from './PageTransition';
 import { ShoppingCart } from '@phosphor-icons/react';
 
 const T = {
   addedToCart: { uz: 'Savatga qo\'shildi!', ru: 'Добавлено в корзину!', en: 'Added to cart!' },
+  addedDesc:   { uz: 'Buyurtmani "Savat" bo\'limida rasmiylashtirishingiz mumkin.', ru: 'Вы можете оформить заказ в разделе "Корзина".', en: 'You can finish your order in the Cart tab.' },
   buy:         { uz: '🛒 Sotib olish',      ru: '🛒 Купить',           en: '🛒 Buy now' },
   noPrice:     { uz: 'Narx yo\'q',          ru: 'Цена не указана',     en: 'No price' },
 };
 
 export default function BookCard({ book, lang = 'uz', onNavigate, index = 0 }) {
   const { addItem } = useCart();
-  const [showSheet, setShowSheet] = useState(false);
 
   const title  = book[`title_${lang}`]  || book.title  || '—';
   const author = book[`author_${lang}`] || book.author || '—';
@@ -24,9 +23,19 @@ export default function BookCard({ book, lang = 'uz', onNavigate, index = 0 }) {
 
   const handleBuy = (e) => {
     e.stopPropagation();
-    haptic('light');
+    haptic('success');
     addItem(book);
-    setShowSheet(true);
+    
+    // Show Telegram popup if available
+    if (window.Telegram?.WebApp?.showPopup) {
+      window.Telegram.WebApp.showPopup({
+        title: T.addedToCart[lang] || T.addedToCart.uz,
+        message: T.addedDesc[lang] || T.addedDesc.uz,
+        buttons: [{ type: 'ok' }]
+      });
+    } else {
+      alert((T.addedToCart[lang] || T.addedToCart.uz) + "\n" + (T.addedDesc[lang] || T.addedDesc.uz));
+    }
   };
 
   return (
@@ -88,14 +97,6 @@ export default function BookCard({ book, lang = 'uz', onNavigate, index = 0 }) {
           </div>
         </motion.div>
       </motion.div>
-
-      {showSheet && (
-        <CheckoutSheet
-          book={book}
-          lang={lang}
-          onClose={() => setShowSheet(false)}
-        />
-      )}
     </>
   );
 }

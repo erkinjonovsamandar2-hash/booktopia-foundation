@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { formatPrice, haptic, tg } from '../lib/utils';
 import { useLang } from '../context/LangContext';
-import CheckoutSheet from '../components/CheckoutSheet';
+import { useCart } from '../context/CartContext';
 import PageTransition from '../components/PageTransition';
 import { Books, ShoppingCart, RocketLaunch, Package, CaretDown, CaretUp, ArrowRight } from '@phosphor-icons/react';
 
@@ -42,6 +42,8 @@ const T = {
   ordersAll:   { uz: 'Barchasi →',        ru: 'Все →',              en: 'All →' },
   orderNum:    { uz: 'Buyurtma',          ru: 'Заказ',              en: 'Order' },
   collapse:    { uz: 'Yopish',            ru: 'Свернуть',           en: 'Collapse' },
+  addedToCart: { uz: 'Savatga qo\'shildi!', ru: 'Добавлено в корзину!', en: 'Added to cart!' },
+  addedDesc:   { uz: 'Buyurtmani "Savat" bo\'limida rasmiylashtirishingiz mumkin.', ru: 'Вы можете оформить заказ в разделе "Корзина".', en: 'You can finish your order in the Cart tab.' },
 };
 
 const STEPS = [
@@ -53,11 +55,11 @@ const STEPS = [
 export default function Home() {
   const navigate = useNavigate();
   const { lang } = useLang();
+  const { addItem } = useCart();
   const [books, setBooks]               = useState([]);
   const [articles, setArticles]         = useState([]);
   const [myOrders, setMyOrders]         = useState([]);
   const [loading, setLoading]           = useState(true);
-  const [sheetBook, setSheetBook]       = useState(null);
   const [notified, setNotified]         = useState(() => {
     try { return JSON.parse(localStorage.getItem('booktopia_notified') ?? '{}'); }
     catch { return {}; }
@@ -137,6 +139,20 @@ export default function Home() {
       return orders.length > 0 ? `${500 + orders.length}+` : '500+';
     } catch { return '500+'; }
   })();
+
+  const handleAddToCart = (book) => {
+    haptic('success');
+    addItem(book);
+    if (window.Telegram?.WebApp?.showPopup) {
+      window.Telegram.WebApp.showPopup({
+        title: T.addedToCart[lang] || T.addedToCart.uz,
+        message: T.addedDesc[lang] || T.addedDesc.uz,
+        buttons: [{ type: 'ok' }]
+      });
+    } else {
+      alert((T.addedToCart[lang] || T.addedToCart.uz) + "\n" + (T.addedDesc[lang] || T.addedDesc.uz));
+    }
+  };
 
   return (
     <PageTransition>
@@ -306,7 +322,7 @@ export default function Home() {
                 <PortraitCard
                   key={book.id} book={book} lang={lang} index={i}
                   onNavigate={(path) => { trackView(book.id); navigate(path); }}
-                  onBuy={() => { haptic('light'); setSheetBook(book); }}
+                  onBuy={(e) => { e.stopPropagation(); handleAddToCart(book); }}
                 />
               ))}
             </div>
@@ -331,7 +347,7 @@ export default function Home() {
                     <PortraitCard
                       key={book.id} book={book} lang={lang} index={i}
                       onNavigate={(path) => { trackView(book.id); navigate(path); }}
-                      onBuy={() => { haptic('light'); setSheetBook(book); }}
+                      onBuy={(e) => { e.stopPropagation(); handleAddToCart(book); }}
                     />
                   ))
               }
@@ -359,7 +375,7 @@ export default function Home() {
                     <PortraitCard
                       key={book.id} book={book} lang={lang} index={i}
                       onNavigate={navigate}
-                      onBuy={() => { haptic('light'); setSheetBook(book); }}
+                      onBuy={(e) => { e.stopPropagation(); handleAddToCart(book); }}
                     />
                   ))
               }
@@ -409,10 +425,6 @@ export default function Home() {
         </div>
 
       </div>
-
-      {sheetBook && (
-        <CheckoutSheet book={sheetBook} lang={lang} onClose={() => setSheetBook(null)} />
-      )}
     </PageTransition>
   );
 }
