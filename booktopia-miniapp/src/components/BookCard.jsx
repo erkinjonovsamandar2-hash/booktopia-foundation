@@ -4,6 +4,7 @@ import { useCart } from '../context/CartContext';
 import { formatPrice, haptic } from '../lib/utils';
 import CheckoutSheet from './CheckoutSheet';
 import PageTransition from './PageTransition';
+import { ShoppingCart } from '@phosphor-icons/react';
 
 const T = {
   addedToCart: { uz: 'Savatga qo\'shildi!', ru: 'Добавлено в корзину!', en: 'Added to cart!' },
@@ -74,17 +75,16 @@ export default function BookCard({ book, lang = 'uz', onNavigate, index = 0 }) {
                 ? <span className="price" style={{ fontSize: 14 }}>{formatPrice(price)}</span>
                 : <span style={{ fontSize: 13, color: 'var(--text-3)' }}>{T.noPrice[lang]}</span>
               }
+              {!isSoon && price && (
+                <button
+                  className="book-card__btn-quick"
+                  onClick={handleBuy}
+                  aria-label="Savatga qo'shish"
+                >
+                  <ShoppingCart size={18} weight="bold" />
+                </button>
+              )}
             </div>
-            {!isSoon && price && (
-              <motion.button
-                className="book-card__btn"
-                onClick={handleBuy}
-                whileTap={{ scale: 0.94, y: 1 }}
-                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-              >
-                🛒 {lang === 'ru' ? 'Купить' : lang === 'en' ? 'Buy' : 'Sotib olish'}
-              </motion.button>
-            )}
           </div>
         </motion.div>
       </motion.div>
