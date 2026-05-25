@@ -53,6 +53,7 @@ ALTER TABLE miniapp_order_events ENABLE ROW LEVEL SECURITY;
 
 -- Drop policies if they exist (safe to re-run)
 DROP POLICY IF EXISTS "Allow anon insert orders"       ON miniapp_orders;
+DROP POLICY IF EXISTS "Allow anon read own orders"     ON miniapp_orders;
 DROP POLICY IF EXISTS "Allow auth read orders"         ON miniapp_orders;
 DROP POLICY IF EXISTS "Allow auth read order events"   ON miniapp_order_events;
 DROP POLICY IF EXISTS "Allow service insert order events" ON miniapp_order_events;
@@ -61,7 +62,11 @@ DROP POLICY IF EXISTS "Allow service insert order events" ON miniapp_order_event
 CREATE POLICY "Allow anon insert orders"
   ON miniapp_orders FOR INSERT TO anon WITH CHECK (true);
 
--- Only authenticated (admin) can read
+-- Anon (miniapp users) can read orders — client filters by telegram_user_id
+CREATE POLICY "Allow anon read own orders"
+  ON miniapp_orders FOR SELECT TO anon USING (true);
+
+-- Also authenticated (admin) can read all
 CREATE POLICY "Allow auth read orders"
   ON miniapp_orders FOR SELECT TO authenticated USING (true);
 

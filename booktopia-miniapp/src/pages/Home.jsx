@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { formatPrice, haptic, tg } from '../lib/utils';
 import { useLang } from '../context/LangContext';
 import CheckoutSheet from '../components/CheckoutSheet';
 import PageTransition from '../components/PageTransition';
-import { Books, ShoppingCart, RocketLaunch, Flame, Eye, PenNib, Star } from '@phosphor-icons/react';
+import { Books, ShoppingCart, RocketLaunch, Package, CaretDown, CaretUp, ArrowRight } from '@phosphor-icons/react';
 
 // ── Translations ───────────────────────────────────────────────────────────────
 const T = {
@@ -28,7 +28,8 @@ const T = {
   buy:         { uz: 'Sotib olish',       ru: 'Купить',             en: 'Buy' },
   blogTitle:   { uz: '✍️ Maqolalar',      ru: '✍️ Статьи',          en: '✍️ Articles' },
   blogCta:     { uz: 'Barchasini o\'qish →', ru: 'Читать все →',   en: 'Read all →' },
-  readMore:    { uz: 'Batafsil o\'qish',  ru: 'Читать далее',       en: 'Read more' },
+  readMore:    { uz: 'Batafsil o\'qish',  ru: 'Читать dalеj',       en: 'Read more' },
+  openArticle: { uz: 'Maqolani ochish →',  ru: 'Открыть статью →',  en: 'Open article →' },
   soonTitle:   { uz: '⏳ Tez kunda',      ru: '⏳ Скоро',           en: '⏳ Coming Soon' },
   notify:      { uz: 'Xabar bering',      ru: 'Уведомить меня',     en: 'Notify me' },
   notified:    { uz: '✅ Xabar beriladi', ru: '✅ Уведомим вас',    en: '✅ You\'re on the list' },
@@ -37,6 +38,10 @@ const T = {
   trustOrders: { uz: 'buyurtma bajarildi', ru: 'заказов выполнено', en: 'orders fulfilled' },
   trustOfficial:{ uz: 'Rasmiy nashriyot', ru: 'Официальное изд-во', en: 'Official publisher' },
   trustDelivery:{ uz: '24 soat kafolat', ru: 'Гарантия 24 часа',   en: '24-hour guarantee' },
+  ordersTitle: { uz: '📦 Mening buyurtmalarim', ru: '📦 Мои заказы', en: '📦 My Orders' },
+  ordersAll:   { uz: 'Barchasi →',        ru: 'Все →',              en: 'All →' },
+  orderNum:    { uz: 'Buyurtma',          ru: 'Заказ',              en: 'Order' },
+  collapse:    { uz: 'Yopish',            ru: 'Свернуть',           en: 'Collapse' },
 };
 
 const STEPS = [
@@ -50,6 +55,7 @@ export default function Home() {
   const { lang } = useLang();
   const [books, setBooks]               = useState([]);
   const [articles, setArticles]         = useState([]);
+  const [myOrders, setMyOrders]         = useState([]);
   const [loading, setLoading]           = useState(true);
   const [sheetBook, setSheetBook]       = useState(null);
   const [notified, setNotified]         = useState(() => {
@@ -61,9 +67,10 @@ export default function Home() {
     catch { return []; }
   });
 
-  // Get Telegram user name
+  // Get Telegram user info
   const user      = tg()?.initDataUnsafe?.user;
   const firstName = user?.first_name ?? '';
+  const tgUserId  = user?.id ?? null;
 
   const t = (k) => T[k]?.[lang] ?? T[k]?.uz ?? k;
 
@@ -71,12 +78,20 @@ export default function Home() {
 
   const loadData = async () => {
     try {
-      const [booksRes, articlesRes] = await Promise.all([
+      const uid = tg()?.initDataUnsafe?.user?.id ?? null;
+      const queries = [
         supabase.from('books').select('*').order('sort_order', { ascending: true, nullsFirst: false }),
         supabase.from('blog_posts').select('id,slug,title,excerpt,reading_time,image_url,published_at').eq('published', true).order('published_at', { ascending: false }).limit(4),
-      ]);
+      ];
+      if (uid) {
+        queries.push(
+          supabase.from('miniapp_orders').select('id,status,created_at,items,total_uzs').eq('telegram_user_id', uid).order('created_at', { ascending: false }).limit(3)
+        );
+      }
+      const [booksRes, articlesRes, ordersRes] = await Promise.all(queries);
       if (booksRes.data)    setBooks(booksRes.data);
       if (articlesRes.data) setArticles(articlesRes.data);
+      if (ordersRes?.data)  setMyOrders(ordersRes.data);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };
@@ -209,6 +224,26 @@ export default function Home() {
           </div>
         </div>
 
+
+        {/* ── 1b. MY ORDERS WIDGET (only when user has orders) ─────────────────── */}
+        {!loading && myOrders.length > 0 && (
+          <div style={{ padding: '16px 16px 0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <h2 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-1)' }}>{t('ordersTitle')}</h2>
+              <button
+                onClick={() => { haptic('light'); navigate('/orders'); }}
+                style={{ fontSize: 12, fontWeight: 800, color: 'var(--blue-500)', background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                {t('ordersAll')}
+              </button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {myOrders.slice(0, 2).map((order, i) => (
+                <OrderMiniCard key={order.id} order={order} lang={lang} t={t} index={i} onPress={() => { haptic('light'); navigate('/orders'); }} />
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ── 2. HOW IT WORKS ──────────────────────────────────────────────────── */}
         <div style={{ padding: '24px 16px 20px' }}>
@@ -489,14 +524,118 @@ function PortraitSkeleton() {
   );
 }
 
-// ── Blog Article Teaser Card ───────────────────────────────────────────────────
+// ── ORDER STATUS HELPERS ───────────────────────────────────────────────────────
+const ORDER_STEPS = ['pending', 'approved', 'delivering', 'delivered'];
+const STATUS_META = {
+  pending:    { label: { uz: 'Kutilmoqda',     ru: 'Ожидается',    en: 'Pending'    }, color: '#D5AD36' },
+  approved:   { label: { uz: 'Qabul qilindi',  ru: 'Принят',       en: 'Approved'   }, color: '#3182CE' },
+  delivering: { label: { uz: 'Yetkazilmoqda',  ru: 'Доставляется', en: 'Delivering' }, color: '#805AD5' },
+  delivered:  { label: { uz: 'Yetkazildi',     ru: 'Доставлен',    en: 'Delivered'  }, color: '#38A169' },
+  cancelled:  { label: { uz: 'Bekor qilindi',  ru: 'Отменен',      en: 'Cancelled'  }, color: '#E53E3E' },
+};
+
+// ── Mini Order Card (Home widget) ──────────────────────────────────────────────
+function OrderMiniCard({ order, lang, t, index, onPress }) {
+  const meta       = STATUS_META[order.status] ?? STATUS_META.pending;
+  const statusColor = meta.color;
+  const statusLabel = meta.label[lang] ?? meta.label.uz;
+  const stepIdx    = ORDER_STEPS.indexOf(order.status);
+  const isCancelled = order.status === 'cancelled';
+  const firstItem  = (order.items || [])[0];
+  const moreCount  = (order.items || []).length - 1;
+
+  const dateStr = order.created_at
+    ? new Date(order.created_at).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'uz-UZ', { day: 'numeric', month: 'short' })
+    : '';
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.05, type: 'spring', stiffness: 350, damping: 28 }}
+      onClick={onPress}
+      style={{
+        background: 'var(--surface)',
+        borderRadius: 14,
+        padding: '12px 14px',
+        boxShadow: 'var(--shadow-card)',
+        cursor: 'pointer',
+        borderLeft: `3px solid ${statusColor}`,
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Top row */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <div>
+          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)' }}>
+            {t('orderNum')} #{order.id?.toString().slice(0, 8)}
+          </span>
+          {dateStr && <span style={{ fontSize: 10, color: 'var(--text-3)', marginLeft: 6 }}>· {dateStr}</span>}
+        </div>
+        <span style={{
+          fontSize: 10, fontWeight: 800, textTransform: 'uppercase',
+          color: statusColor, background: `${statusColor}18`,
+          padding: '3px 9px', borderRadius: 20,
+        }}>{statusLabel}</span>
+      </div>
+
+      {/* Book title */}
+      {firstItem && (
+        <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', marginBottom: 8, lineHeight: 1.3 }}>
+          {firstItem.title}{moreCount > 0 && <span style={{ color: 'var(--text-3)', fontWeight: 600 }}> +{moreCount}</span>}
+        </p>
+      )}
+
+      {/* Progress stepper (hidden for cancelled) */}
+      {!isCancelled && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+          {ORDER_STEPS.map((step, i) => {
+            const done    = i <= stepIdx;
+            const active  = i === stepIdx;
+            const isLast  = i === ORDER_STEPS.length - 1;
+            return (
+              <div key={step} style={{ display: 'flex', alignItems: 'center', flex: isLast ? 0 : 1 }}>
+                <div style={{
+                  width: active ? 10 : 8, height: active ? 10 : 8,
+                  borderRadius: '50%',
+                  background: done ? statusColor : 'var(--surface-2)',
+                  border: active ? `2px solid ${statusColor}` : 'none',
+                  flexShrink: 0,
+                  transition: 'all 0.2s',
+                  boxShadow: active ? `0 0 0 3px ${statusColor}30` : 'none',
+                }} />
+                {!isLast && (
+                  <div style={{
+                    flex: 1, height: 2,
+                    background: i < stepIdx ? statusColor : 'var(--surface-2)',
+                    transition: 'background 0.3s',
+                  }} />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Arrow hint */}
+      <div style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', opacity: 0.3 }}>
+        <ArrowRight size={14} weight="bold" />
+      </div>
+    </motion.div>
+  );
+}
+
+// ── Blog Article Teaser Card (expand-on-tap) ───────────────────────────────────
 function BlogCard({ article, lang, t, index }) {
+  const [expanded, setExpanded] = useState(false);
   const title   = article[`title_${lang}`] || article.title || '—';
   const excerpt = article[`excerpt_${lang}`] || article.excerpt || '';
   const url     = `https://booktopia.uz/blog/${article.slug || article.id}`;
 
-  const openArticle = () => {
-    haptic('light');
+  const openArticle = (e) => {
+    e.stopPropagation();
+    haptic('medium');
     if (window.Telegram?.WebApp?.openLink) {
       window.Telegram.WebApp.openLink(url);
     } else {
@@ -504,66 +643,141 @@ function BlogCard({ article, lang, t, index }) {
     }
   };
 
+  const toggle = () => {
+    haptic('light');
+    setExpanded(v => !v);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.08, type: 'spring', stiffness: 300, damping: 28 }}
-      onClick={openArticle}
+      onClick={toggle}
       style={{
-        display: 'flex', gap: 12, alignItems: 'center',
         background: 'var(--surface)',
         borderRadius: 14,
-        padding: 12,
+        overflow: 'hidden',
         boxShadow: 'var(--shadow-card)',
         cursor: 'pointer',
+        borderLeft: expanded ? '3px solid var(--blue-500)' : '3px solid transparent',
+        transition: 'border-color 0.2s',
       }}
     >
-      {/* Thumbnail */}
-      {article.image_url ? (
-        <img
-          src={article.image_url}
-          alt={title}
-          style={{
-            width: 72, height: 72,
-            objectFit: 'cover',
-            borderRadius: 10,
-            flexShrink: 0,
-          }}
-        />
-      ) : (
-        <div style={{
-          width: 72, height: 72, borderRadius: 10,
-          background: 'var(--blue-100)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 24, flexShrink: 0,
-        }}>✍️</div>
-      )}
-
-      {/* Text */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{
-          fontSize: 13, fontWeight: 700, lineHeight: 1.3, color: 'var(--text-1)',
-          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-          marginBottom: 4,
-        }}>{title}</p>
-        {excerpt && (
-          <p style={{
-            fontSize: 11, color: 'var(--text-2)', lineHeight: 1.4,
-            display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-          }}>{excerpt}</p>
+      {/* ── Collapsed row ── */}
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center', padding: 12 }}>
+        {/* Thumbnail */}
+        {article.image_url ? (
+          <img
+            src={article.image_url}
+            alt={title}
+            style={{
+              width: expanded ? 60 : 72,
+              height: expanded ? 60 : 72,
+              objectFit: 'cover',
+              borderRadius: 10,
+              flexShrink: 0,
+              transition: 'all 0.25s',
+            }}
+          />
+        ) : (
+          <div style={{
+            width: 72, height: 72, borderRadius: 10,
+            background: 'var(--blue-100)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 24, flexShrink: 0,
+          }}>✍️</div>
         )}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
-          {article.reading_time && (
+
+        {/* Text */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{
+            fontSize: 13, fontWeight: 700, lineHeight: 1.3, color: 'var(--text-1)',
+            display: '-webkit-box',
+            WebkitLineClamp: expanded ? 'unset' : 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: expanded ? 'visible' : 'hidden',
+            marginBottom: 4,
+            transition: 'all 0.2s',
+          }}>{title}</p>
+
+          {!expanded && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
+              {article.reading_time && (
+                <span style={{ fontSize: 10, color: 'var(--text-3)', fontWeight: 600 }}>🕐 {article.reading_time}</span>
+              )}
+              <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--blue-500)', marginLeft: 'auto' }}>
+                O'qish <CaretDown size={10} weight="bold" style={{ verticalAlign: 'middle' }} />
+              </span>
+            </div>
+          )}
+
+          {expanded && (
             <span style={{ fontSize: 10, color: 'var(--text-3)', fontWeight: 600 }}>
-              🕐 {article.reading_time}
+              {article.reading_time ? `🕐 ${article.reading_time}` : ''}
             </span>
           )}
-          <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--blue-500)' }}>
-            {t('readMore')} →
-          </span>
         </div>
+
+        {/* Chevron indicator */}
+        {expanded && (
+          <motion.div
+            initial={{ rotate: 0 }}
+            animate={{ rotate: 180 }}
+            style={{ flexShrink: 0, color: 'var(--blue-500)', opacity: 0.6 }}
+          >
+            <CaretDown size={16} weight="bold" />
+          </motion.div>
+        )}
       </div>
+
+      {/* ── Expanded preview ── */}
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            key="preview"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
+            style={{ overflow: 'hidden' }}
+          >
+            <div style={{ padding: '0 14px 14px' }}>
+              {/* Divider */}
+              <div style={{ height: 1, background: 'var(--surface-2)', marginBottom: 12 }} />
+
+              {/* Excerpt text */}
+              {excerpt ? (
+                <p style={{
+                  fontSize: 13, color: 'var(--text-2)', lineHeight: 1.65,
+                  fontWeight: 500, marginBottom: 14,
+                }}>{excerpt}</p>
+              ) : (
+                <p style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 14, fontStyle: 'italic' }}>...</p>
+              )}
+
+              {/* Open article button */}
+              <motion.button
+                onClick={openArticle}
+                whileTap={{ scale: 0.96 }}
+                style={{
+                  width: '100%',
+                  padding: '10px 16px',
+                  background: 'linear-gradient(135deg, #265999, #4488BF)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 10,
+                  fontSize: 13, fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                }}
+              >
+                {t('openArticle')} <ArrowRight size={14} weight="bold" />
+              </motion.button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
