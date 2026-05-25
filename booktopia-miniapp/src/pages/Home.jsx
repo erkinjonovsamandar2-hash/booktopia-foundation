@@ -196,40 +196,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* ── TRUST STATS BAR ──────────────────────────────────────────────────── */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          style={{
-            display: 'flex',
-            borderTop: '1px solid rgba(255,255,255,0.08)',
-            background: 'linear-gradient(180deg, #132D55 0%, #0F2444 100%)',
-            padding: '14px 20px',
-            gap: 0,
-          }}
-        >
-          {[
-            { icon: '📦', value: orderCount, label: t('trustOrders') },
-            { icon: '⭐', value: null,       label: t('trustOfficial') },
-            { icon: '🚀', value: null,       label: t('trustDelivery') },
-          ].map((stat, i) => (
-            <div key={i} style={{
-              flex: 1,
-              textAlign: 'center',
-              borderRight: i < 2 ? '1px solid rgba(255,255,255,0.1)' : 'none',
-              padding: '0 8px',
-            }}>
-              <div style={{ fontSize: 16, marginBottom: 2 }}>{stat.icon}</div>
-              {stat.value && (
-                <div style={{ fontSize: 13, fontWeight: 900, color: '#00CDFE', lineHeight: 1 }}>{stat.value}</div>
-              )}
-              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)', fontWeight: 700, marginTop: 2, lineHeight: 1.2 }}>
-                {stat.label}
-              </div>
-            </div>
-          ))}
-        </motion.div>
 
         {/* ── 2. HOW IT WORKS ──────────────────────────────────────────────────── */}
         <div style={{ padding: '24px 16px 20px' }}>
@@ -325,36 +291,7 @@ export default function Home() {
           </div>
         )}
 
-        <div className="divider" />
-
-        {/* ── 3. FEATURED BOOKS — horizontal portrait strip ─────────────────────── */}
-        {(loading || featured.length > 0) && (
-          <div style={{ paddingTop: 20, paddingBottom: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px 14px' }}>
-              <h2 style={{ fontSize: 16, fontWeight: 800 }}>{t('featured')}</h2>
-              <button
-                onClick={() => navigate('/catalog')}
-                style={{ fontSize: 12, fontWeight: 800, color: 'var(--blue-500)', background: 'none', border: 'none', cursor: 'pointer' }}
-              >
-                {t('seeAll')}
-              </button>
-            </div>
-            <div className="h-scroll" style={{ paddingBottom: 12 }}>
-              {loading
-                ? Array.from({ length: 5 }).map((_, i) => <PortraitSkeleton key={i} />)
-                : featured.map((book, i) => (
-                    <PortraitCard
-                      key={book.id} book={book} lang={lang} index={i}
-                      onNavigate={navigate}
-                      onBuy={() => { haptic('light'); setSheetBook(book); }}
-                    />
-                  ))
-              }
-            </div>
-          </div>
-        )}
-
-        {/* ── 4. NEW RELEASES — horizontal portrait strip ───────────────────────── */}
+        {/* ── 4. NEW RELEASES ──────────────────────────────────────────────── */}
         {(loading || newReleases.length > 0) && (
           <div style={{ paddingBottom: 8 }}>
             <div className="divider" />
@@ -408,64 +345,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* ── 6. COMING SOON + NOTIFY ME ───────────────────────────────────────── */}
-        {!loading && comingSoon.length > 0 && (
-          <div>
-            <div className="divider" />
-            <div style={{ padding: '20px 16px 14px' }}>
-              <h2 style={{ fontSize: 16, fontWeight: 800 }}>{t('soonTitle')}</h2>
-            </div>
-            <div className="h-scroll" style={{ paddingBottom: 16 }}>
-              {comingSoon.map((book, i) => {
-                const title = book[`title_${lang}`] || book.title || '—';
-                const isNotified = notified[book.id];
-                return (
-                  <motion.div
-                    key={book.id}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: i * 0.07 }}
-                    style={{
-                      width: 120, flexShrink: 0,
-                      background: 'var(--surface)',
-                      borderRadius: 14,
-                      overflow: 'hidden',
-                      boxShadow: 'var(--shadow-card)',
-                    }}
-                  >
-                    {/* Cover greyed out */}
-                    <div style={{ position: 'relative', width: 120, height: 160 }}>
-                      {book.cover_url ? (
-                        <img src={book.cover_url} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(60%) brightness(0.7)' }} />
-                      ) : (
-                        <div style={{ width: '100%', height: '100%', background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>📚</div>
-                      )}
-                      <div style={{ position: 'absolute', top: 8, left: 8, background: '#FF6B35', color: '#fff', fontSize: 9, fontWeight: 900, padding: '2px 7px', borderRadius: 20 }}>SOON</div>
-                    </div>
-                    <div style={{ padding: '8px 10px 10px' }}>
-                      <p style={{ fontSize: 11, fontWeight: 700, lineHeight: 1.3, color: 'var(--text-1)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: 8 }}>{title}</p>
-                      <motion.button
-                        onClick={() => handleNotify(book.id)}
-                        whileTap={{ scale: 0.93 }}
-                        style={{
-                          width: '100%', padding: '6px 0',
-                          background: isNotified ? '#EBF8F0' : 'var(--blue-100)',
-                          color: isNotified ? '#38A169' : 'var(--blue-500)',
-                          border: 'none', borderRadius: 8,
-                          fontSize: 10, fontWeight: 800, cursor: 'pointer',
-                          fontFamily: 'Nunito, sans-serif',
-                          transition: 'background 0.2s, color 0.2s',
-                        }}
-                      >
-                        {isNotified ? t('notified') : `🔔 ${t('notify')}`}
-                      </motion.button>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        {/* ── 6. CATALOG CTA ───────────────────────────────────────────────────── */}
 
         {/* ── 7. CATALOG CTA ───────────────────────────────────────────────────── */}
         <div style={{ padding: '12px 16px 0' }}>
