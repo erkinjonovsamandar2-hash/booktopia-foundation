@@ -4,6 +4,16 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { tg } from '../lib/utils';
 import PageTransition from '../components/PageTransition';
+import {
+  Package,
+  Heart,
+  ShoppingCart,
+  Globe,
+  MessageCircle,
+  Info,
+  User,
+  ChevronRight,
+} from 'lucide-react';
 
 const T = {
   title:       { uz: 'Profil',              ru: 'Профиль',         en: 'Profile' },
@@ -19,6 +29,11 @@ const T = {
   cart:        { uz: 'Savat',               ru: 'Корзина',          en: 'Cart' },
   items:       { uz: 'ta kitob',            ru: 'книг',             en: 'books' },
 };
+
+// Icon wrapper — consistent size + color
+function Icon({ component: Comp, color = 'var(--blue-500)' }) {
+  return <Comp size={20} strokeWidth={1.75} color={color} />;
+}
 
 export default function Profile() {
   const { lang, changeLang, langs, langLabels } = useLang();
@@ -46,9 +61,9 @@ export default function Profile() {
           background: 'rgba(255,255,255,0.15)',
           borderRadius: '50%',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 28, flexShrink: 0,
+          flexShrink: 0,
         }}>
-          {user ? '👤' : '🔍'}
+          <User size={30} strokeWidth={1.5} color="rgba(255,255,255,0.85)" />
         </div>
         <div>
           <h2 style={{ color: '#fff', fontSize: 20, marginBottom: 2 }}>{userName}</h2>
@@ -56,9 +71,12 @@ export default function Profile() {
             <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14, fontWeight: 600 }}>{userHandle}</p>
           )}
           {totalCount > 0 && (
-            <p style={{ color: '#00CDFE', fontSize: 13, fontWeight: 700, marginTop: 4 }}>
-              🛒 {totalCount} {t('items')}
-            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 5 }}>
+              <ShoppingCart size={13} color="#00CDFE" />
+              <p style={{ color: '#00CDFE', fontSize: 13, fontWeight: 700 }}>
+                {totalCount} {t('items')}
+              </p>
+            </div>
           )}
         </div>
         {/* Language switcher in header */}
@@ -77,17 +95,41 @@ export default function Profile() {
 
       {/* Menu items */}
       <div style={{ background: 'var(--surface)', marginTop: 12, borderRadius: '12px 12px 0 0', overflow: 'hidden' }}>
-        <MenuItem icon="📦" label={t('orders')} sub={t('ordersDesc')} href="/orders" />
-        <MenuItem icon="❤️" label={t('wishlist')} sub={t('wishDesc')} href="/wishlist" />
-        <MenuItem icon="🛒" label={t('cart')} sub={`${totalCount} ${t('items')}`} href="/cart" />
+        <MenuItem
+          icon={<Icon component={Package} color="#D5AD36" />}
+          iconBg="#FBF6E3"
+          label={t('orders')} sub={t('ordersDesc')} href="/orders"
+        />
+        <MenuItem
+          icon={<Icon component={Heart} color="#E53E3E" />}
+          iconBg="#FFF5F5"
+          label={t('wishlist')} sub={t('wishDesc')} href="/wishlist"
+        />
+        <MenuItem
+          icon={<Icon component={ShoppingCart} color="#265999" />}
+          iconBg="#E8F4FD"
+          label={t('cart')} sub={`${totalCount} ${t('items')}`} href="/cart"
+        />
       </div>
 
       <div style={{ height: 8 }} />
 
       <div style={{ background: 'var(--surface)', overflow: 'hidden' }}>
-        <MenuItem icon="🌐" label={t('website')} sub="booktopia.uz" href="https://booktopia.uz" external />
-        <MenuItem icon="💬" label={t('contact')} sub="Telegram orqali" href="https://t.me/booktopia_uz" external />
-        <MenuItem icon="ℹ️" label={t('about')} sub="Booktopia Publishing House" />
+        <MenuItem
+          icon={<Icon component={Globe} color="#38A169" />}
+          iconBg="#EBF8F0"
+          label={t('website')} sub="booktopia.uz" href="https://booktopia.uz" external
+        />
+        <MenuItem
+          icon={<Icon component={MessageCircle} color="#805AD5" />}
+          iconBg="#F5F0FF"
+          label={t('contact')} sub="Telegram orqali" href="https://t.me/booktopia_uz" external
+        />
+        <MenuItem
+          icon={<Icon component={Info} color="#3182CE" />}
+          iconBg="#EBF8FF"
+          label={t('about')} sub="Booktopia Publishing House"
+        />
       </div>
 
       {/* Version */}
@@ -99,7 +141,7 @@ export default function Profile() {
   );
 }
 
-function MenuItem({ icon, label, sub, href, external }) {
+function MenuItem({ icon, iconBg, label, sub, href, external }) {
   const Tag = href ? (external ? 'a' : Link) : 'div';
   const props = href
     ? (external ? { href, target: '_blank', rel: 'noopener noreferrer' } : { to: href })
@@ -107,14 +149,18 @@ function MenuItem({ icon, label, sub, href, external }) {
 
   return (
     <Tag className="list-item" {...props}>
-      <div className="list-item__icon">{icon}</div>
+      <div style={{
+        width: 38, height: 38, borderRadius: 11, flexShrink: 0,
+        background: iconBg ?? 'var(--surface-2)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        {icon}
+      </div>
       <div style={{ flex: 1 }}>
         <div className="list-item__label">{label}</div>
         {sub && <div style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 600, marginTop: 1 }}>{sub}</div>}
       </div>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="9 18 15 12 9 6" />
-      </svg>
+      <ChevronRight size={16} strokeWidth={2} color="var(--text-3)" />
     </Tag>
   );
 }

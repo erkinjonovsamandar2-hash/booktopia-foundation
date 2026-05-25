@@ -227,7 +227,7 @@ function WeekCard({ book, lang, t, onNavigate }) {
             width: 76, height: 108,
             objectFit: 'cover',
             borderRadius: '3px 9px 9px 3px',
-            boxShadow: '-6px 6px 20px rgba(0,0,0,0.7), inset -3px 0 8px rgba(0,0,0,0.5)',
+            boxShadow: '-6px 6px 20px rgba(0,0,0,0.7)',
           }} />
         ) : (
           <div style={{
@@ -429,7 +429,7 @@ function PathCard({ path, books, purchased, lang, t, onNavigate, index }) {
                     <img src={book.cover_url} alt={btitle} style={{
                       width: 48, height: 68, objectFit: 'cover',
                       borderRadius: '2px 7px 7px 2px', flexShrink: 0,
-                      boxShadow: '-3px 3px 10px rgba(0,0,0,0.28), inset -2px 0 5px rgba(0,0,0,0.35)',
+                      boxShadow: '-3px 3px 10px rgba(0,0,0,0.2)',
                       opacity: done ? 0.45 : 1, transition: 'opacity 0.2s',
                     }} />
                   ) : (
