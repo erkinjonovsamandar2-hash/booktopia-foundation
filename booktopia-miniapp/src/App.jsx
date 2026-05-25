@@ -42,7 +42,7 @@ function AppRoutes() {
           <Route path="*"            element={<Navigate to="/" replace />} />
         </Routes>
       </AnimatePresence>
-      <BottomNav lang={lang} />
+      {!location.pathname.startsWith('/book/') && <BottomNav lang={lang} />}
     </>
   );
 }

@@ -147,17 +147,22 @@ export default function BookDetail() {
               📄 {t('excerpt')}
             </a>
           )}
+          <p style={{ fontSize: 13, color: 'var(--text-3)', lineHeight: 1.5, marginTop: 12 }}>
+            Bu yerda kitob haqida qo'shimcha ma'lumotlar, iqtiboslar yoki qisqacha sharhlar bo'lishi mumkin.
+          </p>
         </div>
       </div>
+
+      <div style={{ height: 100 }} /> {/* Padding to scroll past fixed button */}
 
       {/* Fixed buy button */}
       {book.price && (
         <div style={{
-          position: 'fixed', bottom: 'calc(var(--nav-h) + var(--safe-bottom))',
+          position: 'fixed', bottom: 0,
           left: '50%', transform: 'translateX(-50%)',
           width: '100%', maxWidth: 480,
-          padding: '10px 16px',
-          background: 'linear-gradient(to top, var(--bg) 80%, transparent)',
+          padding: '16px 16px calc(16px + env(safe-area-inset-bottom, 16px))',
+          background: 'linear-gradient(to top, var(--bg) 85%, transparent)',
           zIndex: 99,
         }}>
           <motion.button
