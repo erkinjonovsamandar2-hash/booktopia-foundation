@@ -148,6 +148,18 @@ export default function Home() {
             pointerEvents: 'none',
           }} />
 
+          {/* Logo */}
+          <div style={{
+            position: 'absolute', top: 24, right: 20,
+            width: 36, height: 36,
+            background: 'rgba(255,255,255,0.1)',
+            borderRadius: 8, backdropFilter: 'blur(10px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 10
+          }}>
+            <img src="/favicon.svg" alt="Booktopia" style={{ width: 20, height: 20, filter: 'brightness(0) invert(1)' }} />
+          </div>
+
           <div style={{ position: 'relative', zIndex: 1 }}>
             {firstName ? (
               <motion.p
