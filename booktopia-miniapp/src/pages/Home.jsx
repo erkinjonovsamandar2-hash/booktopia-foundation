@@ -25,6 +25,12 @@ const T = {
   seeAll:      { uz: 'Barchasini ko\'rish →', ru: 'Смотреть все →', en: 'See all →' },
   catalogCta:  { uz: 'Butun katalogni ko\'rish', ru: 'Открыть каталог', en: 'Open catalog' },
   buy:         { uz: 'Sotib olish',       ru: 'Купить',             en: 'Buy' },
+  blogTitle:   { uz: '✍️ Maqolalar',      ru: '✍️ Статьи',          en: '✍️ Articles' },
+  blogCta:     { uz: 'Barchasini o\'qish →', ru: 'Читать все →',   en: 'Read all →' },
+  readMore:    { uz: 'Batafsil o\'qish',  ru: 'Читать далее',       en: 'Read more' },
+  soonTitle:   { uz: '⏳ Tez kunda',      ru: '⏳ Скоро',           en: '⏳ Coming Soon' },
+  notify:      { uz: 'Xabar bering',      ru: 'Уведомить меня',     en: 'Notify me' },
+  notified:    { uz: '✅ Xabar beriladi', ru: '✅ Уведомим вас',    en: '✅ You\'re on the list' },
 };
 
 const STEPS = [
@@ -36,9 +42,14 @@ const STEPS = [
 export default function Home() {
   const navigate = useNavigate();
   const { lang } = useLang();
-  const [books, setBooks]     = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [books, setBooks]         = useState([]);
+  const [articles, setArticles]   = useState([]);
+  const [loading, setLoading]     = useState(true);
   const [sheetBook, setSheetBook] = useState(null);
+  const [notified, setNotified]   = useState(() => {
+    try { return JSON.parse(localStorage.getItem('booktopia_notified') ?? '{}'); }
+    catch { return {}; }
+  });
 
   // Get Telegram user name
   const user      = tg()?.initDataUnsafe?.user;
@@ -46,16 +57,25 @@ export default function Home() {
 
   const t = (k) => T[k]?.[lang] ?? T[k]?.uz ?? k;
 
-  useEffect(() => { loadBooks(); }, []);
+  useEffect(() => { loadData(); }, []);
 
-  const loadBooks = async () => {
+  const loadData = async () => {
     try {
-      const { data } = await supabase
-        .from('books').select('*')
-        .order('sort_order', { ascending: true, nullsFirst: false });
-      if (data) setBooks(data);
+      const [booksRes, articlesRes] = await Promise.all([
+        supabase.from('books').select('*').order('sort_order', { ascending: true, nullsFirst: false }),
+        supabase.from('blog_posts').select('id,slug,title,excerpt,reading_time,image_url,published_at').eq('published', true).order('published_at', { ascending: false }).limit(4),
+      ]);
+      if (booksRes.data)    setBooks(booksRes.data);
+      if (articlesRes.data) setArticles(articlesRes.data);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
+  };
+
+  const handleNotify = (bookId) => {
+    const next = { ...notified, [bookId]: true };
+    setNotified(next);
+    localStorage.setItem('booktopia_notified', JSON.stringify(next));
+    haptic('success');
   };
 
   // De-duplicate same book across language editions
@@ -68,6 +88,7 @@ export default function Home() {
 
   const featured    = uniqueBooks.filter(b => b.featured).slice(0, 8);
   const newReleases = uniqueBooks.filter(b => b.category === 'new').slice(0, 6);
+  const comingSoon  = uniqueBooks.filter(b => b.status === 'soon' || b.price === null).slice(0, 5);
 
   return (
     <PageTransition>
@@ -248,7 +269,92 @@ export default function Home() {
           </div>
         )}
 
-        {/* ── 5. CATALOG CTA ───────────────────────────────────────────────────── */}
+        {/* ── 5. BLOG TEASERS ───────────────────────────────────────────────────── */}
+        {(loading || articles.length > 0) && (
+          <div>
+            <div className="divider" />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 16px 14px' }}>
+              <h2 style={{ fontSize: 16, fontWeight: 800 }}>{t('blogTitle')}</h2>
+              <button
+                onClick={() => { haptic('light'); window.Telegram?.WebApp?.openLink('https://booktopia.uz/blog'); }}
+                style={{ fontSize: 12, fontWeight: 800, color: 'var(--blue-500)', background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                {t('blogCta')}
+              </button>
+            </div>
+            <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {loading
+                ? Array.from({ length: 2 }).map((_, i) => (
+                    <div key={i} className="skeleton" style={{ height: 90, borderRadius: 14 }} />
+                  ))
+                : articles.slice(0, 3).map((a, i) => (
+                    <BlogCard key={a.id} article={a} lang={lang} t={t} index={i} />
+                  ))
+              }
+            </div>
+          </div>
+        )}
+
+        {/* ── 6. COMING SOON + NOTIFY ME ───────────────────────────────────────── */}
+        {!loading && comingSoon.length > 0 && (
+          <div>
+            <div className="divider" />
+            <div style={{ padding: '20px 16px 14px' }}>
+              <h2 style={{ fontSize: 16, fontWeight: 800 }}>{t('soonTitle')}</h2>
+            </div>
+            <div className="h-scroll" style={{ paddingBottom: 16 }}>
+              {comingSoon.map((book, i) => {
+                const title = book[`title_${lang}`] || book.title || '—';
+                const isNotified = notified[book.id];
+                return (
+                  <motion.div
+                    key={book.id}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: i * 0.07 }}
+                    style={{
+                      width: 120, flexShrink: 0,
+                      background: 'var(--surface)',
+                      borderRadius: 14,
+                      overflow: 'hidden',
+                      boxShadow: 'var(--shadow-card)',
+                    }}
+                  >
+                    {/* Cover greyed out */}
+                    <div style={{ position: 'relative', width: 120, height: 160 }}>
+                      {book.cover_url ? (
+                        <img src={book.cover_url} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(60%) brightness(0.7)' }} />
+                      ) : (
+                        <div style={{ width: '100%', height: '100%', background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>📚</div>
+                      )}
+                      <div style={{ position: 'absolute', top: 8, left: 8, background: '#FF6B35', color: '#fff', fontSize: 9, fontWeight: 900, padding: '2px 7px', borderRadius: 20 }}>SOON</div>
+                    </div>
+                    <div style={{ padding: '8px 10px 10px' }}>
+                      <p style={{ fontSize: 11, fontWeight: 700, lineHeight: 1.3, color: 'var(--text-1)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: 8 }}>{title}</p>
+                      <motion.button
+                        onClick={() => handleNotify(book.id)}
+                        whileTap={{ scale: 0.93 }}
+                        style={{
+                          width: '100%', padding: '6px 0',
+                          background: isNotified ? '#EBF8F0' : 'var(--blue-100)',
+                          color: isNotified ? '#38A169' : 'var(--blue-500)',
+                          border: 'none', borderRadius: 8,
+                          fontSize: 10, fontWeight: 800, cursor: 'pointer',
+                          fontFamily: 'Nunito, sans-serif',
+                          transition: 'background 0.2s, color 0.2s',
+                        }}
+                      >
+                        {isNotified ? t('notified') : `🔔 ${t('notify')}`}
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── 7. CATALOG CTA ───────────────────────────────────────────────────── */}
         <div style={{ padding: '12px 16px 0' }}>
           <motion.button
             className="btn-primary"
@@ -369,3 +475,83 @@ function PortraitSkeleton() {
     </div>
   );
 }
+
+// ── Blog Article Teaser Card ───────────────────────────────────────────────────
+function BlogCard({ article, lang, t, index }) {
+  const title   = article[`title_${lang}`] || article.title || '—';
+  const excerpt = article[`excerpt_${lang}`] || article.excerpt || '';
+  const url     = `https://booktopia.uz/blog/${article.slug || article.id}`;
+
+  const openArticle = () => {
+    haptic('light');
+    if (window.Telegram?.WebApp?.openLink) {
+      window.Telegram.WebApp.openLink(url);
+    } else {
+      window.open(url, '_blank');
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.08, type: 'spring', stiffness: 300, damping: 28 }}
+      onClick={openArticle}
+      style={{
+        display: 'flex', gap: 12, alignItems: 'center',
+        background: 'var(--surface)',
+        borderRadius: 14,
+        padding: 12,
+        boxShadow: 'var(--shadow-card)',
+        cursor: 'pointer',
+      }}
+    >
+      {/* Thumbnail */}
+      {article.image_url ? (
+        <img
+          src={article.image_url}
+          alt={title}
+          style={{
+            width: 72, height: 72,
+            objectFit: 'cover',
+            borderRadius: 10,
+            flexShrink: 0,
+          }}
+        />
+      ) : (
+        <div style={{
+          width: 72, height: 72, borderRadius: 10,
+          background: 'var(--blue-100)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 24, flexShrink: 0,
+        }}>✍️</div>
+      )}
+
+      {/* Text */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{
+          fontSize: 13, fontWeight: 700, lineHeight: 1.3, color: 'var(--text-1)',
+          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+          marginBottom: 4,
+        }}>{title}</p>
+        {excerpt && (
+          <p style={{
+            fontSize: 11, color: 'var(--text-2)', lineHeight: 1.4,
+            display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+          }}>{excerpt}</p>
+        )}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
+          {article.reading_time && (
+            <span style={{ fontSize: 10, color: 'var(--text-3)', fontWeight: 600 }}>
+              🕐 {article.reading_time}
+            </span>
+          )}
+          <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--blue-500)' }}>
+            {t('readMore')} →
+          </span>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
