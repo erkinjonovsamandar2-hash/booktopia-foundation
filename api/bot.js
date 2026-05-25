@@ -41,6 +41,27 @@ async function handleStart(ctx) {
   const user = ctx.from;
   await saveUser(user);
 
+  // 1. First wipe any old Reply Keyboard (e.g. from Robosell) silently
+  await fetch(`${API}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chat_id: user.id,
+      text: '.',
+      reply_markup: { remove_keyboard: true },
+    }),
+  }).then(async r => {
+    // Delete that "." message immediately so user doesn't see it
+    const data = await r.json();
+    if (data.ok) {
+      await fetch(`${API}/deleteMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: user.id, message_id: data.result.message_id }),
+      });
+    }
+  });
+
   const name = user.first_name || 'kitobxon';
   const text =
     `Assalomu alaykum, <b>${name}</b>! 👋\n\n` +
