@@ -380,7 +380,7 @@ function PortraitCard({ book, lang, index, onNavigate, onBuy }) {
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.06, type: 'spring', stiffness: 300, damping: 28 }}
-      style={{ width: 130, flexShrink: 0, cursor: 'pointer' }}
+      style={{ width: 130, flexShrink: 0, cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
     >
       {/* Cover */}
       <div
@@ -427,30 +427,37 @@ function PortraitCard({ book, lang, index, onNavigate, onBuy }) {
       </div>
 
       {/* Info */}
-      <div style={{ padding: '8px 2px 0' }}>
+      <div style={{ padding: '8px 2px 0', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
         <p style={{
           fontSize: 12, fontWeight: 700, lineHeight: 1.3, color: 'var(--text-1)',
+          height: 32, /* Exact 2-line height for alignment */
           display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
         }}>{title}</p>
         <p style={{ fontSize: 10, color: 'var(--text-3)', fontWeight: 600, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {author}
         </p>
-        {book.price ? (
-          <motion.button
-            onClick={onBuy}
-            whileTap={{ scale: 0.93 }}
-            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-            style={{
-              marginTop: 7, width: '100%', padding: '6px 0',
-              background: 'var(--blue-500)', color: '#fff',
-              border: 'none', borderRadius: 8,
-              fontSize: 11, fontWeight: 800, cursor: 'pointer',
-              fontFamily: 'Nunito, sans-serif',
-            }}
-          >
-            {formatPrice(book.price)}
-          </motion.button>
-        ) : null}
+        <div style={{ marginTop: 'auto', paddingTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          {book.price ? (
+            <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-1)' }}>
+              {formatPrice(book.price)}
+            </span>
+          ) : <span style={{ fontSize: 12, color: 'var(--text-3)' }}>—</span>}
+          {book.price && (
+            <motion.button
+              onClick={onBuy}
+              whileTap={{ scale: 0.9 }}
+              style={{
+                width: 30, height: 30, borderRadius: '50%',
+                background: 'var(--blue-500)', color: '#fff',
+                border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', flexShrink: 0,
+                boxShadow: '0 4px 10px rgba(38, 89, 153, 0.25)'
+              }}
+            >
+              <ShoppingCart size={16} weight="bold" />
+            </motion.button>
+          )}
+        </div>
       </div>
     </motion.div>
   );

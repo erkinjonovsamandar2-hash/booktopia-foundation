@@ -133,9 +133,9 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
       {/* Sheet — slides up with spring, drag handle to dismiss */}
       <motion.div
         className="sheet"
-        initial={{ y: '100%' }}
-        animate={{ y: 0 }}
-        exit={{ y: '100%' }}
+        initial={{ y: '100%', x: '-50%' }}
+        animate={{ y: 0, x: '-50%' }}
+        exit={{ y: '100%', x: '-50%' }}
         transition={sheetSpring}
       >
         {/* Drag handle — ONLY this element handles drag-to-dismiss */}
