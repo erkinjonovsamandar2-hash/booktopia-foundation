@@ -166,15 +166,41 @@ async function handleCallbackQuery(update) {
 
   await answerCallback(query.id);
 
-  // ── Helper to prevent HTML parsing errors from original text ──────────────
-  const escapeHTML = (str) => str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  // ── Helper for dynamic buttons based on status ────────────────────────────
+  const getButtonsForStatus = (status, orderId) => {
+    if (status === 'pending') {
+      return [[
+        { text: '✅ Tasdiqlash', callback_data: `approve_${orderId}` },
+        { text: '❌ Bekor qilish', callback_data: `cancel_${orderId}` }
+      ]];
+    } else if (status === 'approved') {
+      return [
+        [{ text: "🚚 Yo'lda", callback_data: `delivering_${orderId}` },
+         { text: "📦 Yetkazildi", callback_data: `delivered_${orderId}` }],
+        [{ text: "❌ Bekor qilish", callback_data: `cancel_${orderId}` }]
+      ];
+    } else if (status === 'delivering') {
+      return [[
+        { text: "📦 Yetkazildi", callback_data: `delivered_${orderId}` },
+        { text: "❌ Bekor qilish", callback_data: `cancel_${orderId}` }
+      ]];
+    }
+    return []; // delivered or cancelled have no buttons
+  };
 
   // ── STEP 1: First click — ask for confirmation ────────────────────────────
-  if (data.startsWith('approve_') || data.startsWith('cancel_')) {
-    const isApprove = data.startsWith('approve_');
-    const orderId   = data.replace(/^(approve_|cancel_)/, '');
-    const emoji     = isApprove ? '✅' : '❌';
-    const actionLabel = isApprove ? 'Tasdiqlash' : 'Bekor qilish';
+  const actions = ['approve', 'cancel', 'delivering', 'delivered'];
+  const matchedAction = actions.find(a => data.startsWith(`${a}_`));
+  
+  if (matchedAction) {
+    const orderId = data.replace(`${matchedAction}_`, '');
+    
+    let emoji, actionLabel;
+    if (matchedAction === 'approve') { emoji = '✅'; actionLabel = 'Tasdiqlash'; }
+    if (matchedAction === 'cancel') { emoji = '❌'; actionLabel = 'Bekor qilish'; }
+    if (matchedAction === 'delivering') { emoji = '🚚'; actionLabel = "Yo'lda deb belgilash"; }
+    if (matchedAction === 'delivered') { emoji = '📦'; actionLabel = 'Yetkazildi deb belgilash'; }
+
     const originalText = escapeHTML(query.message.text || '');
 
     try {
@@ -183,7 +209,7 @@ async function handleCallbackQuery(update) {
         {
           reply_markup: {
             inline_keyboard: [[
-              { text: `${emoji} Ha, ${actionLabel}`, callback_data: `confirm_${isApprove ? 'approve' : 'cancel'}_${orderId}` },
+              { text: `${emoji} Ha, tasdiqlayman`, callback_data: `confirm_${matchedAction}_${orderId}` },
               { text: "↩️ Yo'q, qaytish",            callback_data: `dismiss_${orderId}` },
             ]],
           },
@@ -197,22 +223,25 @@ async function handleCallbackQuery(update) {
   }
 
   // ── STEP 2: Confirmation click — execute the action ───────────────────────
-  if (data.startsWith('confirm_approve_') || data.startsWith('confirm_cancel_')) {
-    const isApprove = data.startsWith('confirm_approve_');
-    const orderId   = data.replace(/^confirm_(approve|cancel)_/, '');
-    const newStatus = isApprove ? 'approved' : 'cancelled';
+  if (data.startsWith('confirm_')) {
+    const parts = data.split('_'); // confirm, action, orderId
+    const action = parts[1];
+    const orderId = parts.slice(2).join('_');
+    
+    let newStatus, resultLine;
+    if (action === 'approve') { newStatus = 'approved'; resultLine = '\n\n✅ <b>Tasdiqlandi.</b> Mijozga xabar yuborildi.'; }
+    else if (action === 'delivering') { newStatus = 'delivering'; resultLine = '\n\n🚚 <b>Yo\'lda.</b> Mijozga xabar yuborildi.'; }
+    else if (action === 'delivered') { newStatus = 'delivered'; resultLine = '\n\n📦 <b>Yetkazildi.</b> Mijozga xabar yuborildi.'; }
+    else if (action === 'cancel') { newStatus = 'cancelled'; resultLine = '\n\n❌ <b>Bekor qilindi.</b> Mijozga xabar yuborildi.'; }
 
     try {
       await updateOrderStatus(orderId, newStatus);
 
       // Strip the confirmation warning from message text
       const cleanText = escapeHTML(query.message.text.split('\n\n⚠️')[0] || '');
-      const resultLine = isApprove
-        ? '\n\n✅ <b>Tasdiqlandi.</b> Mijozga xabar yuborildi.'
-        : '\n\n❌ <b>Bekor qilindi.</b> Mijozga xabar yuborildi.';
 
       const res = await editMessageText(chatId, msgId, cleanText + resultLine, {
-        reply_markup: { inline_keyboard: [] },
+        reply_markup: { inline_keyboard: getButtonsForStatus(newStatus, orderId) },
       });
       if (!res.ok) console.error('[Bot] editMessageText step 2 failed:', res);
     } catch (err) {
@@ -225,20 +254,22 @@ async function handleCallbackQuery(update) {
     return;
   }
 
-  // ── Dismiss — restore original buttons ───────────────────────────────────
+  // ── Dismiss — restore original buttons by fetching current status ────────
   if (data.startsWith('dismiss_')) {
-    const orderId   = data.replace('dismiss_', '');
+    const orderId = data.replace('dismiss_', '');
     const cleanText = escapeHTML(query.message.text.split('\n\n⚠️')[0] || '');
 
-    const res = await editMessageText(chatId, msgId, cleanText, {
-      reply_markup: {
-        inline_keyboard: [[
-          { text: '✅ Tasdiqlash',    callback_data: `approve_${orderId}` },
-          { text: '❌ Bekor qilish', callback_data: `cancel_${orderId}` },
-        ]],
-      },
-    });
-    if (!res.ok) console.error('[Bot] editMessageText dismiss failed:', res);
+    try {
+      const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+      const { data: order } = await supabase.from('miniapp_orders').select('status').eq('id', orderId).single();
+      
+      const res = await editMessageText(chatId, msgId, cleanText, {
+        reply_markup: { inline_keyboard: getButtonsForStatus(order?.status || 'pending', orderId) },
+      });
+      if (!res.ok) console.error('[Bot] editMessageText dismiss failed:', res);
+    } catch (err) {
+      console.error('[Bot] Dismiss error:', err);
+    }
     return;
   }
 
