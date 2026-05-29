@@ -57,6 +57,9 @@ const CuratedLibraryManager = lazy(() => import("./pages/admin/CuratedLibraryMan
 // Bot Sales
 const BotLayout = lazy(() => import("./pages/admin/bot/BotLayout"));
 const OrdersManager = lazy(() => import("./pages/admin/bot/OrdersManager"));
+const BotCustomers = lazy(() => import("./pages/admin/bot/BotCustomers"));
+const BotStats = lazy(() => import("./pages/admin/bot/BotStats"));
+const BotBroadcast = lazy(() => import("./pages/admin/bot/BotBroadcast"));
 
 const queryClient = new QueryClient();
 
@@ -301,6 +304,9 @@ const AppInner = () => {
             }
           >
             <Route index element={<Lazy component={OrdersManager} />} />
+            <Route path="customers" element={<Lazy component={BotCustomers} />} />
+            <Route path="stats" element={<Lazy component={BotStats} />} />
+            <Route path="broadcast" element={<Lazy component={BotBroadcast} />} />
           </Route>
 
           <Route path="*" element={<Lazy component={NotFound} />} />
