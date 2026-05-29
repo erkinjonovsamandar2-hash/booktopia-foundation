@@ -80,6 +80,8 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState(null);
+  const [geoCoords, setGeoCoords] = useState(null);
+  const [geoLoading, setGeoLoading] = useState(false);
 
   // Pre-fill from Telegram user data
   useEffect(() => {
@@ -124,6 +126,8 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
           name:              name || tgUser?.first_name || 'Noma\'lum',
           phone:             phone.replace(/\D/g, ''),
           address:           address || null,
+          lat:               geoCoords?.lat ?? null,
+          lng:               geoCoords?.lng ?? null,
           payment_method:    payment,
           telegram_user_id:  tgUser?.id ?? null,
           telegram_username: tgUser?.username ?? null,
@@ -292,10 +296,40 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
                   )}
                 </div>
 
-                {/* Address */}
+                {/* Address + Geolocation */}
                 <div className="input-group">
-                  <label className="input-label">{t('address')}</label>
-                  <input className="input" value={address} onChange={e => setAddress(e.target.value)} placeholder={t('addressPh')} />
+                  <label className="input-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>{t('address')}</span>
+                    <motion.button
+                      type="button"
+                      onClick={async () => {
+                        if (!navigator.geolocation) return;
+                        setGeoLoading(true);
+                        navigator.geolocation.getCurrentPosition(
+                          (pos) => {
+                            const { latitude: lat, longitude: lng } = pos.coords;
+                            setGeoCoords({ lat, lng });
+                            setAddress(`📍 GPS: ${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+                            haptic('success');
+                            setGeoLoading(false);
+                          },
+                          () => { setGeoLoading(false); haptic('error'); },
+                          { timeout: 8000 }
+                        );
+                      }}
+                      whileTap={{ scale: 0.9 }}
+                      style={{
+                        background: geoCoords ? '#EBF8F0' : 'var(--surface-2)',
+                        border: 'none', borderRadius: 8, padding: '4px 10px',
+                        fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                        color: geoCoords ? '#38A169' : 'var(--text-2)',
+                        display: 'flex', alignItems: 'center', gap: 4,
+                      }}
+                    >
+                      {geoLoading ? '⏳' : geoCoords ? '✅ GPS' : '📍 GPS olish'}
+                    </motion.button>
+                  </label>
+                  <input className="input" value={address} onChange={e => { setAddress(e.target.value); if (!e.target.value.startsWith('📍 GPS')) setGeoCoords(null); }} placeholder={t('addressPh')} />
                 </div>
 
                 {/* Payment */}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Package, Phone, MapPin, CreditCard, ChevronDown, ChevronUp, Search, Filter, Download } from "lucide-react";
+import { Package, Phone, MapPin, CreditCard, ChevronDown, ChevronUp, Search, Filter, Download, Trash2 } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface OrderItem { book_id: string; title: string; price: number; qty: number; }
@@ -33,6 +33,7 @@ const STATUS_META: Record<string, { label: string; color: string; bg: string }> 
   delivering: { label: "Yetkazilmoqda", color: "#805AD5", bg: "#FAF5FF" },
   delivered:  { label: "Yetkazildi",    color: "#38A169", bg: "#EBF8F0" },
   cancelled:  { label: "Bekor qilindi", color: "#E53E3E", bg: "#FFF5F5" },
+  archived:   { label: "Arxivlandi",    color: "#9ca3af", bg: "#F3F4F6" },
 };
 
 const STATUS_TABS = [
@@ -138,10 +139,11 @@ function StatusBadge({ status }: { status: string }) {
 
 // ── Order Row / Card ───────────────────────────────────────────────────────────
 function OrderRow({
-  order, expanded, onToggle, working, onAction
+  order, expanded, onToggle, working, onAction, onArchive
 }: {
   order: Order; expanded: boolean; onToggle: () => void;
   working: boolean; onAction: (o: Order, nextStatus: string, label: string) => void;
+  onArchive: (o: Order) => void;
 }) {
   const actions = NEXT_ACTION_LABELS[order.status] ?? [];
   const firstItem = order.items?.[0];
@@ -263,6 +265,22 @@ function OrderRow({
               ))}
             </div>
           )}
+
+          {/* Archive button */}
+          <div style={{ marginTop: 10, borderTop: "1px solid #f3f4f6", paddingTop: 10 }}>
+            <button
+              onClick={() => onArchive(order)}
+              disabled={working}
+              style={{
+                display: "flex", alignItems: "center", gap: 5,
+                padding: "6px 12px", borderRadius: 8, border: "1px solid #e5e7eb",
+                background: "#fff", color: "#9ca3af", fontWeight: 600, fontSize: 12,
+                cursor: "pointer", opacity: working ? 0.6 : 1,
+              }}
+            >
+              <Trash2 style={{ width: 13, height: 13 }} /> Arxivlash (Yashirish)
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -331,8 +349,26 @@ export default function OrdersManager() {
     setConfirm(null);
   }, []);
 
+  // ── Archive order (soft delete — sets status to 'archived') ─────────────
+  const archiveOrder = useCallback(async (order: Order) => {
+    if (!confirm(`"${order.full_name}" ning buyurtmasini arxivlaysizmi? Bu buyurtma statistikaga kirmaydi.`)) return;
+    setWorking(true);
+    try {
+      const { error } = await (supabase as any)
+        .from("miniapp_orders")
+        .update({ status: "archived" })
+        .eq("id", order.id);
+      if (error) throw error;
+      showToast(`Arxivlandi: ${order.full_name}`);
+    } catch (err: any) {
+      showToast(`Xatolik: ${err.message}`, "error");
+    }
+    setWorking(false);
+  }, []);
+
   // ── Filter logic ──────────────────────────────────────────────────────────
   const filtered = orders.filter((o) => {
+    if (o.status === "archived" && tab !== "archived") return false; // hide archived unless on archived tab
     const matchTab = tab === "all" || o.status === tab;
     const q = search.toLowerCase();
     const matchSearch = !q ||
@@ -469,6 +505,7 @@ export default function OrdersManager() {
               onToggle={() => setExpanded(expanded === order.id ? null : order.id)}
               working={working}
               onAction={(o, ns, label) => setConfirm({ order: o, nextStatus: ns, label })}
+              onArchive={archiveOrder}
             />
           ))}
           <p style={{ textAlign: "center", color: "#9ca3af", fontSize: 12, marginTop: 12 }}>

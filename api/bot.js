@@ -167,17 +167,26 @@ async function handleCallbackQuery(update) {
   await answerCallback(query.id);
 
   // ── Helper for dynamic buttons based on status ────────────────────────────
+  const escapeHTML = (str) => String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
   const getButtonsForStatus = (status, orderId) => {
     if (status === 'pending') {
-      return [[
-        { text: '✅ Tasdiqlash', callback_data: `approve_${orderId}` },
-        { text: '❌ Bekor qilish', callback_data: `cancel_${orderId}` }
-      ]];
+      return [
+        [
+          { text: '✅ Tasdiqlash', callback_data: `approve_${orderId}` },
+          { text: '❌ Bekor qilish', callback_data: `cancel_${orderId}` }
+        ],
+        [
+          { text: '🙋‍♂️ O\'zim olaman', callback_data: `assign_${orderId}` },
+          { text: '📤 Kuryer nusxasi', callback_data: `slip_${orderId}` },
+        ]
+      ];
     } else if (status === 'approved') {
       return [
         [{ text: "🚚 Yo'lda", callback_data: `delivering_${orderId}` },
          { text: "📦 Yetkazildi", callback_data: `delivered_${orderId}` }],
-        [{ text: "❌ Bekor qilish", callback_data: `cancel_${orderId}` }]
+        [{ text: "❌ Bekor qilish", callback_data: `cancel_${orderId}` },
+         { text: '📤 Kuryer nusxasi', callback_data: `slip_${orderId}` }]
       ];
     } else if (status === 'delivering') {
       return [[
@@ -273,12 +282,69 @@ async function handleCallbackQuery(update) {
     return;
   }
 
+  // ── Admin assign to self ──────────────────────────────────────────────────
+  if (data.startsWith('assign_')) {
+    const orderId = data.replace('assign_', '');
+    const cleanText = escapeHTML(query.message.text.split('\n\n⚠️')[0] || '');
+    const assignLine = `\n\n👨‍💻 <b>Mas'ul:</b> ${escapeHTML(adminName)} qabul qildi.`;
+    try {
+      await editMessageText(chatId, msgId, cleanText + assignLine, {
+        reply_markup: { inline_keyboard: getButtonsForStatus('pending', orderId) },
+      });
+    } catch (err) { console.error('[Bot] Assign error:', err); }
+    return;
+  }
+
+  // ── Courier slip ─────────────────────────────────────────────────────────
+  if (data.startsWith('slip_')) {
+    const orderId = data.replace('slip_', '');
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) { return; }
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+    const { data: order } = await supabase.from('miniapp_orders')
+      .select('full_name, phone, delivery_address, total_uzs, items')
+      .eq('id', orderId).single();
+    if (!order) { return; }
+    const shortId = orderId.slice(0, 8).toUpperCase();
+    const itemLines = (order.items || []).map(i => `• ${i.title} × ${i.qty}`).join('\n');
+    const slipText = `📋 <b>Kuryer nusxasi — #${shortId}</b>\n\n` +
+      `👤 ${order.full_name}\n📞 ${order.phone}\n📍 ${order.delivery_address || 'Ko\'rsatilmagan'}\n\n` +
+      `${itemLines}\n\n💰 Jami: <b>${Number(order.total_uzs).toLocaleString()} so'm</b>`;
+    await sendMessage(chatId, slipText);
+    return;
+  }
+
   // ── Simple callbacks ──────────────────────────────────────────────────────
   if (data === 'help') {
     await handleHelp(chatId);
-  } else if (data === 'home' || data === 'my_orders') {
+  } else if (data === 'home') {
     await sendMessage(chatId, "Ilovani oching 👇", {
       reply_markup: { inline_keyboard: [[{ text: "📖 Ilovani ochish", web_app: { url: WEBAPP_URL } }]] }
+    });
+  } else if (data === 'my_orders') {
+    const userId = query.from.id;
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) { return; }
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+    const { data: orders } = await supabase.from('miniapp_orders')
+      .select('id, status, total_uzs, created_at, items')
+      .eq('telegram_user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(5);
+    if (!orders || orders.length === 0) {
+      await sendMessage(userId, '📦 Sizda hali buyurtmalar yo\'q.\n\nKitob tanlash uchun ilovani oching 👇', {
+        reply_markup: { inline_keyboard: [[{ text: '📖 Kitoblarni ko\'rish', web_app: { url: WEBAPP_URL } }]] }
+      });
+      return;
+    }
+    const statusEmoji = { pending: '⏳', approved: '✅', delivering: '🚚', delivered: '📦', cancelled: '❌' };
+    const statusLabel = { pending: 'Kutilmoqda', approved: 'Tasdiqlandi', delivering: 'Yo\'lda', delivered: 'Yetkazildi', cancelled: 'Bekor' };
+    let msg = `📦 <b>So'nggi buyurtmalaringiz:</b>\n\n`;
+    orders.forEach((o, i) => {
+      const s = o.status || 'pending';
+      msg += `${i+1}. ${statusEmoji[s] || '⏳'} <b>${statusLabel[s] || s}</b> — ${Number(o.total_uzs).toLocaleString()} so'm\n`;
+      msg += `   Sana: ${new Date(o.created_at).toLocaleDateString('uz-UZ')}\n\n`;
+    });
+    await sendMessage(userId, msg, {
+      reply_markup: { inline_keyboard: [[{ text: '📖 Ilovani ochish', web_app: { url: WEBAPP_URL } }]] }
     });
   }
 }
@@ -314,9 +380,9 @@ async function handleAdminCommand(msg) {
 
   if (cmd === '/pending') {
     const { data: pendingOrders } = await supabase.from('miniapp_orders')
-      .select('id, full_name, phone, total_price, created_at')
+      .select('id, full_name, phone, total_uzs, created_at')
       .eq('status', 'pending')
-      .order('created_at', { ascending: true }) // Oldest first to prioritize them
+      .order('created_at', { ascending: true })
       .limit(10);
       
     if (!pendingOrders || pendingOrders.length === 0) {
@@ -331,7 +397,7 @@ async function handleAdminCommand(msg) {
     let pendingMsg = `⏳ <b>Kutilayotgan buyurtmalar (${totalPending} ta):</b>\n\n`;
     pendingOrders.forEach((o, i) => {
        pendingMsg += `${i+1}. 👤 <b>${o.full_name}</b> (${o.phone})\n`;
-       pendingMsg += `   💰 ${Number(o.total_price).toLocaleString()} so'm | 🕒 ${new Date(o.created_at).toLocaleTimeString('uz-UZ', {timeZone: 'Asia/Tashkent'})}\n\n`;
+       pendingMsg += `   💰 ${Number(o.total_uzs).toLocaleString()} so'm | 🕒 ${new Date(o.created_at).toLocaleTimeString('uz-UZ', {timeZone: 'Asia/Tashkent'})}\n\n`;
     });
     
     if (totalPending > 10) {
@@ -347,10 +413,10 @@ async function handleAdminCommand(msg) {
     const { count: totalOrders } = await supabase.from('miniapp_orders').select('*', { count: 'exact', head: true });
     
     const { data: revData } = await supabase.from('miniapp_orders')
-      .select('total_price')
+      .select('total_uzs')
       .in('status', ['approved', 'delivering', 'delivered']);
     
-    const totalRev = revData ? revData.reduce((acc, curr) => acc + (Number(curr.total_price) || 0), 0) : 0;
+    const totalRev = revData ? revData.reduce((acc, curr) => acc + (Number(curr.total_uzs) || 0), 0) : 0;
 
     const statsMsg = `📊 <b>Guruhdagi tezkor statistika</b>\n\n` +
       `📦 Barcha buyurtmalar: <b>${totalOrders || 0} ta</b>\n` +
@@ -367,7 +433,7 @@ async function handleAdminCommand(msg) {
        return;
     }
     const { data: orders } = await supabase.from('miniapp_orders')
-      .select('id, full_name, total_price, status, created_at')
+      .select('id, full_name, total_uzs, status, created_at')
       .ilike('phone', `%${phone}%`)
       .order('created_at', { ascending: false })
       .limit(5);
@@ -380,7 +446,7 @@ async function handleAdminCommand(msg) {
     let searchMsg = `🔍 <b>Natija: ${phone}</b>\n\n`;
     orders.forEach((o, i) => {
        const statusEmoji = o.status === 'delivered' ? '📦' : o.status === 'cancelled' ? '❌' : o.status === 'pending' ? '⏳' : '🚚';
-       searchMsg += `👤 ${o.full_name} — ${Number(o.total_price).toLocaleString()} so'm\n`;
+       searchMsg += `👤 ${o.full_name} — ${Number(o.total_uzs).toLocaleString()} so'm\n`;
        searchMsg += `Holati: ${statusEmoji} ${o.status.toUpperCase()} | Sana: ${new Date(o.created_at).toLocaleDateString()}\n\n`;
     });
     
@@ -404,6 +470,28 @@ export default async function handler(req, res) {
 
       // Check if message is from the Admin Group
       if (ADMIN_GROUP_ID && msg.chat.id.toString() === ADMIN_GROUP_ID.toString()) {
+        // Direct reply forwarding — if admin replies to an order message, forward the text to the customer
+        if (msg.reply_to_message && !text.startsWith('/')) {
+          const originalText = msg.reply_to_message.text || '';
+          const orderIdMatch = originalText.match(/#([a-f0-9]{8})/i);
+          if (orderIdMatch && SUPABASE_URL && SUPABASE_SERVICE_KEY) {
+            const shortId = orderIdMatch[1].toLowerCase();
+            const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+            const { data: orders } = await supabase.from('miniapp_orders')
+              .select('telegram_user_id, full_name')
+              .ilike('id', `${shortId}%`)
+              .limit(1);
+            const order = orders?.[0];
+            if (order?.telegram_user_id) {
+              const adminMsg = `📩 <b>Menejerdan xabar:</b>\n\n${text}`;
+              await sendMessage(order.telegram_user_id, adminMsg);
+              // Confirm to admin that it was sent
+              await sendMessage(chatId, `✅ Xabar <b>${order.full_name}</b> ga yuborildi.`);
+            }
+          }
+          return res.status(200).json({ ok: true });
+        }
+
         if (text.startsWith('/')) {
           await handleAdminCommand(msg);
         }

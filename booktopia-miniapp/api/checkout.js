@@ -36,6 +36,8 @@ export default async function handler(req, res) {
     name,
     phone,
     address,
+    lat,
+    lng,
     payment_method,
     telegram_user_id,
     telegram_username,
@@ -116,11 +118,15 @@ export default async function handler(req, res) {
         ? `\n👤 TG: <a href="tg://user?id=${telegram_user_id}">${name || 'Mijoz'}${tgHandle}</a>`
         : '';
 
+      const mapLink = (lat && lng)
+        ? `\n📍 <a href="https://yandex.uz/maps/?ll=${lng},${lat}&z=16&pt=${lng},${lat}">Xaritada ko'rish</a>`
+        : '';
+
       const text =
         `🛒 <b>Yangi buyurtma! #${shortId}</b>\n\n` +
         `👤 Ism: <b>${name || 'Noma\'lum'}</b>${tgLink}\n` +
         `📞 Tel: <code>${phone}</code>\n` +
-        (address ? `📍 Manzil: ${address}\n` : `📍 Manzil: Ko'rsatilmagan\n`) +
+        (address ? `📍 Manzil: ${address}${mapLink}\n` : `📍 Manzil: Ko'rsatilmagan\n`) +
         `💳 To'lov: ${PAYMENT_LABELS[payment_method] || payment_method}\n\n` +
         `📚 <b>Buyurtma:</b>\n${itemLines}\n\n` +
         `💰 <b>Jami: ${total_uzs.toLocaleString('ru-RU')} so'm</b>`;
@@ -133,10 +139,16 @@ export default async function handler(req, res) {
           text,
           parse_mode: 'HTML',
           reply_markup: {
-            inline_keyboard: [[
-              { text: '✅ Tasdiqlash', callback_data: `approve_${order.id}` },
-              { text: '❌ Bekor qilish', callback_data: `cancel_${order.id}` },
-            ]],
+            inline_keyboard: [
+              [
+                { text: '✅ Tasdiqlash',    callback_data: `approve_${order.id}` },
+                { text: '❌ Bekor qilish', callback_data: `cancel_${order.id}` },
+              ],
+              [
+                { text: '🙋‍♂️ O\'zim olaman',  callback_data: `assign_${order.id}` },
+                { text: '📤 Kuryer nusxasi', callback_data: `slip_${order.id}` },
+              ],
+            ],
           },
         }),
       });
