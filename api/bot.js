@@ -283,6 +283,80 @@ async function handleCallbackQuery(update) {
   }
 }
 
+// ── Admin Helper Commands ─────────────────────────────────────────────────────
+async function handleAdminCommand(msg) {
+  const text = msg.text || '';
+  const chatId = msg.chat.id;
+
+  // Clean the command (handles /stats@bot_username)
+  const cmd = text.split('@')[0].trim();
+
+  if (cmd === '/help') {
+    const helpMsg = `🛠 <b>Admin yordamchi buyruqlari</b>\n\n` +
+      `/stats - Savdo statistikasi\n` +
+      `/search [raqam] - Telefon bo'yicha qidirish\n` +
+      `/ping - Bot holatini tekshirish`;
+    await sendMessage(chatId, helpMsg);
+    return;
+  }
+
+  if (cmd === '/ping') {
+    await sendMessage(chatId, `🟢 Bot faol holatda. Server vaqti: ${new Date().toLocaleTimeString('uz-UZ', {timeZone: 'Asia/Tashkent'})}`);
+    return;
+  }
+
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+     await sendMessage(chatId, `🔴 Baza ulanmagan (Supabase keys missing)`);
+     return;
+  }
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+
+  if (cmd === '/stats') {
+    const { count: totalOrders } = await supabase.from('miniapp_orders').select('*', { count: 'exact', head: true });
+    
+    const { data: revData } = await supabase.from('miniapp_orders')
+      .select('total_price')
+      .in('status', ['approved', 'delivering', 'delivered']);
+    
+    const totalRev = revData ? revData.reduce((acc, curr) => acc + (Number(curr.total_price) || 0), 0) : 0;
+
+    const statsMsg = `📊 <b>Guruhdagi tezkor statistika</b>\n\n` +
+      `📦 Barcha buyurtmalar: <b>${totalOrders || 0} ta</b>\n` +
+      `💰 Tasdiqlangan tushum: <b>${totalRev.toLocaleString()} so'm</b>\n\n` +
+      `<i>Batafsil ma'lumot Dashboard'ning Statistika bo'limida.</i>`;
+    await sendMessage(chatId, statsMsg);
+    return;
+  }
+
+  if (cmd.startsWith('/search')) {
+    const phone = text.replace('/search', '').split('@')[0].trim();
+    if (!phone) {
+       await sendMessage(chatId, `⚠️ Kiritish xato. Namuna:\n/search 998901234567`);
+       return;
+    }
+    const { data: orders } = await supabase.from('miniapp_orders')
+      .select('id, full_name, total_price, status, created_at')
+      .ilike('phone', `%${phone}%`)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    if (!orders || orders.length === 0) {
+       await sendMessage(chatId, `❌ Ushbu raqam bo'yicha topilmadi.`);
+       return;
+    }
+
+    let searchMsg = `🔍 <b>Natija: ${phone}</b>\n\n`;
+    orders.forEach((o, i) => {
+       const statusEmoji = o.status === 'delivered' ? '📦' : o.status === 'cancelled' ? '❌' : o.status === 'pending' ? '⏳' : '🚚';
+       searchMsg += `👤 ${o.full_name} — ${Number(o.total_price).toLocaleString()} so'm\n`;
+       searchMsg += `Holati: ${statusEmoji} ${o.status.toUpperCase()} | Sana: ${new Date(o.created_at).toLocaleDateString()}\n\n`;
+    });
+    
+    await sendMessage(chatId, searchMsg);
+    return;
+  }
+}
+
 // ── Main webhook handler ──────────────────────────────────────────────────────
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -296,6 +370,15 @@ export default async function handler(req, res) {
       const msg  = update.message;
       const text = msg.text || '';
 
+      // Check if message is from the Admin Group
+      if (ADMIN_GROUP_ID && msg.chat.id.toString() === ADMIN_GROUP_ID.toString()) {
+        if (text.startsWith('/')) {
+          await handleAdminCommand(msg);
+        }
+        return res.status(200).json({ ok: true });
+      }
+
+      // Regular user commands
       if (text === '/start') {
         await handleStart({ from: msg.from });
       } else {
