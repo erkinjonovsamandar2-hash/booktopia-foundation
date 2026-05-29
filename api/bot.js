@@ -294,6 +294,7 @@ async function handleAdminCommand(msg) {
   if (cmd === '/help') {
     const helpMsg = `🛠 <b>Admin yordamchi buyruqlari</b>\n\n` +
       `/stats - Savdo statistikasi\n` +
+      `/pending - Tasdiqlanmagan buyurtmalar\n` +
       `/search [raqam] - Telefon bo'yicha qidirish\n` +
       `/ping - Bot holatini tekshirish`;
     await sendMessage(chatId, helpMsg);
@@ -310,6 +311,37 @@ async function handleAdminCommand(msg) {
      return;
   }
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+
+  if (cmd === '/pending') {
+    const { data: pendingOrders } = await supabase.from('miniapp_orders')
+      .select('id, full_name, phone, total_price, created_at')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true }) // Oldest first to prioritize them
+      .limit(10);
+      
+    if (!pendingOrders || pendingOrders.length === 0) {
+      await sendMessage(chatId, `✅ <b>Ajoyib!</b> Tasdiqlanmagan (kutilayotgan) buyurtmalar yo'q.`);
+      return;
+    }
+
+    const { count: totalPending } = await supabase.from('miniapp_orders')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'pending');
+
+    let pendingMsg = `⏳ <b>Kutilayotgan buyurtmalar (${totalPending} ta):</b>\n\n`;
+    pendingOrders.forEach((o, i) => {
+       pendingMsg += `${i+1}. 👤 <b>${o.full_name}</b> (${o.phone})\n`;
+       pendingMsg += `   💰 ${Number(o.total_price).toLocaleString()} so'm | 🕒 ${new Date(o.created_at).toLocaleTimeString('uz-UZ', {timeZone: 'Asia/Tashkent'})}\n\n`;
+    });
+    
+    if (totalPending > 10) {
+       pendingMsg += `<i>...va yana ${totalPending - 10} ta buyurtma bor.</i>\n`;
+    }
+    pendingMsg += `\n<i>Guruhdagi xabarlarni topib tasdiqlang yoki bekor qiling!</i>`;
+    
+    await sendMessage(chatId, pendingMsg);
+    return;
+  }
 
   if (cmd === '/stats') {
     const { count: totalOrders } = await supabase.from('miniapp_orders').select('*', { count: 'exact', head: true });
