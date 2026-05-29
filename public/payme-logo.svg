@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" width="200" height="60">
+  <!-- Payme logo: blue wordmark with green P icon -->
+  <!-- "P" circle icon -->
+  <circle cx="30" cy="30" r="26" fill="#00AAFF"/>
+  <text x="30" y="39" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="30" fill="white">P</text>
+  <!-- "ayme" text -->
+  <text x="65" y="40" font-family="Arial, sans-serif" font-weight="700" font-size="28" fill="#00AAFF">ayme</text>
+</svg>
