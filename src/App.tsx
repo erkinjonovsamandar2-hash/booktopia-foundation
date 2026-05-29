@@ -19,6 +19,8 @@ import GlobalEffects from "@/components/GlobalEffects";
 import Navbar from "@/components/Navbar";
 import ScrollToTop from "@/components/ScrollToTop";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import MiniCart from "@/components/MiniCart";
+import { CartProvider } from "@/context/CartContext";
 
 // ── STATIC IMPORTS (critical path — must be instant for FCP) ─────────────────
 import Index from "./pages/Index";
@@ -39,6 +41,7 @@ const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
+const AdminModeSelect = lazy(() => import("./pages/admin/AdminModeSelect"));
 const BookManager = lazy(() => import("./pages/admin/BookManager"));
 const BlogManager = lazy(() => import("./pages/admin/BlogManager"));
 const QuizManager = lazy(() => import("./pages/admin/QuizManager"));
@@ -51,6 +54,9 @@ const HeroOrderManager = lazy(() => import("./pages/admin/HeroOrderManager"));
 const Hamkorlar = lazy(() => import("./pages/Hamkorlar"));
 const PartnerManager = lazy(() => import("./pages/admin/PartnerManager"));
 const CuratedLibraryManager = lazy(() => import("./pages/admin/CuratedLibraryManager"));
+// Bot Sales
+const BotLayout = lazy(() => import("./pages/admin/bot/BotLayout"));
+const OrdersManager = lazy(() => import("./pages/admin/bot/OrdersManager"));
 
 const queryClient = new QueryClient();
 
@@ -178,6 +184,7 @@ const AppInner = () => {
       <ScrollToTop />
       <GlobalEffects />
       <Navbar />
+      <MiniCart />
 
       {/* FIX: AnimatePresence wraps AnimatedRoutes DIRECTLY as its only child.
           No Suspense between AnimatePresence and Routes — the pipeline can
@@ -246,6 +253,19 @@ const AppInner = () => {
             path="/admin/login"
             element={<Lazy component={AdminLogin} />}
           />
+          {/* Mode select (after login) */}
+          <Route
+            path="/admin/select"
+            element={
+              <Suspense fallback={<SuspenseFallback />}>
+                <RequireAdmin>
+                  <AdminModeSelect />
+                </RequireAdmin>
+              </Suspense>
+            }
+          />
+
+          {/* CMS Admin */}
           <Route
             path="/admin"
             element={
@@ -267,6 +287,20 @@ const AppInner = () => {
             <Route path="hero-order" element={<Lazy component={HeroOrderManager} />} />
             <Route path="partners" element={<Lazy component={PartnerManager} />} />
             <Route path="curated" element={<Lazy component={CuratedLibraryManager} />} />
+          </Route>
+
+          {/* Bot Sales Admin */}
+          <Route
+            path="/admin/bot"
+            element={
+              <Suspense fallback={<SuspenseFallback />}>
+                <RequireAdmin>
+                  <BotLayout />
+                </RequireAdmin>
+              </Suspense>
+            }
+          >
+            <Route index element={<Lazy component={OrdersManager} />} />
           </Route>
 
           <Route path="*" element={<Lazy component={NotFound} />} />
@@ -292,15 +326,17 @@ const App = () => {
           <DataProvider>
             <LanguageProvider>
               <TooltipProvider>
-                <div className="min-h-screen bg-background text-foreground transition-colors duration-500">
-                  <Toaster />
-                  <Sonner />
-                  <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-                    <AppLoader>
-                      <AppInner />
-                    </AppLoader>
-                  </BrowserRouter>
-                </div>
+                <CartProvider>
+                  <div className="min-h-screen bg-background text-foreground transition-colors duration-500">
+                    <Toaster />
+                    <Sonner />
+                    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                      <AppLoader>
+                        <AppInner />
+                      </AppLoader>
+                    </BrowserRouter>
+                  </div>
+                </CartProvider>
               </TooltipProvider>
             </LanguageProvider>
           </DataProvider>

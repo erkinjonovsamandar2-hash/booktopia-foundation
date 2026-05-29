@@ -19,7 +19,7 @@ const AdminLogin = () => {
 
   useEffect(() => {
     if (awaitingRedirect && user) {
-      navigate("/admin", { replace: true });
+      navigate("/admin/select", { replace: true });
     }
   }, [awaitingRedirect, user, navigate]);
 
