@@ -218,7 +218,7 @@ async function handleCallbackQuery(update) {
     } catch (err) {
       console.error('[Bot] Confirm callback error:', err);
       const cleanText = escapeHTML(query.message.text.split('\n\n⚠️')[0] || '');
-      await editMessageText(chatId, msgId, cleanText + '\n\n🔴 Xatolik yuz berdi.', {
+      await editMessageText(chatId, msgId, cleanText + '\n\n🔴 Xatolik yuz berdi: ' + escapeHTML(err.message || 'Noma\'lum xato'), {
         reply_markup: { inline_keyboard: [] },
       });
     }
