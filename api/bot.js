@@ -166,25 +166,33 @@ async function handleCallbackQuery(update) {
 
   await answerCallback(query.id);
 
+  // ── Helper to prevent HTML parsing errors from original text ──────────────
+  const escapeHTML = (str) => str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
   // ── STEP 1: First click — ask for confirmation ────────────────────────────
   if (data.startsWith('approve_') || data.startsWith('cancel_')) {
     const isApprove = data.startsWith('approve_');
     const orderId   = data.replace(/^(approve_|cancel_)/, '');
     const emoji     = isApprove ? '✅' : '❌';
     const actionLabel = isApprove ? 'Tasdiqlash' : 'Bekor qilish';
-    const originalText = query.message.text;
+    const originalText = escapeHTML(query.message.text || '');
 
-    await editMessageText(chatId, msgId,
-      originalText + `\n\n⚠️ <b>${adminName}</b> ${actionLabel.toLowerCase()}ni tasdiqlayapti...`,
-      {
-        reply_markup: {
-          inline_keyboard: [[
-            { text: `${emoji} Ha, ${actionLabel}`, callback_data: `confirm_${isApprove ? 'approve' : 'cancel'}_${orderId}` },
-            { text: "↩️ Yo'q, qaytish",            callback_data: `dismiss_${orderId}` },
-          ]],
-        },
-      }
-    );
+    try {
+      const res = await editMessageText(chatId, msgId,
+        originalText + `\n\n⚠️ <b>${escapeHTML(adminName)}</b> ${actionLabel.toLowerCase()}ni tasdiqlayapti...`,
+        {
+          reply_markup: {
+            inline_keyboard: [[
+              { text: `${emoji} Ha, ${actionLabel}`, callback_data: `confirm_${isApprove ? 'approve' : 'cancel'}_${orderId}` },
+              { text: "↩️ Yo'q, qaytish",            callback_data: `dismiss_${orderId}` },
+            ]],
+          },
+        }
+      );
+      if (!res.ok) console.error('[Bot] editMessageText step 1 failed:', res);
+    } catch (err) {
+      console.error('[Bot] Step 1 exception:', err);
+    }
     return;
   }
 
@@ -198,17 +206,18 @@ async function handleCallbackQuery(update) {
       await updateOrderStatus(orderId, newStatus);
 
       // Strip the confirmation warning from message text
-      const cleanText = query.message.text.split('\n\n⚠️')[0];
+      const cleanText = escapeHTML(query.message.text.split('\n\n⚠️')[0] || '');
       const resultLine = isApprove
         ? '\n\n✅ <b>Tasdiqlandi.</b> Mijozga xabar yuborildi.'
         : '\n\n❌ <b>Bekor qilindi.</b> Mijozga xabar yuborildi.';
 
-      await editMessageText(chatId, msgId, cleanText + resultLine, {
+      const res = await editMessageText(chatId, msgId, cleanText + resultLine, {
         reply_markup: { inline_keyboard: [] },
       });
+      if (!res.ok) console.error('[Bot] editMessageText step 2 failed:', res);
     } catch (err) {
       console.error('[Bot] Confirm callback error:', err);
-      const cleanText = query.message.text.split('\n\n⚠️')[0];
+      const cleanText = escapeHTML(query.message.text.split('\n\n⚠️')[0] || '');
       await editMessageText(chatId, msgId, cleanText + '\n\n🔴 Xatolik yuz berdi.', {
         reply_markup: { inline_keyboard: [] },
       });
@@ -219,9 +228,9 @@ async function handleCallbackQuery(update) {
   // ── Dismiss — restore original buttons ───────────────────────────────────
   if (data.startsWith('dismiss_')) {
     const orderId   = data.replace('dismiss_', '');
-    const cleanText = query.message.text.split('\n\n⚠️')[0];
+    const cleanText = escapeHTML(query.message.text.split('\n\n⚠️')[0] || '');
 
-    await editMessageText(chatId, msgId, cleanText, {
+    const res = await editMessageText(chatId, msgId, cleanText, {
       reply_markup: {
         inline_keyboard: [[
           { text: '✅ Tasdiqlash',    callback_data: `approve_${orderId}` },
@@ -229,6 +238,7 @@ async function handleCallbackQuery(update) {
         ]],
       },
     });
+    if (!res.ok) console.error('[Bot] editMessageText dismiss failed:', res);
     return;
   }
 
