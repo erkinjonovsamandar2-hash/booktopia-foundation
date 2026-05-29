@@ -1,4 +1,4 @@
-// api/bot.js — Vercel Serverless Webhook for @booktopia_shop_bot
+// api/bot.js — Vercel Serverless Webhook for @Booktopiapress_bot
 // Architecture: Vercel (webhook) + Supabase (orders) + Upstash Redis (user store)
 
 import { Redis } from '@upstash/redis';
