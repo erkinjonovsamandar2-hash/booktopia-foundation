@@ -3,8 +3,21 @@ import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { useCart } from '../context/CartContext';
 import { formatPrice, haptic, tg } from '../lib/utils';
-import { supabase } from '../lib/supabase';
-import { CreditCard, DeviceMobile, Money } from '@phosphor-icons/react';
+import { Money } from '@phosphor-icons/react';
+
+// ── Phone mask helper ─────────────────────────────────────────────────────────
+// Always formats as +998 (XX) XXX-XX-XX, returns raw and display values
+const maskPhone = (raw) => {
+  let digits = raw.replace(/\D/g, '');
+  if (digits.startsWith('998')) digits = digits.slice(3);
+  digits = digits.slice(0, 9);
+  let out = '+998 ';
+  if (digits.length > 0) out += '(' + digits.slice(0, 2);
+  if (digits.length >= 2) out += ') ' + digits.slice(2, 5);
+  if (digits.length >= 5) out += '-' + digits.slice(5, 7);
+  if (digits.length >= 7) out += '-' + digits.slice(7, 9);
+  return { display: out, digits };
+};
 
 const PaymeLogo = () => (
   <svg width="34" height="20" viewBox="0 0 74 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -61,11 +74,12 @@ const overlayFade   = { duration: 0.22 };
 export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
   const { items, totalPrice, clearCart, addItem } = useCart();
   const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
+  const [phone, setPhone] = useState('+998 ');
   const [address, setAddress] = useState('');
   const [payment, setPayment] = useState('payme');
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+  const [error, setError] = useState(null);
 
   // Pre-fill from Telegram user data
   useEffect(() => {
@@ -81,48 +95,62 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
     : items;
 
   const total = orderItems.reduce((s, i) => s + (i.price || 0) * i.qty, 0);
-  const canSubmit = phone.trim().length >= 9 && !loading;
+  const phoneDigits = maskPhone(phone).digits;
+  const canSubmit = phoneDigits.length === 9 && !loading;
+
+  const handlePhoneChange = (e) => {
+    const { display } = maskPhone(e.target.value);
+    setPhone(display);
+  };
 
   const handleConfirm = async () => {
     if (!canSubmit) return;
     haptic('medium');
     setLoading(true);
+    setError(null);
 
     try {
       const tgUser = tg()?.initDataUnsafe?.user;
 
-      await supabase.from('miniapp_orders').insert({
-        telegram_user_id: tgUser?.id ?? null,
-        telegram_username: tgUser?.username ?? null,
-        full_name: name || tgUser?.first_name || 'Noma\'lum',
-        phone: phone.trim(),
-        items: orderItems.map(i => ({
-          book_id: i.id,
-          title: i.title,
-          price: i.price,
-          qty: i.qty,
-        })),
-        total_uzs: total,
-        payment_method: payment,
-        delivery_address: address || null,
-        status: 'pending',
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: orderItems.map(i => ({
+            book_id: i.id,
+            title:   i.title,
+            qty:     i.qty,
+          })),
+          name:              name || tgUser?.first_name || 'Noma\'lum',
+          phone:             phone.replace(/\D/g, ''),
+          address:           address || null,
+          payment_method:    payment,
+          telegram_user_id:  tgUser?.id ?? null,
+          telegram_username: tgUser?.username ?? null,
+        }),
       });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Checkout failed');
 
       clearCart();
       haptic('success');
       setDone(true);
-      
-      // Fire confetti celebration
+
       confetti({
         particleCount: 100,
         spread: 70,
         origin: { y: 0.6 },
         colors: ['#38A169', '#00CDFE', '#D5AD36']
       });
-      
+
     } catch (err) {
       console.error('[Checkout]', err);
-      setDone(true);
+      setError(
+        lang === 'ru' ? 'Xatolik yuz berdi. Qayta urining.' :
+        lang === 'en' ? 'An error occurred. Please try again.' :
+        'Xatolik yuz berdi. Qayta urining.'
+      );
     } finally {
       setLoading(false);
     }
@@ -244,7 +272,24 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
                 {/* Phone */}
                 <div className="input-group">
                   <label className="input-label">{t('phone')}</label>
-                  <input className="input" type="tel" inputMode="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder={t('phonePh')} autoFocus />
+                  <input
+                    className="input"
+                    type="tel"
+                    inputMode="numeric"
+                    value={phone}
+                    onChange={handlePhoneChange}
+                    placeholder="+998 (XX) XXX-XX-XX"
+                    style={{
+                      fontFamily: 'monospace',
+                      letterSpacing: '0.04em',
+                      borderColor: phoneDigits.length > 0 && phoneDigits.length < 9 ? 'var(--discount)' : undefined,
+                    }}
+                  />
+                  {phoneDigits.length > 0 && phoneDigits.length < 9 && (
+                    <p style={{ fontSize: 11, color: 'var(--discount)', marginTop: 4, fontWeight: 600 }}>
+                      {9 - phoneDigits.length} ta raqam qoldi
+                    </p>
+                  )}
                 </div>
 
                 {/* Address */}
@@ -282,14 +327,34 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
                   </div>
                 </div>
 
+                {error && (
+                  <p style={{ fontSize: 12, color: 'var(--discount)', textAlign: 'center', fontWeight: 600 }}>
+                    ⚠️ {error}
+                  </p>
+                )}
+
                 <motion.button
                   className="btn-primary"
                   onClick={handleConfirm}
                   disabled={!canSubmit}
                   whileTap={canSubmit ? { scale: 0.97, y: 1 } : {}}
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                  style={{ opacity: canSubmit ? 1 : 0.5 }}
                 >
-                  {loading ? '...' : t('confirm')}
+                  {loading
+                    ? (
+                      <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                          <line x1="12" y1="2" x2="12" y2="6" /><line x1="12" y1="18" x2="12" y2="22" />
+                          <line x1="4.93" y1="4.93" x2="7.76" y2="7.76" /><line x1="16.24" y1="16.24" x2="19.07" y2="19.07" />
+                          <line x1="2" y1="12" x2="6" y2="12" /><line x1="18" y1="12" x2="22" y2="12" />
+                          <line x1="4.93" y1="19.07" x2="7.76" y2="16.24" /><line x1="16.24" y1="7.76" x2="19.07" y2="4.93" />
+                        </svg>
+                        Yuborilmoqda...
+                      </span>
+                    )
+                    : t('confirm')
+                  }
                 </motion.button>
               </motion.div>
             )}
