@@ -22,7 +22,7 @@ const T = {
 
 export default function Cart() {
   const navigate = useNavigate();
-  const { items, removeItem, updateQty, clearCart, totalPrice, totalCount } = useCart();
+  const { items, removeItem, incrementQty, decrementQty, clearCart, totalPrice, totalCount } = useCart();
   const { lang } = useLang();
   const [showSheet, setShowSheet] = useState(false);
 
@@ -68,8 +68,8 @@ export default function Cart() {
               item={item}
               lang={lang}
               onRemove={() => { haptic('light'); removeItem(item.id); }}
-              onQtyUp={() => { haptic('light'); updateQty(item.id, item.qty + 1); }}
-              onQtyDown={() => { haptic('light'); updateQty(item.id, item.qty - 1); }}
+              onQtyUp={() => { haptic('light'); incrementQty(item.id); }}
+              onQtyDown={() => { haptic('light'); decrementQty(item.id); }}
             />
           ))}
         </div>
