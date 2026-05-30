@@ -125,6 +125,7 @@ function SwipeableCartItem({ item, lang, onRemove, onQtyUp, onQtyDown }) {
   const x = useMotionValue(0);
   const deleteOpacity = useTransform(x, [-80, -40], [1, 0]);
   const itemOpacity   = useTransform(x, [-80, 0], [0.6, 1]);
+  const pointerEvents = useTransform(x, [-50, -40], ['auto', 'none']);
 
   const handleDragEnd = (_, info) => {
     if (info.offset.x < -70) {
@@ -147,6 +148,8 @@ function SwipeableCartItem({ item, lang, onRemove, onQtyUp, onQtyDown }) {
           background: 'var(--discount)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           opacity: deleteOpacity,
+          pointerEvents: pointerEvents,
+          zIndex: 1,
         }}
       >
         <button
@@ -163,7 +166,7 @@ function SwipeableCartItem({ item, lang, onRemove, onQtyUp, onQtyDown }) {
         dragConstraints={{ left: -80, right: 0 }}
         dragElastic={{ left: 0.1, right: 0.1 }}
         onDragEnd={handleDragEnd}
-        style={{ x, opacity: itemOpacity, touchAction: 'pan-y', background: 'var(--surface)' }}
+        style={{ x, opacity: itemOpacity, touchAction: 'pan-y', background: 'var(--surface)', zIndex: 10, position: 'relative' }}
       >
         <div style={{ display: 'flex', gap: 12, padding: '14px 16px', alignItems: 'center' }}>
           {/* Cover thumbnail */}
