@@ -10,6 +10,7 @@ import { useData } from "@/context/DataContext";
 import { motion, useScroll, useSpring } from "framer-motion";
 import BookCover from "@/components/BookCover";
 import ExcerptReader from "@/components/ExcerptReader";
+import { useCart } from "@/context/CartContext";
 
 
 function ScrollProgress() {
@@ -33,6 +34,7 @@ const BookDetails = () => {
   const navigate = useNavigate();
   const { lang } = useLang();
   const { books, newBooks } = useData();
+  const { addItem, items, openMiniCart } = useCart();
 
   if (!slugParam) return null;
 
@@ -199,9 +201,44 @@ const BookDetails = () => {
 
                 {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4 mt-auto w-full">
-                  <button className="btn-glass px-10 py-4 sm:px-12 sm:py-5 text-white dark:text-white w-full sm:w-auto justify-center">
-                    Xarid qilish
-                  </button>
+                  {(() => {
+                    const inCart = book ? items.find((i) => i.id === book.id) : null;
+                    return (
+                      <button
+                        id="book-add-to-cart-btn"
+                        className={`btn-add-to-cart px-10 py-4 sm:px-12 sm:py-5 w-full sm:w-auto justify-center${inCart ? " in-cart" : ""}`}
+                        onClick={() => {
+                          if (inCart) {
+                            openMiniCart();
+                          } else {
+                            addItem(book!);
+                          }
+                        }}
+                      >
+                        {inCart ? (
+                          <>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                              aria-hidden="true">
+                              <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
+                              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                            </svg>
+                            Savatchada {inCart.qty} ta — ko'rish
+                          </>
+                        ) : (
+                          <>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                              aria-hidden="true">
+                              <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
+                              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                            </svg>
+                            Savatchaga qo'shish
+                          </>
+                        )}
+                      </button>
+                    );
+                  })()}
                   <ExcerptReader book={book} />
                 </div>
               </div>

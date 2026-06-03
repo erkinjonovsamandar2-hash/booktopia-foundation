@@ -1,6 +1,8 @@
+import { useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { BrowserRouter } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
+import confetti from 'canvas-confetti';
 import { CartProvider } from './context/CartContext';
 import { LangProvider, useLang } from './context/LangContext';
 import { ToastProvider } from './context/ToastContext';
@@ -27,6 +29,43 @@ if (window.Telegram?.WebApp) {
 function AppRoutes() {
   const { lang } = useLang();
   const location = useLocation();
+
+  // ── Payment return URL handler ──────────────────────────────────────────────
+  // When Payme / Click redirect back to the miniapp they append:
+  //   ?payment=success&order_id=<uuid>
+  // We detect this on mount, show a confirmation banner, then clean the URL.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('payment') === 'success') {
+      const orderId = params.get('order_id') ?? '';
+      // Fire confetti to celebrate the completed payment
+      confetti({
+        particleCount: 120,
+        spread: 80,
+        origin: { y: 0.55 },
+        colors: ['#38A169', '#00CDFE', '#D5AD36'],
+      });
+
+      // Clean up the URL so the banner won't re-trigger on back-nav
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, '', cleanUrl);
+
+      // Show a Telegram popup if available, otherwise alert
+      const msg =
+        lang === 'ru' ? 'Оплата прошла успешно! Ваш заказ подтверждён.' :
+        lang === 'en' ? 'Payment successful! Your order is confirmed.' :
+                        "To'lov muvaffaqiyatli! Buyurtmangiz tasdiqlandi.";
+
+      if (window.Telegram?.WebApp?.showPopup) {
+        window.Telegram.WebApp.showPopup({
+          title: lang === 'ru' ? 'Оплата подтверждена' : lang === 'en' ? 'Payment Confirmed' : "To'lov tasdiqlandi",
+          message: msg,
+          buttons: [{ type: 'ok' }],
+        });
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <>

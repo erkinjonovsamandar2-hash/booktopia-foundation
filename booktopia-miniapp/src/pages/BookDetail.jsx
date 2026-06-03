@@ -32,7 +32,14 @@ export default function BookDetail() {
   const [readMore, setReadMore] = useState(false);
 
   useEffect(() => {
-    supabase.from('books').select('*').eq('id', id).maybeSingle()
+    // The URL param may be a full slug like "title-words-{uuid}" or a bare UUID.
+    // Supabase's id column is UUID type — passing a non-UUID string causes a 400.
+    // We extract the UUID by grabbing the last 36 characters if the param is longer.
+    const UUID_RE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const match = id.match(UUID_RE);
+    const bookId = match ? match[0] : id;
+
+    supabase.from('books').select('*').eq('id', bookId).maybeSingle()
       .then(({ data }) => { if (data) setBook(data); })
       .finally(() => setLoading(false));
   }, [id]);

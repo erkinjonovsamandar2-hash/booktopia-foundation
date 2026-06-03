@@ -79,6 +79,7 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
   const [payment, setPayment] = useState('payme');
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+  const [redirecting, setRedirecting] = useState(false); // true while opening payment gateway
   const [error, setError] = useState(null);
   const [geoCoords, setGeoCoords] = useState(null);
   const [geoLoading, setGeoLoading] = useState(false);
@@ -141,12 +142,30 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
       haptic('success');
       setDone(true);
 
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#38A169', '#00CDFE', '#D5AD36']
-      });
+      // ── For online payments: open the gateway then let user return ──────────
+      const paymentUrl = data.payme_url || data.click_url;
+      if (paymentUrl) {
+        setRedirecting(true);
+        // Short delay so the user sees the "Redirecting" state
+        setTimeout(() => {
+          // tg().openLink opens inside TG's in-app browser.
+          // Falls back to window.open for desktop / web preview.
+          if (tg()?.openLink) {
+            tg().openLink(paymentUrl);
+          } else {
+            window.open(paymentUrl, '_blank');
+          }
+          setRedirecting(false);
+        }, 600);
+      } else {
+        // Cash — just show confetti celebration
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#38A169', '#00CDFE', '#D5AD36'],
+        });
+      }
 
     } catch (err) {
       console.error('[Checkout]', err);
@@ -201,7 +220,7 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
         <div className="sheet__body">
           <AnimatePresence mode="wait">
             {done ? (
-              /* ── Success state ── */
+              /* ── Success / Redirecting state ── */
               <motion.div
                 key="success"
                 initial={{ opacity: 0, scale: 0.85 }}
@@ -210,34 +229,78 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
                 className="success-screen"
                 style={{ minHeight: 'auto', padding: '24px 0' }}
               >
-                <div className="success-screen__icon" style={{ background: 'transparent' }}>
-                  <svg width="80" height="80" viewBox="0 0 52 52">
-                    <motion.circle
-                      cx="26" cy="26" r="25" fill="#EBF8F0"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-                    />
-                    <motion.path
-                      d="M15 27.2l7.1 7.2 15.7-15.8"
-                      fill="none" stroke="#38A169" strokeWidth="4" strokeLinecap="round"
-                      initial={{ pathLength: 0, opacity: 0 }}
-                      animate={{ pathLength: 1, opacity: 1 }}
-                      transition={{ duration: 0.5, delay: 0.2, ease: 'easeOut' }}
-                    />
-                  </svg>
-                </div>
-                <h2 style={{ fontSize: 20 }}>{t('success')}</h2>
-                <p style={{ color: 'var(--text-2)', fontSize: 14, lineHeight: 1.5 }}>{t('successDesc')}</p>
-                <motion.button
-                  className="btn-primary"
-                  style={{ marginTop: 8 }}
-                  onClick={onClose}
-                  whileTap={{ scale: 0.96, y: 1 }}
-                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                >
-                  {t('close')}
-                </motion.button>
+                {redirecting ? (
+                  /* ── Payment gateway redirect pending ── */
+                  <>
+                    <div style={{ fontSize: 52, textAlign: 'center', marginBottom: 12 }}>
+                      {payment === 'payme' ? '🏦' : '💳'}
+                    </div>
+                    <h2 style={{ fontSize: 18, textAlign: 'center' }}>
+                      {payment === 'payme' ? 'Payme' : 'Click'}
+                      {lang === 'ru' ? ' открывается...' : lang === 'en' ? ' opening...' : ' ochilmoqda...'}
+                    </h2>
+                    <p style={{ color: 'var(--text-2)', fontSize: 13, textAlign: 'center', lineHeight: 1.5 }}>
+                      {lang === 'ru'
+                        ? 'Вы будете перенаправлены на страницу оплаты.'
+                        : lang === 'en'
+                        ? "You'll be redirected to the payment page."
+                        : "To'lov sahifasiga yo'naltirilasiz."}
+                    </p>
+                    {/* Animated spinner */}
+                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                        style={{
+                          width: 28, height: 28,
+                          border: '3px solid var(--surface-2)',
+                          borderTopColor: 'var(--blue-500)',
+                          borderRadius: '50%',
+                        }}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  /* ── Order confirmed (cash, or after gateway return) ── */
+                  <>
+                    <div className="success-screen__icon" style={{ background: 'transparent' }}>
+                      <svg width="80" height="80" viewBox="0 0 52 52">
+                        <motion.circle
+                          cx="26" cy="26" r="25" fill="#EBF8F0"
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+                        />
+                        <motion.path
+                          d="M15 27.2l7.1 7.2 15.7-15.8"
+                          fill="none" stroke="#38A169" strokeWidth="4" strokeLinecap="round"
+                          initial={{ pathLength: 0, opacity: 0 }}
+                          animate={{ pathLength: 1, opacity: 1 }}
+                          transition={{ duration: 0.5, delay: 0.2, ease: 'easeOut' }}
+                        />
+                      </svg>
+                    </div>
+                    <h2 style={{ fontSize: 20, textAlign: 'center' }}>{t('success')}</h2>
+                    <p style={{ color: 'var(--text-2)', fontSize: 14, lineHeight: 1.5, textAlign: 'center' }}>
+                      {payment === 'cash'
+                        ? t('successDesc')
+                        : lang === 'ru'
+                        ? 'Оплата прошла успешно! Ваш заказ подтверждён.'
+                        : lang === 'en'
+                        ? 'Payment successful! Your order is confirmed.'
+                        : "To'lov muvaffaqiyatli! Buyurtmangiz tasdiqlandi."}
+                    </p>
+                    <motion.button
+                      className="btn-primary"
+                      style={{ marginTop: 8 }}
+                      onClick={onClose}
+                      whileTap={{ scale: 0.96, y: 1 }}
+                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                    >
+                      {t('close')}
+                    </motion.button>
+                  </>
+                )}
               </motion.div>
             ) : (
               /* ── Form ── */

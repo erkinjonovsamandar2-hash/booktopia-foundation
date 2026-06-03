@@ -11,6 +11,7 @@ import Footer from "@/components/Footer";
 import EmptyState from "@/components/EmptyState";
 import librarySeal from "@/assets/design/library-seal.png";
 import { getBookSlug } from "@/lib/slugify";
+import { useCart } from "@/context/CartContext";
 
 // ── Local Categories Configuration ────────────────────────────────────────────
 const CATEGORIES = ["all", "jahon", "ilmiy", "new", "amir-temur", "erkin-millat"] as const;
@@ -62,6 +63,7 @@ const getCategoryLabel = (key: string, lang: string): string => {
 const LibraryPage = () => {
   const { books } = useData();
   const { lang } = useLang();
+  const { addItem, items, openMiniCart } = useCart();
 
   const [active, setActive] = useState<string>("all");
   const [currentIndex, setCurrentIndex] = useState<number>(0);
@@ -295,10 +297,11 @@ const LibraryPage = () => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 20 }}
                     transition={{ duration: 0.3, delay: i * 0.05 }}
+                    className="relative"
                   >
                     <Link to={`/book/${getBookSlug(book)}`} className="h-full block">
-                      <SpotlightCard className="h-full p-3 md:p-4 group cursor-pointer">
-                        <div className="flex flex-col gap-4 h-full">
+                      <SpotlightCard className="h-full p-3 md:p-4 pb-10 group cursor-pointer">
+                        <div className="flex flex-col gap-3 h-full">
 
                           <BookCover
                             src={book.cover_url}
@@ -313,15 +316,47 @@ const LibraryPage = () => {
                             <h3 className="font-heading font-black tracking-tight text-base md:text-[17px] text-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors">
                               {locField(book, "title", lang)}
                             </h3>
-                            <span className="w-8 h-[1.5px] bg-primary/30 my-3 transition-all duration-500 group-hover:w-16 group-hover:bg-primary" />
+                            <span className="w-8 h-[1.5px] bg-primary/30 my-2 transition-all duration-500 group-hover:w-16 group-hover:bg-primary" />
                             <p className="text-[10px] font-bold text-muted-foreground tracking-[0.15em] uppercase">
                               {locField(book, "author", lang)}
                             </p>
+                            {book.price && (
+                              <p className="text-[10px] font-bold mt-1" style={{color:'hsl(var(--gold))'}}>
+                                {book.price.toLocaleString()} so'm
+                              </p>
+                            )}
                           </div>
 
                         </div>
                       </SpotlightCard>
                     </Link>
+
+                    {/* Always-visible cart button — touch-friendly */}
+                    {(() => {
+                      const inCart = items.find((ci) => ci.id === book.id);
+                      return (
+                        <button
+                          id={`add-cart-${book.id}`}
+                          className={`book-cart-btn${inCart ? ' in-cart' : ''}`}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (inCart) openMiniCart();
+                            else addItem(book);
+                          }}
+                          aria-label={inCart ? `Savatchada ${inCart.qty} ta — ochish` : "Savatchaga qo'shish"}
+                        >
+                          {inCart ? (
+                            <>✔️ {inCart.qty}</>
+                          ) : (
+                            <>
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                              Savat
+                            </>
+                          )}
+                        </button>
+                      );
+                    })()}
                   </motion.div>
                 ))}
               </AnimatePresence>

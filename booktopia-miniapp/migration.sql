@@ -81,3 +81,29 @@ CREATE INDEX IF NOT EXISTS idx_miniapp_orders_status    ON miniapp_orders(status
 CREATE INDEX IF NOT EXISTS idx_miniapp_orders_tg_user   ON miniapp_orders(telegram_user_id);
 CREATE INDEX IF NOT EXISTS idx_miniapp_orders_created   ON miniapp_orders(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_miniapp_events_order_id  ON miniapp_order_events(order_id);
+
+-- ============================================================
+-- Payment Gateway Columns (Phase 1 — additive, safe to run)
+-- Adds payment_status separate from order status so we can
+-- track gateway confirmation independently of delivery status.
+-- ============================================================
+
+-- payment_status: pending_payment | paid | failed | refunded
+ALTER TABLE miniapp_orders
+  ADD COLUMN IF NOT EXISTS payment_status TEXT DEFAULT 'pending_payment';
+
+-- Gateway transaction IDs (populated by Phase 2 webhooks)
+ALTER TABLE miniapp_orders
+  ADD COLUMN IF NOT EXISTS payme_transaction_id TEXT;   -- from Payme webhook
+ALTER TABLE miniapp_orders
+  ADD COLUMN IF NOT EXISTS click_transaction_id  TEXT;  -- from Click webhook
+
+-- Index for payment status lookups
+CREATE INDEX IF NOT EXISTS idx_miniapp_orders_payment_status
+  ON miniapp_orders(payment_status);
+
+-- Backfill: cash orders that already exist are considered "paid on delivery"
+UPDATE miniapp_orders
+  SET payment_status = 'paid'
+  WHERE payment_method = 'cash'
+    AND payment_status = 'pending_payment';

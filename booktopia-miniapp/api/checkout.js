@@ -4,13 +4,22 @@
 // • Fetches real book prices from Supabase (anon can't fake prices)
 // • Inserts order using service_role key
 // • Fires admin notification to Telegram group with Approve/Cancel buttons
+// • Generates Payme & Click payment redirect URLs server-side (merchant IDs
+//   never exposed to the browser)
 
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL        = process.env.VITE_SUPABASE_URL;
+const SUPABASE_URL         = process.env.VITE_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
-const BOT_TOKEN           = process.env.BOT_TOKEN;
-const ADMIN_GROUP_ID      = process.env.ADMIN_GROUP_ID;
+const BOT_TOKEN            = process.env.BOT_TOKEN;
+const ADMIN_GROUP_ID       = process.env.ADMIN_GROUP_ID;
+
+// ── Payment gateway credentials (set in Vercel env / .env) ───────────────────
+const PAYME_MERCHANT_ID  = process.env.PAYME_MERCHANT_ID  || '';   // from merchant.payme.uz
+const CLICK_MERCHANT_ID  = process.env.CLICK_MERCHANT_ID  || '';   // from merchant.click.uz
+const CLICK_SERVICE_ID   = process.env.CLICK_SERVICE_ID   || '';   // from merchant.click.uz
+// Base URL of the miniapp — used as the return_url after payment
+const MINIAPP_URL        = process.env.MINIAPP_URL || 'https://booktopia-miniapp.vercel.app';
 
 const TG_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
@@ -19,6 +28,41 @@ const PAYMENT_LABELS = {
   click: 'Click',
   cash:  'Naqd pul (yetkazganda)',
 };
+
+// ── Payme checkout URL builder ────────────────────────────────────────────────
+// Docs: https://developer.help.paycom.uz/ru/initsializatsiya-platezhey/
+// Params encoded as "key=value" pairs separated by ";", then base64 encoded.
+// Amount must be in tiyins (so'm × 100).
+function buildPaymeUrl(orderId, amountUzs, lang = 'uz') {
+  if (!PAYME_MERCHANT_ID) return null;
+  const amountTiyins = amountUzs * 100;
+  const returnUrl = `${MINIAPP_URL}/?payment=success&order_id=${orderId}`;
+  const params = [
+    `m=${PAYME_MERCHANT_ID}`,
+    `ac.order_id=${orderId}`,
+    `a=${amountTiyins}`,
+    `l=${lang}`,
+    `c=${encodeURIComponent(returnUrl)}`,
+  ].join(';');
+  const encoded = Buffer.from(params).toString('base64');
+  return `https://checkout.paycom.uz/${encoded}`;
+}
+
+// ── Click checkout URL builder ────────────────────────────────────────────────
+// Docs: https://docs.click.uz/en/click-api-request/
+// Amount in so'm (not tiyins). transaction_param is our order reference.
+function buildClickUrl(orderId, amountUzs) {
+  if (!CLICK_MERCHANT_ID || !CLICK_SERVICE_ID) return null;
+  const returnUrl = encodeURIComponent(`${MINIAPP_URL}/?payment=success&order_id=${orderId}`);
+  return (
+    `https://my.click.uz/services/pay` +
+    `?service_id=${CLICK_SERVICE_ID}` +
+    `&merchant_id=${CLICK_MERCHANT_ID}` +
+    `&amount=${amountUzs}` +
+    `&transaction_param=${orderId}` +
+    `&return_url=${returnUrl}`
+  );
+}
 
 export default async function handler(req, res) {
   // CORS headers for miniapp origin
@@ -105,6 +149,10 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Failed to create order' });
   }
 
+  // ── Build payment redirect URLs (server-side — merchant IDs never leave server) ──
+  const payme_url = payment_method === 'payme' ? buildPaymeUrl(order.id, total_uzs) : null;
+  const click_url = payment_method === 'click' ? buildClickUrl(order.id, total_uzs) : null;
+
   // ── Admin Telegram notification ───────────────────────────────────────────
   if (BOT_TOKEN && ADMIN_GROUP_ID) {
     try {
@@ -158,5 +206,10 @@ export default async function handler(req, res) {
     }
   }
 
-  return res.status(200).json({ ok: true, order_id: order.id });
+  return res.status(200).json({
+    ok:        true,
+    order_id:  order.id,
+    payme_url, // null when payment_method !== 'payme' or credentials missing
+    click_url, // null when payment_method !== 'click' or credentials missing
+  });
 }

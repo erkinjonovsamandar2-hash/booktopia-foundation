@@ -162,6 +162,47 @@ const Footer = () => {
         </div>
       </div>
 
+      {/* ZONE 1.5 - Payment methods bar */}
+      <div className="w-full px-[2.25rem] py-[1.25rem] border-t border-[rgba(255,255,255,0.06)] flex flex-col sm:flex-row items-center justify-between gap-4">
+        <span className="font-sans text-[0.65rem] font-bold tracking-[0.18em] text-[rgba(255,255,255,0.28)] uppercase select-none">
+          To‘lov usullari
+        </span>
+        <div className="flex items-center gap-3">
+          {/* Payme */}
+          <a
+            href="https://payme.uz"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Payme orqali to'lash"
+            className="flex items-center h-8 px-3 rounded-[6px] bg-white/[0.07] hover:bg-white/[0.13] transition-all duration-200 border border-white/[0.08]"
+          >
+            <img
+              src="/payme-logo.png"
+              alt="Payme"
+              className="h-[18px] w-auto object-contain brightness-[1.15] saturate-[0.9]"
+              loading="lazy"
+              decoding="async"
+            />
+          </a>
+          {/* Click */}
+          <a
+            href="https://click.uz"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Click orqali to'lash"
+            className="flex items-center h-8 px-3 rounded-[6px] bg-white/[0.07] hover:bg-white/[0.13] transition-all duration-200 border border-white/[0.08]"
+          >
+            <img
+              src="/click-logo.png"
+              alt="Click"
+              className="h-[18px] w-auto object-contain brightness-[1.1]"
+              loading="lazy"
+              decoding="async"
+            />
+          </a>
+        </div>
+      </div>
+
       {/* ZONE 2 - Copyright bar */}
       <div className="w-full bg-[#050B1A] py-[1rem] px-[2.25rem] flex flex-col md:flex-row justify-between items-center gap-3">
         <div className="font-sans text-[0.7rem] font-semibold tracking-[0.08em] text-[rgba(255,255,255,0.4)] uppercase text-center md:text-left">
