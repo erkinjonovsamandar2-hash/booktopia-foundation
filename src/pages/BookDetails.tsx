@@ -42,6 +42,12 @@ const BookDetails = () => {
   const cachedBook = books.find(b => b.slug === slugParam || b.id === slugParam) || 
                      (newBooks as any[]).find((b: any) => b.slug === slugParam || b.id === slugParam);
 
+  // Extract UUID from slug param — the slug may be "title-words-{uuid}" or a bare UUID.
+  // Passing a non-UUID string to a UUID column causes a Supabase 400 error.
+  const UUID_RE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const uuidMatch = slugParam.match(UUID_RE);
+  const bookId = uuidMatch ? uuidMatch[0] : null;
+
   // Fetch book from Supabase (runs in background if we have cachedBook)
   const { data: book, isLoading, error } = useQuery<Book>({
     queryKey: ["book", slugParam],
@@ -49,9 +55,9 @@ const BookDetails = () => {
       // 1. Try books table by slug
       let { data } = await (supabase as any).from("books").select("*").eq("slug", slugParam).maybeSingle();
       
-      // 2. Try books table by id (fallback for old links)
-      if (!data) {
-        const { data: idData } = await (supabase as any).from("books").select("*").eq("id", slugParam).maybeSingle();
+      // 2. Try books table by id (fallback for old links — only if param looks like/contains a UUID)
+      if (!data && bookId) {
+        const { data: idData } = await (supabase as any).from("books").select("*").eq("id", bookId).maybeSingle();
         data = idData;
       }
 
@@ -62,8 +68,8 @@ const BookDetails = () => {
       }
 
       // 4. Try new_books table by id
-      if (!data) {
-        const { data: newIdData } = await (supabase as any).from("new_books").select("*").eq("id", slugParam).maybeSingle();
+      if (!data && bookId) {
+        const { data: newIdData } = await (supabase as any).from("new_books").select("*").eq("id", bookId).maybeSingle();
         data = newIdData;
       }
 
