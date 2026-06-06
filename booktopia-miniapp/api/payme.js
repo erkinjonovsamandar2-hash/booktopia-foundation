@@ -18,7 +18,9 @@ import { createClient } from '@supabase/supabase-js';
 const SUPABASE_URL        = process.env.VITE_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 const PAYME_MERCHANT_ID   = process.env.PAYME_MERCHANT_ID || '';
-const PAYME_SECRET_KEY    = process.env.PAYME_SECRET_KEY  || '';
+const PAYME_SECRET_KEY    = process.env.PAYME_TEST_MODE === 'true'
+  ? (process.env.PAYME_TEST_SECRET_KEY || '')
+  : (process.env.PAYME_SECRET_KEY || '');
 
 // Payme error codes
 const ERROR = {

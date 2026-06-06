@@ -45,7 +45,10 @@ function buildPaymeUrl(orderId, amountUzs, lang = 'uz') {
     `c=${encodeURIComponent(returnUrl)}`,
   ].join(';');
   const encoded = Buffer.from(params).toString('base64');
-  return `https://checkout.paycom.uz/${encoded}`;
+  const baseUrl = process.env.PAYME_TEST_MODE === 'true' 
+    ? 'https://checkout.test.paycom.uz/' 
+    : 'https://checkout.paycom.uz/';
+  return `${baseUrl}${encoded}`;
 }
 
 // ── Click checkout URL builder ────────────────────────────────────────────────
