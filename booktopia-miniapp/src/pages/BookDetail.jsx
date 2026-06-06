@@ -18,6 +18,7 @@ const T = {
   noPrice:  { uz: 'Narxi so\'rash', ru: 'Узнать цену', en: 'Ask for price' },
   notFound: { uz: 'Kitob topilmadi', ru: 'Книга не найдена', en: 'Book not found' },
   excerpt:  { uz: 'Namuna o\'qish', ru: 'Читать фрагмент', en: 'Read excerpt' },
+  wholesaleOffer: { uz: '10+ xarid qiling, har biridan 5 000 so\'m tejab qoling!', ru: 'Купите 10+ и сэкономьте 5 000 сум на каждой!', en: 'Buy 10+ and save 5,000 UZS on each!' },
 };
 
 export default function BookDetail() {
@@ -111,13 +112,20 @@ export default function BookDetail() {
           </p>
 
           {/* Price */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
             {book.price ? (
               <span className="price" style={{ fontSize: 24 }}>{formatPrice(book.price)}</span>
             ) : (
               <span style={{ color: 'var(--text-2)', fontSize: 16, fontWeight: 700 }}>{t('noPrice')}</span>
             )}
           </div>
+          {book.price && (
+            <div style={{ marginBottom: 20 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, background: 'var(--discount)', color: '#fff', padding: '4px 8px', borderRadius: 6, fontWeight: 700 }}>
+                <span style={{ fontSize: 14 }}>🔥</span> {t('wholesaleOffer')}
+              </span>
+            </div>
+          )}
 
           {/* Description */}
           {desc && (

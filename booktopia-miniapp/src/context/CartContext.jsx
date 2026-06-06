@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { getEffectivePrice } from '../lib/utils';
 
 const CartContext = createContext(null);
 
@@ -45,7 +46,7 @@ export const CartProvider = ({ children }) => {
 
   const clearCart = () => setItems([]);
 
-  const totalPrice = items.reduce((sum, i) => sum + (i.price || 0) * i.qty, 0);
+  const totalPrice = items.reduce((sum, i) => sum + getEffectivePrice(i.price, i.qty) * i.qty, 0);
   const totalCount = items.reduce((sum, i) => sum + i.qty, 0);
 
   return (

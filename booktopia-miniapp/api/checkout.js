@@ -64,6 +64,12 @@ function buildClickUrl(orderId, amountUzs) {
   );
 }
 
+// Calculate effective price with wholesale discount (10+ items)
+function getEffectivePrice(price, qty) {
+  if (!price) return 0;
+  return qty >= 10 ? Math.max(0, price - 5000) : price;
+}
+
 export default async function handler(req, res) {
   // CORS headers for miniapp origin
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -117,11 +123,13 @@ export default async function handler(req, res) {
   // Build verified order items — prices come from DB, not the client
   const orderItems = items.map(item => {
     const book = priceMap[item.book_id];
+    const qty = Math.max(1, parseInt(item.qty) || 1);
+    const basePrice = book?.price || 0;
     return {
       book_id: item.book_id,
       title:   book?.title || item.title || 'Noma\'lum',
-      price:   book?.price || 0,
-      qty:     Math.max(1, parseInt(item.qty) || 1),
+      price:   getEffectivePrice(basePrice, qty),
+      qty:     qty,
     };
   });
 

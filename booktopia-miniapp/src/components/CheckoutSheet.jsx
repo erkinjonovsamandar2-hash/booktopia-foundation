@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { useCart } from '../context/CartContext';
-import { formatPrice, haptic, tg } from '../lib/utils';
+import { formatPrice, haptic, tg, getEffectivePrice } from '../lib/utils';
 import { Money } from '@phosphor-icons/react';
 
 // ── Phone mask helper ─────────────────────────────────────────────────────────
@@ -97,7 +97,7 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
     ? (items.find(i => i.id === book.id) ? items : [...items, { ...book, qty: 1 }])
     : items;
 
-  const total = orderItems.reduce((s, i) => s + (i.price || 0) * i.qty, 0);
+  const total = orderItems.reduce((s, i) => s + getEffectivePrice(i.price, i.qty) * i.qty, 0);
   const phoneDigits = maskPhone(phone).digits;
   const canSubmit = phoneDigits.length === 9 && !loading;
 
@@ -316,12 +316,15 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
 
                 {/* Order summary */}
                 <div style={{ background: 'var(--surface-2)', borderRadius: 12, padding: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {orderItems.map(item => (
-                    <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 600 }}>
-                      <span style={{ color: 'var(--text-1)' }}>{item[`title_${lang}`] || item.title} × {item.qty}</span>
-                      <span className="price" style={{ fontSize: 13 }}>{formatPrice((item.price || 0) * item.qty)}</span>
-                    </div>
-                  ))}
+                  {orderItems.map(item => {
+                    const price = getEffectivePrice(item.price, item.qty);
+                    return (
+                      <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 600 }}>
+                        <span style={{ color: 'var(--text-1)' }}>{item[`title_${lang}`] || item.title} × {item.qty}</span>
+                        <span className="price" style={{ fontSize: 13 }}>{formatPrice((price || 0) * item.qty)}</span>
+                      </div>
+                    );
+                  })}
                   {total > 0 && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, borderTop: '1px solid #DDE3EC', fontWeight: 800 }}>
                       <span>{t('total')}</span>

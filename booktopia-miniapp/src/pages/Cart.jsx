@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
 import { useCart } from '../context/CartContext';
 import { useLang } from '../context/LangContext';
-import { formatPrice, haptic } from '../lib/utils';
+import { formatPrice, haptic, getEffectivePrice } from '../lib/utils';
 import CheckoutSheet from '../components/CheckoutSheet';
 import PageTransition from '../components/PageTransition';
 import { ShoppingCart } from '@phosphor-icons/react';
@@ -181,9 +181,21 @@ function SwipeableCartItem({ item, lang, onRemove, onQtyUp, onQtyDown }) {
             <p style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.3, marginBottom: 2 }}>{title}</p>
             <p style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 600 }}>{author}</p>
             {item.price && (
-              <p className="price" style={{ fontSize: 14, marginTop: 6 }}>
-                {formatPrice(item.price * item.qty)}
-              </p>
+              <div style={{ marginTop: 6, display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                <p className="price" style={{ fontSize: 14 }}>
+                  {formatPrice(getEffectivePrice(item.price, item.qty) * item.qty)}
+                </p>
+                {item.qty >= 10 && (
+                  <span style={{ fontSize: 11, textDecoration: 'line-through', color: 'var(--text-3)', fontWeight: 600 }}>
+                    {formatPrice(item.price * item.qty)}
+                  </span>
+                )}
+              </div>
+            )}
+            {item.qty >= 10 && (
+              <span style={{ display: 'inline-block', fontSize: 10, background: 'var(--discount)', color: '#fff', padding: '2px 6px', borderRadius: 4, fontWeight: 700, marginTop: 4 }}>
+                Ulgurji narx
+              </span>
             )}
           </div>
 

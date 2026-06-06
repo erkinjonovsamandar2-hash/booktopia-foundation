@@ -11,6 +11,12 @@ export const locField = (obj, field, lang) => {
   return obj[field] || '';
 };
 
+// Calculate effective price with wholesale discount (10+ items)
+export const getEffectivePrice = (price, qty) => {
+  if (!price) return 0;
+  return qty >= 10 ? Math.max(0, price - 5000) : price;
+};
+
 // Truncate text
 export const truncate = (text, maxLen = 120) => {
   if (!text) return '';
