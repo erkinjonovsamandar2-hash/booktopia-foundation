@@ -149,7 +149,7 @@ async function performTransaction({ id }) {
 
   const { data: order, error } = await db
     .from('miniapp_orders')
-    .select('id, payment_status, total_uzs')
+    .select('id, payment_status, total_uzs, updated_at')
     .eq('payme_transaction_id', id)
     .maybeSingle();
 
@@ -158,23 +158,24 @@ async function performTransaction({ id }) {
   }
 
   if (order.payment_status === 'paid') {
-    // Already performed — idempotent response
+    // Already performed — idempotent response using saved updated_at timestamp
     return {
       result: {
         transaction: order.id,
-        perform_time: Date.now(),
+        perform_time: new Date(order.updated_at).getTime(),
         state: STATE.COMPLETED,
       },
     };
   }
 
   const performTime = Date.now();
+  const performDate = new Date(performTime).toISOString();
 
   // Mark order as paid
   await db.from('miniapp_orders').update({
     payment_status: 'paid',
     status: 'confirmed',   // auto-confirm paid orders
-    updated_at: new Date().toISOString(),
+    updated_at: performDate,
   }).eq('id', order.id);
 
   // Log the payment event
