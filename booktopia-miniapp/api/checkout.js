@@ -15,7 +15,10 @@ const BOT_TOKEN            = process.env.BOT_TOKEN;
 const ADMIN_GROUP_ID       = process.env.ADMIN_GROUP_ID;
 
 // ── Payment gateway credentials (set in Vercel env / .env) ───────────────────
-const PAYME_MERCHANT_ID  = process.env.PAYME_MERCHANT_ID  || '';   // from merchant.payme.uz
+const PAYME_TEST_MODE    = process.env.PAYME_TEST_MODE === 'true';
+const PAYME_MERCHANT_ID  = (PAYME_TEST_MODE && process.env.PAYME_TEST_MERCHANT_ID)
+  ? process.env.PAYME_TEST_MERCHANT_ID
+  : (process.env.PAYME_MERCHANT_ID || '');   // from merchant.payme.uz
 const CLICK_MERCHANT_ID  = process.env.CLICK_MERCHANT_ID  || '';   // from merchant.click.uz
 const CLICK_SERVICE_ID   = process.env.CLICK_SERVICE_ID   || '';   // from merchant.click.uz
 // Base URL of the miniapp — used as the return_url after payment
