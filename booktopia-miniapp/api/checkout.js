@@ -1,5 +1,5 @@
 // booktopia-miniapp/api/checkout.js
-// Secure server-side checkout handler for Booktopia MiniApp
+// Secure server-side checkout handler for Booktopia MiniApp (v1.0.1)
 // ─────────────────────────────────────────────────────────────────────────────
 // • Fetches real book prices from Supabase (anon can't fake prices)
 // • Inserts order using service_role key
