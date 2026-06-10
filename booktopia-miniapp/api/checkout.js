@@ -222,6 +222,5 @@ export default async function handler(req, res) {
     order_id:  order.id,
     payme_url, // null when payment_method !== 'payme' or credentials missing
     click_url, // null when payment_method !== 'click' or credentials missing
-    debug_env: process.env.PAYME_TEST_MODE || 'NOT_FOUND',
   });
 }
