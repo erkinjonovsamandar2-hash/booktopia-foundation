@@ -101,23 +101,56 @@ async function createTransaction({ id, time, amount, account }) {
   const check = await checkPerformTransaction({ account, amount });
   if (check.error) return check;
 
-  // Check if transaction already exists for this payme_transaction_id
-  const { data: existing } = await db
+  // Get current order status
+  const { data: order } = await db
     .from('miniapp_orders')
     .select('id, payment_status, payme_transaction_id')
-    .eq('payme_transaction_id', id)
+    .eq('id', orderId)
     .maybeSingle();
 
-  if (existing) {
-    // Already created — return same state
-    return {
-      result: {
-        create_time: time,
-        transaction: existing.id,
-        state: STATE.PENDING,
-      },
-    };
+  if (!order) {
+    return { error: { code: ERROR.ORDER_NOT_FOUND, message: { uz: 'Buyurtma topilmadi', ru: 'Заказ не найден', en: 'Order not found' } } };
   }
+
+  // If there is already a transaction ID associated with the order:
+  if (order.payme_transaction_id) {
+    if (order.payme_transaction_id === id) {
+      // Same transaction ID — return success (idempotency)
+      if (order.payment_status === 'paid') {
+        return { error: { code: ERROR.UNABLE_TO_PERFORM, message: { uz: 'Tranzaksiya yakunlangan', ru: 'Транзакция завершена', en: 'Transaction completed' } } };
+      }
+      if (order.payment_status === 'failed') {
+        return { error: { code: ERROR.UNABLE_TO_PERFORM, message: { uz: 'Tranzaksiya bekor qilingan', ru: 'Транзакция отменена', en: 'Transaction cancelled' } } };
+      }
+
+      // Query the create time from the events to be completely accurate
+      const { data: createEvent } = await db
+        .from('miniapp_order_events')
+        .select('created_at')
+        .eq('order_id', order.id)
+        .eq('status', 'payment_pending')
+        .maybeSingle();
+
+      return {
+        result: {
+          create_time: createEvent ? new Date(createEvent.created_at).getTime() : time,
+          transaction: order.id,
+          state: STATE.PENDING,
+        },
+      };
+    } else {
+      // Different transaction ID:
+      if (order.payment_status === 'pending_payment') {
+        return { error: { code: ERROR.UNABLE_TO_PERFORM, message: { uz: 'Aktiv tranzaksiya mavjud', ru: 'Есть активная транзакция', en: 'Active transaction exists' } } };
+      }
+      if (order.payment_status === 'paid') {
+        return { error: { code: ERROR.UNABLE_TO_PERFORM, message: { uz: 'Buyurtma allaqachon to\'langan', ru: 'Заказ уже оплачен', en: 'Order already paid' } } };
+      }
+      // If it is failed, we let it overwrite and create a new transaction
+    }
+  }
+
+  const now = new Date().toISOString();
 
   // Save transaction ID to the order
   const { error: updateError } = await db
@@ -125,7 +158,7 @@ async function createTransaction({ id, time, amount, account }) {
     .update({
       payme_transaction_id: id,
       payment_status: 'pending_payment',
-      updated_at: new Date().toISOString(),
+      updated_at: now,
     })
     .eq('id', orderId);
 
@@ -134,9 +167,17 @@ async function createTransaction({ id, time, amount, account }) {
     return { error: { code: ERROR.UNABLE_TO_PERFORM, message: { uz: 'Server xatosi', ru: 'Ошибка сервера', en: 'Server error' } } };
   }
 
+  // Insert a create event so we can track the create time
+  await db.from('miniapp_order_events').insert({
+    order_id: order.id,
+    status: 'payment_pending',
+    note: `Payme tranzaksiya yaratildi: ${id}`,
+    created_at: now,
+  });
+
   return {
     result: {
-      create_time: time,
+      create_time: new Date(now).getTime(),
       transaction: orderId,
       state: STATE.PENDING,
     },
@@ -276,6 +317,13 @@ async function checkTransaction({ id }) {
     return { error: { code: ERROR.TRANSACTION_NOT_FOUND, message: { uz: 'Tranzaksiya topilmadi', ru: 'Транзакция не найдена', en: 'Transaction not found' } } };
   }
 
+  const { data: createEvent } = await db
+    .from('miniapp_order_events')
+    .select('created_at')
+    .eq('order_id', order.id)
+    .eq('status', 'payment_pending')
+    .maybeSingle();
+
   const { data: payEvent } = await db
     .from('miniapp_order_events')
     .select('created_at')
@@ -285,13 +333,22 @@ async function checkTransaction({ id }) {
 
   const { data: cancelEvent } = await db
     .from('miniapp_order_events')
-    .select('created_at')
+    .select('created_at, note')
     .eq('order_id', order.id)
     .eq('status', 'payment_cancelled')
     .maybeSingle();
 
+  const create_time = createEvent ? new Date(createEvent.created_at).getTime() : new Date(order.created_at).getTime();
   const perform_time = payEvent ? new Date(payEvent.created_at).getTime() : 0;
   const cancel_time = cancelEvent ? new Date(cancelEvent.created_at).getTime() : 0;
+
+  let reason = null;
+  if (cancelEvent && cancelEvent.note) {
+    const match = cancelEvent.note.match(/Sabab:\s*(\d+)/);
+    if (match) {
+      reason = parseInt(match[1], 10);
+    }
+  }
 
   let state = STATE.PENDING;
   if (cancelEvent) {
@@ -302,12 +359,12 @@ async function checkTransaction({ id }) {
 
   return {
     result: {
-      create_time: new Date(order.created_at).getTime(),
+      create_time,
       perform_time,
       cancel_time,
       transaction: order.id,
       state,
-      reason: null,
+      reason,
     },
   };
 }
