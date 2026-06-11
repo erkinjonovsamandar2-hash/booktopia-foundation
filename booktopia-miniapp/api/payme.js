@@ -62,7 +62,7 @@ async function checkPerformTransaction({ account, amount }) {
   const db = supabase();
   const orderId = account?.order_id;
   if (!orderId) {
-    return { error: { code: ERROR.ORDER_NOT_FOUND, message: { uz: 'Buyurtma topilmadi', ru: 'Заказ не найден', en: 'Order not found' } } };
+    return { error: { code: ERROR.ORDER_NOT_FOUND, message: { uz: 'Buyurtma topilmadi', ru: 'Заказ не найден', en: 'Order not found' }, data: 'order_id' } };
   }
 
   const { data: order, error } = await db
@@ -72,15 +72,15 @@ async function checkPerformTransaction({ account, amount }) {
     .single();
 
   if (error || !order) {
-    return { error: { code: ERROR.ORDER_NOT_FOUND, message: { uz: 'Buyurtma topilmadi', ru: 'Заказ не найден', en: 'Order not found' } } };
+    return { error: { code: ERROR.ORDER_NOT_FOUND, message: { uz: 'Buyurtma topilmadi', ru: 'Заказ не найден', en: 'Order not found' }, data: 'order_id' } };
   }
 
   if (order.payment_status === 'paid') {
-    return { error: { code: ERROR.UNABLE_TO_PERFORM, message: { uz: 'Buyurtma allaqachon to\'langan', ru: 'Заказ уже оплачен', en: 'Order already paid' } } };
+    return { error: { code: ERROR.ORDER_CANNOT_PAY, message: { uz: 'Buyurtma allaqachon to\'langan', ru: 'Заказ уже оплачен', en: 'Order already paid' }, data: 'order_id' } };
   }
 
   if (order.status === 'cancelled') {
-    return { error: { code: ERROR.ORDER_CANNOT_PAY, message: { uz: 'Buyurtma bekor qilingan', ru: 'Заказ отменён', en: 'Order cancelled' } } };
+    return { error: { code: ERROR.ORDER_CANNOT_PAY, message: { uz: 'Buyurtma bekor qilingan', ru: 'Заказ отменён', en: 'Order cancelled' }, data: 'order_id' } };
   }
 
   // Payme sends amount in tiyins; our DB stores in so'm
@@ -109,7 +109,7 @@ async function createTransaction({ id, time, amount, account }) {
     .maybeSingle();
 
   if (!order) {
-    return { error: { code: ERROR.ORDER_NOT_FOUND, message: { uz: 'Buyurtma topilmadi', ru: 'Заказ не найден', en: 'Order not found' } } };
+    return { error: { code: ERROR.ORDER_NOT_FOUND, message: { uz: 'Buyurtma topilmadi', ru: 'Заказ не найден', en: 'Order not found' }, data: 'order_id' } };
   }
 
   // If there is already a transaction ID associated with the order:
@@ -117,10 +117,10 @@ async function createTransaction({ id, time, amount, account }) {
     if (order.payme_transaction_id === id) {
       // Same transaction ID — return success (idempotency)
       if (order.payment_status === 'paid') {
-        return { error: { code: ERROR.UNABLE_TO_PERFORM, message: { uz: 'Tranzaksiya yakunlangan', ru: 'Транзакция завершена', en: 'Transaction completed' } } };
+        return { error: { code: ERROR.ORDER_CANNOT_PAY, message: { uz: 'Tranzaksiya yakunlangan', ru: 'Транзакция завершена', en: 'Transaction completed' }, data: 'order_id' } };
       }
       if (order.payment_status === 'failed') {
-        return { error: { code: ERROR.UNABLE_TO_PERFORM, message: { uz: 'Tranzaksiya bekor qilingan', ru: 'Транзакция отменена', en: 'Transaction cancelled' } } };
+        return { error: { code: ERROR.ORDER_CANNOT_PAY, message: { uz: 'Tranzaksiya bekor qilingan', ru: 'Транзакция отменена', en: 'Transaction cancelled' }, data: 'order_id' } };
       }
 
       // Query the create time from the events to be completely accurate
@@ -141,10 +141,10 @@ async function createTransaction({ id, time, amount, account }) {
     } else {
       // Different transaction ID:
       if (order.payment_status === 'pending_payment') {
-        return { error: { code: ERROR.ORDER_CANNOT_PAY, message: { uz: 'Aktiv tranzaksiya mavjud', ru: 'Есть активная транзакция', en: 'Active transaction exists' } } };
+        return { error: { code: ERROR.ORDER_CANNOT_PAY, message: { uz: 'Aktiv tranzaksiya mavjud', ru: 'Есть активная транзакция', en: 'Active transaction exists' }, data: 'order_id' } };
       }
       if (order.payment_status === 'paid') {
-        return { error: { code: ERROR.UNABLE_TO_PERFORM, message: { uz: 'Buyurtma allaqachon to\'langan', ru: 'Заказ уже оплачен', en: 'Order already paid' } } };
+        return { error: { code: ERROR.ORDER_CANNOT_PAY, message: { uz: 'Buyurtma allaqachon to\'langan', ru: 'Заказ уже оплачен', en: 'Order already paid' }, data: 'order_id' } };
       }
       // If it is failed, we let it overwrite and create a new transaction
     }
