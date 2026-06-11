@@ -141,7 +141,7 @@ async function createTransaction({ id, time, amount, account }) {
     } else {
       // Different transaction ID:
       if (order.payment_status === 'pending_payment') {
-        return { error: { code: ERROR.UNABLE_TO_PERFORM, message: { uz: 'Aktiv tranzaksiya mavjud', ru: 'Есть активная транзакция', en: 'Active transaction exists' } } };
+        return { error: { code: ERROR.ORDER_CANNOT_PAY, message: { uz: 'Aktiv tranzaksiya mavjud', ru: 'Есть активная транзакция', en: 'Active transaction exists' } } };
       }
       if (order.payment_status === 'paid') {
         return { error: { code: ERROR.UNABLE_TO_PERFORM, message: { uz: 'Buyurtma allaqachon to\'langan', ru: 'Заказ уже оплачен', en: 'Order already paid' } } };
