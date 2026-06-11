@@ -375,25 +375,74 @@ async function checkTransaction({ id }) {
 async function getStatement({ from, to }) {
   const db = supabase();
 
+  const fromIso = new Date(Number(from)).toISOString();
+  const toIso = new Date(Number(to)).toISOString();
+
   const { data: orders } = await db
     .from('miniapp_orders')
     .select('id, total_uzs, payment_status, created_at, payme_transaction_id')
     .not('payme_transaction_id', 'is', null)
-    .gte('created_at', new Date(from).toISOString())
-    .lte('created_at', new Date(to).toISOString());
+    .gte('created_at', fromIso)
+    .lte('created_at', toIso);
 
-  const transactions = (orders || []).map(o => ({
-    id:           o.payme_transaction_id,
-    time:         new Date(o.created_at).getTime(),
-    amount:       o.total_uzs * 100, // tiyins
-    account:      { order_id: o.id },
-    create_time:  new Date(o.created_at).getTime(),
-    perform_time: o.payment_status === 'paid' ? new Date(o.created_at).getTime() : 0,
-    cancel_time:  o.payment_status === 'failed' ? new Date(o.created_at).getTime() : 0,
-    transaction:  o.id,
-    state:        o.payment_status === 'paid' ? STATE.COMPLETED : STATE.PENDING,
-    reason:       null,
-  }));
+  if (!orders || orders.length === 0) {
+    return { result: { transactions: [] } };
+  }
+
+  const orderIds = orders.map(o => o.id);
+
+  // Fetch all events for these orders to map exact timestamps and states
+  const { data: events } = await db
+    .from('miniapp_order_events')
+    .select('*')
+    .in('order_id', orderIds);
+
+  const eventsMap = {};
+  (events || []).forEach(e => {
+    if (!eventsMap[e.order_id]) {
+      eventsMap[e.order_id] = [];
+    }
+    eventsMap[e.order_id].push(e);
+  });
+
+  const transactions = orders.map(o => {
+    const orderEvents = eventsMap[o.id] || [];
+    const createEvent = orderEvents.find(e => e.status === 'payment_pending');
+    const payEvent = orderEvents.find(e => e.status === 'paid');
+    const cancelEvent = orderEvents.find(e => e.status === 'payment_cancelled');
+
+    const create_time = createEvent ? new Date(createEvent.created_at).getTime() : new Date(o.created_at).getTime();
+    const perform_time = payEvent ? new Date(payEvent.created_at).getTime() : 0;
+    const cancel_time = cancelEvent ? new Date(cancelEvent.created_at).getTime() : 0;
+
+    let reason = null;
+    if (cancelEvent && cancelEvent.note) {
+      const match = cancelEvent.note.match(/Sabab:\s*(\d+)/);
+      if (match) {
+        reason = parseInt(match[1], 10);
+      }
+    }
+
+    let state = STATE.PENDING;
+    if (cancelEvent) {
+      state = payEvent ? STATE.CANCEL_AFTER_COMPLETE : STATE.CANCELLED;
+    } else if (payEvent) {
+      state = STATE.COMPLETED;
+    }
+
+    return {
+      id:           o.payme_transaction_id,
+      time:         create_time,
+      amount:       o.total_uzs * 100, // tiyins
+      account:      { order_id: o.id },
+      create_time,
+      perform_time,
+      cancel_time,
+      transaction:  o.id,
+      state,
+      reason,
+    };
+  });
 
   return { result: { transactions } };
 }
