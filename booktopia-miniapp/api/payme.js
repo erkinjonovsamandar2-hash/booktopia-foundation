@@ -304,7 +304,7 @@ export default async function handler(req, res) {
 
   // Verify Payme Basic Auth
   if (!isAuthorized(req)) {
-    return res.status(401).json({
+    return res.status(200).json({
       id: req.body?.id ?? null,
       error: { code: -32504, message: { uz: 'Ruxsat yo\'q', ru: 'Нет доступа', en: 'Unauthorized' } },
     });
