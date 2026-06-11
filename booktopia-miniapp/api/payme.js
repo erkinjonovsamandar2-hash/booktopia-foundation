@@ -416,6 +416,7 @@ export default async function handler(req, res) {
   // Verify Payme Basic Auth
   if (!isAuthorized(req)) {
     return res.status(200).json({
+      jsonrpc: '2.0',
       id: req.body?.id ?? null,
       error: { code: -32504, message: { uz: 'Ruxsat yo\'q', ru: 'Нет доступа', en: 'Unauthorized' } },
     });
@@ -435,6 +436,7 @@ export default async function handler(req, res) {
   const handler_fn = METHODS[method];
   if (!handler_fn) {
     return res.status(200).json({
+      jsonrpc: '2.0',
       id,
       error: { code: -32601, message: { uz: 'Metod topilmadi', ru: 'Метод не найден', en: 'Method not found' } },
     });
@@ -442,10 +444,11 @@ export default async function handler(req, res) {
 
   try {
     const response = await handler_fn(params || {});
-    return res.status(200).json({ id, ...response });
+    return res.status(200).json({ jsonrpc: '2.0', id, ...response });
   } catch (err) {
     console.error(`[Payme] Unhandled error in ${method}:`, err);
     return res.status(200).json({
+      jsonrpc: '2.0',
       id,
       error: { code: -31008, message: { uz: 'Server xatosi', ru: 'Ошибка сервера', en: 'Server error' } },
     });
