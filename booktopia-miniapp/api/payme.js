@@ -210,6 +210,31 @@ async function cancelTransaction({ id, reason }) {
     return { error: { code: ERROR.TRANSACTION_NOT_FOUND, message: { uz: 'Tranzaksiya topilmadi', ru: 'Транзакция не найдена', en: 'Transaction not found' } } };
   }
 
+  // Handle repeated cancellation requests (idempotency)
+  if (order.payment_status === 'failed') {
+    const { data: payEvent } = await db
+      .from('miniapp_order_events')
+      .select('created_at')
+      .eq('order_id', order.id)
+      .eq('status', 'paid')
+      .maybeSingle();
+
+    const { data: cancelEvent } = await db
+      .from('miniapp_order_events')
+      .select('created_at')
+      .eq('order_id', order.id)
+      .eq('status', 'payment_cancelled')
+      .maybeSingle();
+
+    return {
+      result: {
+        transaction: order.id,
+        cancel_time: cancelEvent ? new Date(cancelEvent.created_at).getTime() : Date.now(),
+        state: payEvent ? STATE.CANCEL_AFTER_COMPLETE : STATE.CANCELLED,
+      },
+    };
+  }
+
   const newPaymentStatus = 'failed';
   const newState = order.payment_status === 'paid'
     ? STATE.CANCEL_AFTER_COMPLETE
@@ -220,16 +245,18 @@ async function cancelTransaction({ id, reason }) {
     updated_at: new Date().toISOString(),
   }).eq('id', order.id);
 
+  const now = new Date().toISOString();
   await db.from('miniapp_order_events').insert({
     order_id: order.id,
     status: 'payment_cancelled',
     note: `Payme to'lov bekor qilindi. Sabab: ${reason}`,
+    created_at: now,
   });
 
   return {
     result: {
       transaction: order.id,
-      cancel_time: Date.now(),
+      cancel_time: new Date(now).getTime(),
       state: newState,
     },
   };
@@ -249,20 +276,38 @@ async function checkTransaction({ id }) {
     return { error: { code: ERROR.TRANSACTION_NOT_FOUND, message: { uz: 'Tranzaksiya topilmadi', ru: 'Транзакция не найдена', en: 'Transaction not found' } } };
   }
 
-  const stateMap = {
-    pending_payment: STATE.PENDING,
-    paid:            STATE.COMPLETED,
-    failed:          STATE.CANCELLED,
-  };
+  const { data: payEvent } = await db
+    .from('miniapp_order_events')
+    .select('created_at')
+    .eq('order_id', order.id)
+    .eq('status', 'paid')
+    .maybeSingle();
+
+  const { data: cancelEvent } = await db
+    .from('miniapp_order_events')
+    .select('created_at')
+    .eq('order_id', order.id)
+    .eq('status', 'payment_cancelled')
+    .maybeSingle();
+
+  const perform_time = payEvent ? new Date(payEvent.created_at).getTime() : 0;
+  const cancel_time = cancelEvent ? new Date(cancelEvent.created_at).getTime() : 0;
+
+  let state = STATE.PENDING;
+  if (cancelEvent) {
+    state = payEvent ? STATE.CANCEL_AFTER_COMPLETE : STATE.CANCELLED;
+  } else if (payEvent) {
+    state = STATE.COMPLETED;
+  }
 
   return {
     result: {
-      create_time:  new Date(order.created_at).getTime(),
-      perform_time: order.payment_status === 'paid' ? Date.now() : 0,
-      cancel_time:  order.payment_status === 'failed' ? Date.now() : 0,
-      transaction:  order.id,
-      state:        stateMap[order.payment_status] ?? STATE.PENDING,
-      reason:       null,
+      create_time: new Date(order.created_at).getTime(),
+      perform_time,
+      cancel_time,
+      transaction: order.id,
+      state,
+      reason: null,
     },
   };
 }
