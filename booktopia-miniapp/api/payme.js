@@ -219,11 +219,12 @@ async function performTransaction({ id }) {
     updated_at: performDate,
   }).eq('id', order.id);
 
-  // Log the payment event
+  // Log the payment event with the exact same timestamp we return
   await db.from('miniapp_order_events').insert({
     order_id: order.id,
     status: 'paid',
     note: `Payme to'lov tasdiqlandi. Tranzaksiya: ${id}`,
+    created_at: performDate,
   });
 
   console.log(`[Payme] ✅ Order ${order.id} paid — ${order.total_uzs.toLocaleString()} so'm`);
@@ -281,12 +282,13 @@ async function cancelTransaction({ id, reason }) {
     ? STATE.CANCEL_AFTER_COMPLETE
     : STATE.CANCELLED;
 
+  const now = new Date().toISOString();
+
   await db.from('miniapp_orders').update({
     payment_status: newPaymentStatus,
-    updated_at: new Date().toISOString(),
+    updated_at: now,
   }).eq('id', order.id);
 
-  const now = new Date().toISOString();
   await db.from('miniapp_order_events').insert({
     order_id: order.id,
     status: 'payment_cancelled',
