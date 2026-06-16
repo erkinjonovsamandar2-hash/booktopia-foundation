@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Hexagon } from 'lucide-react';
 import './AmirTemurSection.css';
-import temurBg from '@/assets/design/temur-bg.png';
-import temurBook1 from '@/assets/design/temur-book1.jpg';
-import temurBook2 from '@/assets/design/temur-book2.jpg';
-import temurBook3 from '@/assets/design/temur-book3.jpg';
+import temurBg from '@/assets/design/temur-bg.webp';
+import temurBook1 from '@/assets/design/temur-book1.webp';
+import temurBook2 from '@/assets/design/temur-book2.webp';
+import temurBook3 from '@/assets/design/temur-book3.webp';
 
 // ── Configuration ─────────────────────────────────────────────────────────────
 const CONFIG = {

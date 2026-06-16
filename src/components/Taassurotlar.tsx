@@ -6,12 +6,12 @@ import { useData } from "@/context/DataContext";
 import FeedbackForm from "./FeedbackForm";
 
 // ── Design assets ─────────────────────────────────────────────────────────────
-import waxSeal from "@/assets/design/seal.png";
-import pen from "@/assets/design/pen.png";
+import waxSeal from "@/assets/design/seal.webp";
+import pen from "@/assets/design/pen.webp";
 
 // Import the new Van Gogh background (PNG)
 let bgImg: string | undefined;
-try { bgImg = new URL("@/assets/design/taassurotlar-bg.png", import.meta.url).href; } catch { bgImg = undefined; }
+try { bgImg = new URL("@/assets/design/taassurotlar-bg.webp", import.meta.url).href; } catch { bgImg = undefined; }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Review {

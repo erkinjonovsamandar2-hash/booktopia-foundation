@@ -4,7 +4,7 @@ import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import type { CSSProperties } from "react";
 import { motion } from "framer-motion";
 
-import akbarImg from "../assets/team/akbar.png";
+import akbarImg from "../assets/team/akbar.webp";
 
 // ─── Data ──────────────────────────────────────────────────────────────────────
 const TEAM_MEMBERS = [

@@ -6,10 +6,10 @@ import { useData } from "@/context/DataContext";
 import { useLang, locField } from "@/context/LanguageContext";
 import type { Book } from "@/types/database";
 
-import margaritaBg from "../assets/backgrounds/margarita-bg.png";
-import edenBg from "../assets/backgrounds/eden-bg.png";
-import ascanioBg from "../assets/backgrounds/ascanio-bg.png";
-import xukBg from "../assets/backgrounds/xuk-bg.png";
+import margaritaBg from "../assets/backgrounds/margarita-bg.webp";
+import edenBg from "../assets/backgrounds/eden-bg.webp";
+import ascanioBg from "../assets/backgrounds/ascanio-bg.webp";
+import xukBg from "../assets/backgrounds/xuk-bg.webp";
 import { getBookSlug } from "@/lib/slugify";
 
 // ── Per-book tension hooks ────────────────────────────────────────────────────

@@ -7,7 +7,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BookCover from "@/components/BookCover";
 import SpotlightCard from "@/components/SpotlightCard";
-import parchmentTexture from "@/assets/design/parchment-texture.png";
+import parchmentTexture from "@/assets/design/parchment-texture.webp";
 import { postPath } from "@/lib/blog";
 import { getBookSlug } from "@/lib/slugify";
 

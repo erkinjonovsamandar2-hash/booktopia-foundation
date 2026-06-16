@@ -4,10 +4,10 @@ import { useNavigate } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { useLang, locField } from "@/context/LanguageContext";
 import { ChevronRight } from "lucide-react";
-import gotBg from "@/assets/design/bgot.png";
-import gotBooks from "@/assets/design/got-books.jpg";
+import gotBg from "@/assets/design/bgot.webp";
+import gotBooks from "@/assets/design/got-books.webp";
 import gotScroll from "@/assets/design/got-scroll.webp";
-import gotShields from "@/assets/design/got-shields.png";
+import gotShields from "@/assets/design/got-shields.webp";
 import gotStack from "@/assets/design/got-stack.webp";
 
 // ── Translations ──────────────────────────────────────────────────────────────

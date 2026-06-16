@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { Compass, Home } from "lucide-react";
 import { useLang } from "@/context/LanguageContext";
-import parchmentTexture from "@/assets/design/parchment-texture.png";
+import parchmentTexture from "@/assets/design/parchment-texture.webp";
 
 const NotFound = () => {
   const location = useLocation();

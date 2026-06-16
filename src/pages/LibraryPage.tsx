@@ -9,7 +9,7 @@ import { useLang, locField } from "@/context/LanguageContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import EmptyState from "@/components/EmptyState";
-import librarySeal from "@/assets/design/library-seal.png";
+import librarySeal from "@/assets/design/library-seal.webp";
 import { getBookSlug } from "@/lib/slugify";
 import { useCart } from "@/context/CartContext";
 

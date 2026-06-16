@@ -10,7 +10,7 @@ import { getBookSlug } from "@/lib/slugify";
 
 // ── Background image import ───────────────────────────────────────────────────
 let bgUrl: string | undefined;
-try { bgUrl = new URL("@/assets/design/botm-bg.png", import.meta.url).href; } catch { bgUrl = undefined; }
+try { bgUrl = new URL("@/assets/design/botm-bg.webp", import.meta.url).href; } catch { bgUrl = undefined; }
 
 // ── Floating book visual — defined at module level so React never sees a new
 //    component type between renders (avoids unnecessary unmount/remount).

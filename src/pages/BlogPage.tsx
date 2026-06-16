@@ -6,8 +6,8 @@ import { useLang } from "@/context/LanguageContext";
 import { useData } from "@/context/DataContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import parchmentTexture from "@/assets/design/parchment-texture.png";
-import blogHeaderArt from "@/assets/design/blog-header-art.png";
+import parchmentTexture from "@/assets/design/parchment-texture.webp";
+import blogHeaderArt from "@/assets/design/blog-header-art.webp";
 import { postPath } from "@/lib/blog";
 
 const useIsMobile = () => {

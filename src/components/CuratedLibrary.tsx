@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useData } from "@/context/DataContext";
 import { useLang, locField } from "@/context/LanguageContext";
-import parchmentTexture from "@/assets/design/parchment-texture.png";
+import parchmentTexture from "@/assets/design/parchment-texture.webp";
 import { getBookSlug } from "@/lib/slugify";
 
 // ── Local Categories Configuration ───────────────────────────────────────────

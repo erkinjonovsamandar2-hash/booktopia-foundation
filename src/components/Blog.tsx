@@ -5,7 +5,7 @@ import { postPath } from "@/lib/blog";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLang } from "@/context/LanguageContext";
 import { useData } from "@/context/DataContext";
-import parchmentTexture from "@/assets/design/parchment-texture.png";
+import parchmentTexture from "@/assets/design/parchment-texture.webp";
 
 const useIsMobile = () => {
   const [isMobile, setIsMobile] = useState(() =>
