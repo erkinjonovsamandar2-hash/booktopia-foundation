@@ -1,4 +1,5 @@
 // booktopia-miniapp/api/payme.js
+// Update: Switched to live production mode
 // ─────────────────────────────────────────────────────────────────────────────
 // Payme (Paycom) JSONRPC 2.0 endpoint — "billing bilan" integration
 // Docs: https://developer.help.paycom.uz/ru/metody-merchant-api
