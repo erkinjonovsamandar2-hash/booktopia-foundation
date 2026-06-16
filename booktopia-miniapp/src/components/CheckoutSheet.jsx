@@ -264,31 +264,46 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
                   /* ── Order confirmed (cash, or after gateway return) ── */
                   <>
                     <div className="success-screen__icon" style={{ background: 'transparent' }}>
-                      <svg width="80" height="80" viewBox="0 0 52 52">
-                        <motion.circle
-                          cx="26" cy="26" r="25" fill="#EBF8F0"
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-                        />
-                        <motion.path
-                          d="M15 27.2l7.1 7.2 15.7-15.8"
-                          fill="none" stroke="#38A169" strokeWidth="4" strokeLinecap="round"
-                          initial={{ pathLength: 0, opacity: 0 }}
-                          animate={{ pathLength: 1, opacity: 1 }}
-                          transition={{ duration: 0.5, delay: 0.2, ease: 'easeOut' }}
-                        />
-                      </svg>
+                      {payment === 'cash' ? (
+                        <svg width="80" height="80" viewBox="0 0 52 52">
+                          <motion.circle
+                            cx="26" cy="26" r="25" fill="#EBF8F0"
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+                          />
+                          <motion.path
+                            d="M15 27.2l7.1 7.2 15.7-15.8"
+                            fill="none" stroke="#38A169" strokeWidth="4" strokeLinecap="round"
+                            initial={{ pathLength: 0, opacity: 0 }}
+                            animate={{ pathLength: 1, opacity: 1 }}
+                            transition={{ duration: 0.5, delay: 0.2, ease: 'easeOut' }}
+                          />
+                        </svg>
+                      ) : (
+                        <div style={{ width: 80, height: 80, borderRadius: '50%', background: '#F6E05E20', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                          <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 8, ease: "linear" }}>
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#D69E2E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="12" cy="12" r="10"></circle>
+                              <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                          </motion.div>
+                        </div>
+                      )}
                     </div>
-                    <h2 style={{ fontSize: 20, textAlign: 'center' }}>{t('success')}</h2>
+                    <h2 style={{ fontSize: 20, textAlign: 'center' }}>
+                      {payment === 'cash'
+                        ? t('success')
+                        : lang === 'ru' ? 'Ожидание оплаты...' : lang === 'en' ? 'Awaiting payment...' : 'To\'lov kutilmoqda...'}
+                    </h2>
                     <p style={{ color: 'var(--text-2)', fontSize: 14, lineHeight: 1.5, textAlign: 'center' }}>
                       {payment === 'cash'
                         ? t('successDesc')
                         : lang === 'ru'
-                        ? 'Оплата прошла успешно! Ваш заказ подтверждён.'
+                        ? 'Пожалуйста, завершите оплату на открывшейся странице. Статус заказа обновится автоматически.'
                         : lang === 'en'
-                        ? 'Payment successful! Your order is confirmed.'
-                        : "To'lov muvaffaqiyatli! Buyurtmangiz tasdiqlandi."}
+                        ? 'Please complete the payment on the opened page. The order status will update automatically.'
+                        : "Iltimos, ochilgan sahifada to'lovni amalga oshiring. To'lovdan so'ng buyurtma holati yangilanadi."}
                     </p>
                     <motion.button
                       className="btn-primary"
