@@ -426,7 +426,11 @@ COMPONENT MAP (Pre-Flight Audit)
   }
 
   html {
-    scroll-behavior: smooth;
+    /* scroll-behavior: smooth conflicts with framer-motion's own scroll
+       handling and causes janky "fighting" between the two systems.
+       Removed in favour of JS-driven smooth scrolls only. */
+    overscroll-behavior-y: none;
+    text-rendering: optimizeLegibility;
   }
 
   body {
@@ -435,6 +439,8 @@ COMPONENT MAP (Pre-Flight Audit)
     font-family: 'Inter', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Prevent overscroll bounce on iOS/macOS — feels cheap on a premium site */
+    overscroll-behavior: none;
   }
 
   /* ── Grain texture overlay ───────────────────────────────────────────────
@@ -733,7 +739,7 @@ COMPONENT MAP (Pre-Flight Audit)
     padding-right: 1rem;
     padding-top: 4rem;
     padding-bottom: 4rem;
-    contain: layout style;
+    contain: layout style paint;
   }
 
   @media (min-width: 768px) {
@@ -750,6 +756,21 @@ COMPONENT MAP (Pre-Flight Audit)
       padding-top: 6rem;
       padding-bottom: 6rem;
     }
+  }
+
+  /* ── Premium Scroll Section Compositing ────────────────────────────────────
+     GPU-promote each major page section so the compositor handles scroll
+     without triggering main-thread layout/paint. This alone eliminates most
+     of the "crushing" jank — the browser no longer recalculates every section
+     on every scroll frame.
+
+     contain: layout style paint → isolates reflow/repaint to each section.
+     will-change: transform → promotes to its own GPU layer.
+     transform: translateZ(0) → triggers layer promotion on older browsers.   */
+  .section-gpu {
+    contain: layout style paint;
+    will-change: transform;
+    transform: translateZ(0);
   }
 
   /* Premium text selection — Mustard Gold */

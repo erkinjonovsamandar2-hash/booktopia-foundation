@@ -140,15 +140,15 @@ const ReviewCard = ({ review, index }: { review: Review; index: number }) => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       whileInView={{
         opacity: 1, y: 0,
         transition: {
-          type: "spring", stiffness: 100, damping: 18,
-          delay: Math.min(index * 0.06, 0.36),
+          duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94],
+          delay: Math.min(index * 0.04, 0.24),
         },
       }}
-      viewport={{ once: true, margin: "0px" }}
+      viewport={{ once: true, margin: "-10% 0px" }}
       whileHover={reduced ? {} : { rotate: 0, y: -8, zIndex: 30, transition: { duration: 0.2 } }}
       className="
         relative w-[85vw] max-w-[400px] shrink-0 snap-center whitespace-normal
@@ -249,7 +249,7 @@ const Taassurotlar = () => {
       ref={sectionRef}
       id="taassurotlar"
       // TIGHTER PADDING for compact view
-      className="relative overflow-hidden py-12 md:py-16 border-y border-neutral-200/50 dark:border-white/10 z-10"
+      className="section-gpu relative overflow-hidden py-12 md:py-16 border-y border-neutral-200/50 dark:border-white/10 z-10"
     >
       {/* ── Background: Painted Masterpiece ── */}
       <div className="absolute inset-0 pointer-events-none z-0">
@@ -270,9 +270,9 @@ const Taassurotlar = () => {
         <motion.div
           // REDUCED MARGIN BOTTOM
           className="text-center px-6 mb-8"
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={headerInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.65 }}
+          transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
         >
           <div className="inline-flex items-center justify-center gap-4 mb-4">
             {/* Left Pen - Darker for visibility */}

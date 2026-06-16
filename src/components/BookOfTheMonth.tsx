@@ -33,6 +33,24 @@ const FloatingBookVisual = ({ coverUrl, title }: { coverUrl: string | null; titl
   </>
 );
 
+// ── Shared child variant — each child fades/floats into position ─────────────
+// staggerChildren on the parent handles the sequencing automatically.
+const childVariant = {
+  hidden: { opacity: 0, y: 8 },
+  visible: {
+    opacity: 1, y: 0,
+    transition: { duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] },
+  },
+};
+
+const scaleVariant = {
+  hidden: { opacity: 0, scale: 0.95 },
+  visible: {
+    opacity: 1, scale: 1,
+    transition: { duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] },
+  },
+};
+
 const BookOfTheMonth = () => {
   const { books, loading, booksError, siteSettings } = useData() as ReturnType<typeof useData> & { booksError?: boolean };
   const { lang } = useLang();
@@ -86,11 +104,8 @@ const BookOfTheMonth = () => {
   const badge = botm?.badge || "Jahon durdonasi";
 
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-      className="relative flex flex-col justify-center min-h-[auto] lg:min-h-[85vh] overflow-hidden bg-card py-24 lg:py-32 border-y border-border z-10"
+    <section
+      className="section-gpu relative flex flex-col justify-center min-h-[auto] lg:min-h-[85vh] overflow-hidden bg-card py-24 lg:py-32 border-y border-border z-10"
     >
 
       {/* ── Background: Van Gogh Feather & Texture ──────────────────────────── */}
@@ -105,11 +120,19 @@ const BookOfTheMonth = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent" />
         <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-15 dark:opacity-20"
           style={{ background: `radial-gradient(circle, ${glowColor} 0%, transparent 70%)` }} />
-        {/* FIX: Removed SVG <feTurbulence> to prevent full-section paint thrashing on scroll */}
       </div>
 
-      <div className="relative z-10 mx-auto w-full max-w-6xl px-6 sm:px-12">
-        {/* Changed to flex-col on mobile, grid on desktop for exact flow control */}
+      {/* Single parent orchestrator — children stagger in via variants */}
+      <motion.div
+        className="relative z-10 mx-auto w-full max-w-6xl px-6 sm:px-12"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-15% 0px" }}
+        variants={{
+          hidden: {},
+          visible: { transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
+        }}
+      >
         <div className="flex flex-col lg:grid lg:grid-cols-12 gap-8 lg:gap-12 items-center">
 
           {/* ── Left Column (Editorial Content) ── */}
@@ -117,17 +140,14 @@ const BookOfTheMonth = () => {
 
             {/* 1. Section heading */}
             <motion.h2
-              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+              variants={childVariant}
               className="font-heading text-5xl sm:text-6xl text-foreground tracking-tight leading-none mb-6"
             >
               Oy Kitobi
             </motion.h2>
 
             {/* 2. Giant Pull Quote */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }}
-              className="relative mb-6"
-            >
+            <motion.div variants={childVariant} className="relative mb-6">
               <Quote className="absolute -top-3 -left-5 w-8 h-8 lg:w-10 lg:h-10 text-accent/20 dark:text-accent/10 rotate-180" />
               <blockquote className="text-xl sm:text-2xl lg:text-[1.75rem] leading-loose font-serif italic text-foreground drop-shadow-sm max-w-2xl">
                 {quote ? `"${quote}"` : null}
@@ -141,7 +161,7 @@ const BookOfTheMonth = () => {
 
             {/* 3. Title & Author */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }}
+              variants={childVariant}
               className="w-full flex flex-col items-center lg:items-start mb-6"
             >
               <h2 className="font-heading tracking-tight text-3xl sm:text-4xl font-bold text-foreground">
@@ -152,9 +172,9 @@ const BookOfTheMonth = () => {
               </p>
             </motion.div>
 
-            {/* ── MOBILE ONLY: Book Cover inserted here in the exact order requested ── */}
+            {/* ── MOBILE ONLY: Book Cover ── */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: 0.3 }}
+              variants={scaleVariant}
               className="flex lg:hidden flex-col items-center justify-center relative w-full mt-6 mb-0"
             >
               <FloatingBookVisual coverUrl={coverUrl} title={bookTitle} />
@@ -162,7 +182,7 @@ const BookOfTheMonth = () => {
 
             {/* 4. Badges */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.3 }}
+              variants={childVariant}
               className="flex flex-wrap items-center justify-center lg:justify-start gap-4 mt-0 mb-8"
             >
               {badge && (
@@ -180,7 +200,7 @@ const BookOfTheMonth = () => {
 
             {/* 5. "Why Read It" Box */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.4 }}
+              variants={childVariant}
               className="relative w-full max-w-xl mb-10 text-left"
             >
               <div className="flex items-center gap-2 mb-3">
@@ -195,7 +215,7 @@ const BookOfTheMonth = () => {
             </motion.div>
 
             <motion.button
-              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.5 }}
+              variants={childVariant}
               whileTap={{ scale: 0.985 }}
               onClick={() => navigate(`/book/${getBookSlug(spotlightBook)}`)}
               className="btn-glass"
@@ -213,8 +233,8 @@ const BookOfTheMonth = () => {
           </div>
 
         </div>
-      </div>
-    </motion.section>
+      </motion.div>
+    </section>
   );
 };
 
