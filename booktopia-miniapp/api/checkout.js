@@ -126,6 +126,12 @@ export default async function handler(req, res) {
 
   const priceMap = Object.fromEntries((books || []).map(b => [b.id, b]));
 
+  // ── Validate all book_ids exist in the database ───────────────────────────
+  const missingIds = items.filter(i => !priceMap[i.book_id]).map(i => i.book_id);
+  if (missingIds.length > 0) {
+    return res.status(400).json({ error: `Books not found: ${missingIds.join(', ')}` });
+  }
+
   // Build verified order items — prices come from DB, not the client
   const orderItems = items.map(item => {
     const book = priceMap[item.book_id];
@@ -141,7 +147,13 @@ export default async function handler(req, res) {
 
   const total_uzs = orderItems.reduce((sum, i) => sum + (i.price * i.qty), 0);
 
+  // ── Reject zero-amount orders ─────────────────────────────────────────────
+  if (total_uzs <= 0) {
+    return res.status(400).json({ error: 'Order total must be greater than zero' });
+  }
+
   // ── Insert order ──────────────────────────────────────────────────────────
+  const method = payment_method || 'cash';
   const { data: order, error: insertError } = await supabase
     .from('miniapp_orders')
     .insert({
@@ -151,9 +163,10 @@ export default async function handler(req, res) {
       phone:             phone.trim(),
       items:             orderItems,
       total_uzs,
-      payment_method:    payment_method || 'cash',
+      payment_method:    method,
       delivery_address:  address || null,
       status:            'pending',
+      payment_status:    method === 'cash' ? 'cash' : 'unpaid',
     })
     .select()
     .single();

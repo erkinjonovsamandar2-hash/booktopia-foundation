@@ -51,7 +51,7 @@ export default function Wishlist() {
     const title = book[`title_${lang}`] || book.title || '';
     const text = `${T.shareMsg[lang]} "${title}"`;
     // We assume the bot username is booktopia_bot. You can change this if the real bot is different.
-    const url = `https://t.me/share/url?url=https://t.me/booktopia_uz_bot&text=${encodeURIComponent(text)}`;
+    const url = `https://t.me/share/url?url=https://t.me/Booktopiapress_bot&text=${encodeURIComponent(text)}`;
     if (tg()?.openTelegramLink) {
       tg().openTelegramLink(url);
     } else {

@@ -62,11 +62,12 @@ export default function Cart() {
 
         {/* Items */}
         <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--surface)' }}>
-          {items.map(item => (
+          {items.map((item, idx) => (
             <SwipeableCartItem
               key={item.id}
               item={item}
               lang={lang}
+              showSwipeHint={idx === 0}
               onRemove={() => { haptic('light'); removeItem(item.id); }}
               onQtyUp={() => { haptic('light'); incrementQty(item.id); }}
               onQtyDown={() => { haptic('light'); decrementQty(item.id); }}
@@ -119,7 +120,7 @@ export default function Cart() {
 }
 
 // ── Swipeable Cart Item (iOS-style swipe-to-delete) ────────────────────────────
-function SwipeableCartItem({ item, lang, onRemove, onQtyUp, onQtyDown }) {
+function SwipeableCartItem({ item, lang, showSwipeHint, onRemove, onQtyUp, onQtyDown }) {
   const title  = item[`title_${lang}`] || item.title  || '—';
   const author = item[`author_${lang}`] || item.author || '—';
   const x = useMotionValue(0);
@@ -205,7 +206,9 @@ function SwipeableCartItem({ item, lang, onRemove, onQtyUp, onQtyDown }) {
               <span className="qty-num">{item.qty}</span>
               <button className="qty-btn" onClick={onQtyUp}>+</button>
             </div>
-            <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>← swipe</span>
+            {showSwipeHint && (
+              <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>← swipe</span>
+            )}
           </div>
         </div>
       </motion.div>

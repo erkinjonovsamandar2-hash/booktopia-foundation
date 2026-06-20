@@ -128,7 +128,7 @@ export default function Profile() {
         <MenuItem
           icon={<Icon component={Info} color="#3182CE" />}
           iconBg="#EBF8FF"
-          label={t('about')} sub="Booktopia Publishing House"
+          label={t('about')} sub="Booktopia Publishing House" href="https://booktopia.uz/about" external
         />
       </div>
 

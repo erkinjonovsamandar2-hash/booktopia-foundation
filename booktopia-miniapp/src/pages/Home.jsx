@@ -133,14 +133,6 @@ export default function Home() {
     });
   };
 
-  // Calculate order count from localStorage for the trust bar
-  const orderCount = (() => {
-    try {
-      const orders = JSON.parse(localStorage.getItem('booktopia_orders') ?? '[]');
-      // Base of 500+ regardless; add real local orders on top
-      return orders.length > 0 ? `${500 + orders.length}+` : '500+';
-    } catch { return '500+'; }
-  })();
 
   const handleAddToCart = (book) => {
     haptic('success');
@@ -387,7 +379,15 @@ export default function Home() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 16px 14px' }}>
               <h2 style={{ fontSize: 16, fontWeight: 800 }}>{t('blogTitle')}</h2>
               <button
-                onClick={() => { haptic('light'); window.Telegram?.WebApp?.openLink('https://booktopia.uz/blog'); }}
+                onClick={() => {
+                  haptic('light');
+                  const url = 'https://booktopia.uz/blog';
+                  if (window.Telegram?.WebApp?.openLink) {
+                    window.Telegram.WebApp.openLink(url);
+                  } else {
+                    window.open(url, '_blank');
+                  }
+                }}
                 style={{ fontSize: 12, fontWeight: 800, color: 'var(--blue-500)', background: 'none', border: 'none', cursor: 'pointer' }}
               >
                 {t('blogCta')}

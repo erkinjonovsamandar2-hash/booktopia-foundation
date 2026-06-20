@@ -138,27 +138,34 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Checkout failed');
 
-      clearCart();
       haptic('success');
       setDone(true);
 
-      // ── For online payments: open the gateway then let user return ──────────
+      // ── For online payments: open the gateway, keep cart until paid ─────────
       const paymentUrl = data.payme_url || data.click_url;
       if (paymentUrl) {
         setRedirecting(true);
-        // Short delay so the user sees the "Redirecting" state
+        // Open the payment page after a brief delay so user sees the state
         setTimeout(() => {
-          // tg().openLink opens inside TG's in-app browser.
-          // Falls back to window.open for desktop / web preview.
           if (tg()?.openLink) {
             tg().openLink(paymentUrl);
           } else {
             window.open(paymentUrl, '_blank');
           }
-          setRedirecting(false);
         }, 600);
+
+        // Use visibilitychange to detect when user returns from payment page
+        const handleReturn = () => {
+          if (!document.hidden) {
+            setRedirecting(false);
+            document.removeEventListener('visibilitychange', handleReturn);
+          }
+        };
+        document.addEventListener('visibilitychange', handleReturn);
+        // Don't clear cart — it stays until PaymentReturn confirms payment
       } else {
-        // Cash — just show confetti celebration
+        // Cash — clear cart immediately + celebrate
+        clearCart();
         confetti({
           particleCount: 100,
           spread: 70,
@@ -170,7 +177,7 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
     } catch (err) {
       console.error('[Checkout]', err);
       setError(
-        lang === 'ru' ? 'Xatolik yuz berdi. Qayta urining.' :
+        lang === 'ru' ? 'Произошла ошибка. Попробуйте ещё раз.' :
         lang === 'en' ? 'An error occurred. Please try again.' :
         'Xatolik yuz berdi. Qayta urining.'
       );
@@ -325,7 +332,7 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
-                style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
+                style={{ display: 'flex', flexDirection: 'column', gap: 16, pointerEvents: loading ? 'none' : 'auto', opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s' }}
               >
                 <h2 style={{ fontSize: 18, marginBottom: 4 }}>{t('title')}</h2>
 

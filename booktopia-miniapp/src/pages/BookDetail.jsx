@@ -119,7 +119,7 @@ export default function BookDetail() {
               <span style={{ color: 'var(--text-2)', fontSize: 16, fontWeight: 700 }}>{t('noPrice')}</span>
             )}
           </div>
-          {book.price && (
+          {book.price && book.price >= 10000 && (
             <div style={{ marginBottom: 20 }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, background: 'var(--discount)', color: '#fff', padding: '4px 8px', borderRadius: 6, fontWeight: 700 }}>
                 <span style={{ fontSize: 14 }}>🔥</span> {t('wholesaleOffer')}
@@ -162,9 +162,7 @@ export default function BookDetail() {
               📄 {t('excerpt')}
             </a>
           )}
-          <p style={{ fontSize: 13, color: 'var(--text-3)', lineHeight: 1.5, marginTop: 12 }}>
-            Bu yerda kitob haqida qo'shimcha ma'lumotlar, iqtiboslar yoki qisqacha sharhlar bo'lishi mumkin.
-          </p>
+
         </div>
       </div>
 
