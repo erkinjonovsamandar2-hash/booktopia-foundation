@@ -17,7 +17,7 @@ const BotStats = () => {
       setLoading(true);
       const { data, error } = await (supabase as any)
         .from("miniapp_orders")
-        .select("items, total_uzs, status");
+        .select("items, total_uzs, status, payment_status");
 
       if (error) {
         console.error("Error fetching stats:", error);
@@ -30,12 +30,10 @@ const BotStats = () => {
       const bookCounts = new Map<string, number>();
 
       (data || []).forEach((order: any) => {
-        // Only count non-cancelled for revenue
-        if (order.status !== "cancelled") {
+        // Only count paid orders for revenue
+        if (order.payment_status === 'paid') {
           revenue += order.total_uzs || 0;
-          if (order.status === "delivered" || order.status === "approved" || order.status === "delivering") {
-            completed += 1;
-          }
+          completed += 1;
           
           // Aggregate books
           if (Array.isArray(order.items)) {

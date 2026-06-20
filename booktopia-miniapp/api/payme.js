@@ -22,6 +22,10 @@ const PAYME_MERCHANT_ID   = process.env.PAYME_MERCHANT_ID || '';
 const PAYME_SECRET_KEY    = process.env.PAYME_TEST_MODE === 'true'
   ? (process.env.PAYME_TEST_SECRET_KEY || '')
   : (process.env.PAYME_SECRET_KEY || '');
+const BOT_TOKEN           = process.env.BOT_TOKEN;
+const ADMIN_GROUP_ID      = process.env.ADMIN_GROUP_ID;
+const TG_API              = `https://api.telegram.org/bot${BOT_TOKEN}`;
+const ADMIN_DASHBOARD_URL = process.env.ADMIN_DASHBOARD_URL || 'https://booktopia.uz/admin/bot';
 
 // Payme error codes
 const ERROR = {
@@ -229,6 +233,56 @@ async function performTransaction({ id }) {
   });
 
   console.log(`[Payme] ✅ Order ${order.id} paid — ${order.total_uzs.toLocaleString()} so'm`);
+
+  // ── Send admin Telegram notification (only on confirmed payment) ─────────
+  if (BOT_TOKEN && ADMIN_GROUP_ID) {
+    try {
+      // Fetch full order details for the notification
+      const { data: fullOrder } = await db
+        .from('miniapp_orders')
+        .select('id, full_name, phone, delivery_address, items, total_uzs, payment_method, telegram_user_id, telegram_username')
+        .eq('id', order.id)
+        .single();
+
+      if (fullOrder) {
+        const shortId = fullOrder.id?.toString().slice(0, 8) ?? '—';
+        const itemLines = (fullOrder.items || []).map(i =>
+          `  • ${i.title} × ${i.qty} — ${(i.price * i.qty).toLocaleString('ru-RU')} so'm`
+        ).join('\n');
+
+        const tgHandle = fullOrder.telegram_username ? ` (@${fullOrder.telegram_username})` : '';
+        const tgLink = fullOrder.telegram_user_id
+          ? `\n👤 TG: <a href="tg://user?id=${fullOrder.telegram_user_id}">${fullOrder.full_name || 'Mijoz'}${tgHandle}</a>`
+          : '';
+
+        const paymentLabel = fullOrder.payment_method === 'click' ? 'Click' : 'Payme';
+
+        const text =
+          `✅ <b>TO'LANGAN! Yangi buyurtma #${shortId}</b>\n\n` +
+          `👤 Ism: <b>${fullOrder.full_name || 'Noma\'lum'}</b>${tgLink}\n` +
+          `📞 Tel: <code>${fullOrder.phone}</code>\n` +
+          (fullOrder.delivery_address ? `📍 Manzil: ${fullOrder.delivery_address}\n` : '') +
+          `💳 To'lov: ${paymentLabel} ✅\n\n` +
+          `📚 <b>Buyurtma:</b>\n${itemLines}\n\n` +
+          `💰 <b>Jami: ${fullOrder.total_uzs.toLocaleString('ru-RU')} so'm</b>\n\n` +
+          `📊 <a href="${ADMIN_DASHBOARD_URL}">Admin panelda ko'rish</a>`;
+
+        await fetch(`${TG_API}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: ADMIN_GROUP_ID,
+            text,
+            parse_mode: 'HTML',
+            disable_web_page_preview: true,
+          }),
+        });
+      }
+    } catch (notifErr) {
+      // Never fail the payment because of a notification error
+      console.error('[Payme] Admin notification failed:', notifErr);
+    }
+  }
 
   return {
     result: {

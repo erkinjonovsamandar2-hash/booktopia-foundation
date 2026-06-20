@@ -23,18 +23,12 @@ const BotBroadcast = () => {
     setResult(null);
 
     try {
-      // In a real scenario, this SERVICE_KEY should ideally be routed through a backend proxy
-      // but since the Vercel API expects it as authorization to prevent unauthorized broadcasts:
-      const serviceKey = import.meta.env.VITE_SUPABASE_SERVICE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY; 
-      // NOTE: Passing Anon key here will fail if the API strictly checks for Service Key. 
-      // Ensure VITE_SUPABASE_SERVICE_KEY is set in your Vercel frontend environment variables if calling from client.
-      
       const res = await fetch("/api/broadcast", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_SERVICE_KEY || 'MISSING_KEY'}`
         },
+        credentials: 'include', // Send session cookies for auth
         body: JSON.stringify({ message, target })
       });
 

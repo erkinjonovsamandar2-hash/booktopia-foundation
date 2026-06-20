@@ -52,7 +52,7 @@ const BotCustomers = () => {
         
         const cust = customerMap.get(phone)!;
         cust.orderCount += 1;
-        if (order.status !== "cancelled") {
+        if (order.payment_status === 'paid') {
           cust.totalSpent += order.total_uzs || 0;
         }
       });

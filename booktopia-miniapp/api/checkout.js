@@ -29,7 +29,6 @@ const TG_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
 const PAYMENT_LABELS = {
   payme: 'Payme',
   click: 'Click',
-  cash:  'Naqd pul (yetkazganda)',
 };
 
 // ── Payme checkout URL builder ────────────────────────────────────────────────
@@ -104,6 +103,10 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Phone and items are required' });
   }
 
+  if (!['payme', 'click'].includes(payment_method)) {
+    return res.status(400).json({ error: 'Invalid payment method. Only Payme and Click are accepted.' });
+  }
+
   const digits = phone.replace(/\D/g, '');
   if (digits.length < 9) {
     return res.status(400).json({ error: 'Invalid phone number' });
@@ -153,7 +156,7 @@ export default async function handler(req, res) {
   }
 
   // ── Insert order ──────────────────────────────────────────────────────────
-  const method = payment_method || 'cash';
+  const method = payment_method;
   const { data: order, error: insertError } = await supabase
     .from('miniapp_orders')
     .insert({
@@ -166,7 +169,7 @@ export default async function handler(req, res) {
       payment_method:    method,
       delivery_address:  address || null,
       status:            'pending',
-      payment_status:    method === 'cash' ? 'cash' : 'unpaid',
+      payment_status:    'unpaid',
     })
     .select()
     .single();
@@ -177,66 +180,16 @@ export default async function handler(req, res) {
   }
 
   // ── Build payment redirect URLs (server-side — merchant IDs never leave server) ──
-  const payme_url = payment_method === 'payme' ? buildPaymeUrl(order.id, total_uzs) : null;
-  const click_url = payment_method === 'click' ? buildClickUrl(order.id, total_uzs) : null;
+  const payme_url = method === 'payme' ? buildPaymeUrl(order.id, total_uzs) : null;
+  const click_url = method === 'click' ? buildClickUrl(order.id, total_uzs) : null;
 
-  // ── Admin Telegram notification ───────────────────────────────────────────
-  if (BOT_TOKEN && ADMIN_GROUP_ID) {
-    try {
-      const shortId = order.id?.toString().slice(0, 8) ?? '—';
-      const itemLines = orderItems
-        .map(i => `  • ${i.title} × ${i.qty} — ${(i.price * i.qty).toLocaleString('ru-RU')} so'm`)
-        .join('\n');
-
-      const tgHandle = telegram_username ? ` (@${telegram_username})` : '';
-      const tgLink   = telegram_user_id
-        ? `\n👤 TG: <a href="tg://user?id=${telegram_user_id}">${name || 'Mijoz'}${tgHandle}</a>`
-        : '';
-
-      const mapLink = (lat && lng)
-        ? `\n📍 <a href="https://yandex.uz/maps/?ll=${lng},${lat}&z=16&pt=${lng},${lat}">Xaritada ko'rish</a>`
-        : '';
-
-      const text =
-        `🛒 <b>Yangi buyurtma! #${shortId}</b>\n\n` +
-        `👤 Ism: <b>${name || 'Noma\'lum'}</b>${tgLink}\n` +
-        `📞 Tel: <code>${phone}</code>\n` +
-        (address ? `📍 Manzil: ${address}${mapLink}\n` : `📍 Manzil: Ko'rsatilmagan\n`) +
-        `💳 To'lov: ${PAYMENT_LABELS[payment_method] || payment_method}\n\n` +
-        `📚 <b>Buyurtma:</b>\n${itemLines}\n\n` +
-        `💰 <b>Jami: ${total_uzs.toLocaleString('ru-RU')} so'm</b>`;
-
-      await fetch(`${TG_API}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id:    ADMIN_GROUP_ID,
-          text,
-          parse_mode: 'HTML',
-          reply_markup: {
-            inline_keyboard: [
-              [
-                { text: '✅ Tasdiqlash',    callback_data: `approve_${order.id}` },
-                { text: '❌ Bekor qilish', callback_data: `cancel_${order.id}` },
-              ],
-              [
-                { text: '🙋‍♂️ O\'zim olaman',  callback_data: `assign_${order.id}` },
-                { text: '📤 Kuryer nusxasi', callback_data: `slip_${order.id}` },
-              ],
-            ],
-          },
-        }),
-      });
-    } catch (notifErr) {
-      // Never fail the order because of a notification error
-      console.error('[Checkout] Admin notification failed:', notifErr);
-    }
-  }
+  // NOTE: Admin Telegram notification is sent by the Payme webhook (api/payme.js)
+  // only AFTER payment is confirmed. No notification fires here on order creation.
 
   return res.status(200).json({
     ok:        true,
     order_id:  order.id,
-    payme_url, // null when payment_method !== 'payme' or credentials missing
-    click_url, // null when payment_method !== 'click' or credentials missing
+    payme_url,
+    click_url,
   });
 }

@@ -7,6 +7,7 @@ interface OrderItem { book_id: string; title: string; price: number; qty: number
 interface Order {
   id: string;
   status: string;
+  payment_status: string | null;
   created_at: string;
   full_name: string;
   phone: string;
@@ -54,7 +55,14 @@ const NEXT_ACTION_LABELS: Record<string, { label: string; color: string; nextSta
 const PAYMENT_LABELS: Record<string, string> = {
   payme: "💳 Payme",
   click: "💳 Click",
-  cash:  "💵 Naqd pul",
+};
+
+const PAYMENT_STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
+  paid:             { label: "✅ To'langan",    color: "#38A169", bg: "#EBF8F0" },
+  unpaid:           { label: "⏳ Kutilmoqda",   color: "#D5AD36", bg: "#FBF6E3" },
+  pending_payment:  { label: "⏳ Jarayonda",    color: "#805AD5", bg: "#FAF5FF" },
+  failed:           { label: "❌ Bekor",        color: "#E53E3E", bg: "#FFF5F5" },
+  cash:             { label: "💵 Naqd",         color: "#6b7280", bg: "#F3F4F6" },
 };
 
 function fmt(n: number) { return n ? `${Number(n).toLocaleString("ru-RU")} so'm` : "—"; }
@@ -137,6 +145,20 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+// ── Payment Status Badge ───────────────────────────────────────────────────────
+function PaymentStatusBadge({ paymentStatus }: { paymentStatus: string | null }) {
+  const meta = PAYMENT_STATUS_META[paymentStatus || 'unpaid'] ?? PAYMENT_STATUS_META.unpaid;
+  return (
+    <span style={{
+      fontSize: 10, fontWeight: 700,
+      color: meta.color, background: meta.bg,
+      padding: "2px 8px", borderRadius: 20, whiteSpace: "nowrap",
+    }}>
+      {meta.label}
+    </span>
+  );
+}
+
 // ── Order Row / Card ───────────────────────────────────────────────────────────
 function OrderRow({
   order, expanded, onToggle, working, onAction, onArchive
@@ -167,6 +189,7 @@ function OrderRow({
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
               <span style={{ fontWeight: 700, fontSize: 14, color: "#111827" }}>{order.full_name || "—"}</span>
               <StatusBadge status={order.status} />
+              <PaymentStatusBadge paymentStatus={order.payment_status} />
               <span style={{ fontSize: 11, color: "#9ca3af", marginLeft: "auto" }}>{fmtDate(order.created_at)}</span>
             </div>
 
