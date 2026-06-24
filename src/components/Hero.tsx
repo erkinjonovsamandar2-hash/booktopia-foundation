@@ -7,19 +7,15 @@ import { useData } from "@/context/DataContext";
 import { useLang, locField, type Lang } from "@/context/LanguageContext";
 import type { Book } from "@/types/database";
 import { getBookSlug } from "@/lib/slugify";
+import { imgUrl } from "@/lib/imageUrl";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const INTERVAL_MS = 5000;
 const CARD_W_DESK = 76;
 const CARD_W_MOB = 60;
 
-// ── Resolve cover URL ─────────────────────────────────────────────────────────
-const getImageUrl = (url: string | null | undefined): string | null => {
-  if (!url) return null;
-  if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  const base = import.meta.env.VITE_SUPABASE_URL as string;
-  return `${base}/storage/v1/object/public/${url}`;
-};
+// Hero thumbnails are 60-76px — serve at 200px (2× retina) instead of full 1560px
+const getImageUrl = (url: string | null | undefined) => imgUrl(url, 200);
 
 // ── Animated Mesh Background ──────────────────────────────────────────────────
 const Background = () => (

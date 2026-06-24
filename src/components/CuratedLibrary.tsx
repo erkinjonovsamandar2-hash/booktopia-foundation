@@ -7,6 +7,7 @@ import { useData } from "@/context/DataContext";
 import { useLang, locField } from "@/context/LanguageContext";
 import parchmentTexture from "@/assets/design/parchment-texture.webp";
 import { getBookSlug } from "@/lib/slugify";
+import { imgUrl } from "@/lib/imageUrl";
 
 // ── Local Categories Configuration ───────────────────────────────────────────
 const CATEGORIES = ["all", "jahon", "ilmiy", "new", "amir-temur", "erkin-millat"] as const;
@@ -24,13 +25,8 @@ const getCategoryLabel = (key: string, lang: string): string => {
   return labels[key]?.[lang as keyof typeof labels.all] ?? key;
 };
 
-// ── Resolve cover URL ─────────────────────────────────────────────────────────
-const getImageUrl = (url: string | null | undefined): string | null => {
-  if (!url) return null;
-  if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  const base = import.meta.env.VITE_SUPABASE_URL as string;
-  return `${base}/storage/v1/object/public/${url}`;
-};
+// Library covers display at max 220px — serve at 440px (2× retina)
+const getImageUrl = (url: string | null | undefined) => imgUrl(url, 440);
 
 // ── Skeleton Book Card ────────────────────────────────────────────────────────────────
 const BookSkeleton = () => (

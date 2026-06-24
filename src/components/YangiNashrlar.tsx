@@ -3,14 +3,13 @@ import { useLang, locField } from "@/context/LanguageContext";
 import { useData } from "@/context/DataContext";
 import type { NewBook } from "@/types/database";
 import "./YangiNashrlar.css";
+import { imgUrl } from "@/lib/imageUrl";
 
 const resolveBgUrl = (url: string | null | undefined): string | null => {
   if (!url) return null;
   if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("/")) return url;
   const base = import.meta.env.VITE_SUPABASE_URL as string;
-  // Use Supabase image transformation to serve as WebP at reduced quality
-  // This turns the 2.6MB PNG background into ~200KB WebP
-  return `${base}/storage/v1/render/image/public/${url}?width=1920&quality=75&format=origin`;
+  return `${base}/storage/v1/object/public/${url}`;
 };
 
 // ── Per-book tag metadata ──────────────────────────────────────────────────────
@@ -91,11 +90,8 @@ const UPCOMING_BOOKS_MOCK: NewBook[] = [
   },
 ];
 
-const resolveImageUrl = (url: string | null | undefined): string | null => {
-  if (!url) return null;
-  if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("/")) return url;
-  return `${import.meta.env.VITE_SUPABASE_URL as string}/storage/v1/object/public/${url}`;
-};
+// YN covers display at ~160-260px — serve at 600px (2× retina)
+const resolveImageUrl = (url: string | null | undefined) => imgUrl(url, 600);
 
 const YangiNashrlar = () => {
   const { lang } = useLang();

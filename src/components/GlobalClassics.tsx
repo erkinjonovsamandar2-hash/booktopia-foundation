@@ -11,6 +11,7 @@ import edenBg from "../assets/backgrounds/eden-bg.webp";
 import ascanioBg from "../assets/backgrounds/ascanio-bg.webp";
 import xukBg from "../assets/backgrounds/xuk-bg.webp";
 import { getBookSlug } from "@/lib/slugify";
+import { imgUrl } from "@/lib/imageUrl";
 
 // ── Per-book tension hooks ────────────────────────────────────────────────────
 const BOOK_HOOKS = [
@@ -31,12 +32,9 @@ function getHook(book: Book, index: number) {
   return BOOK_HOOKS[index] || book.description || "";
 }
 
-const getImageUrl = (url: string | null | undefined): string => {
-  if (!url) return "";
-  if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  const base = import.meta.env.VITE_SUPABASE_URL as string;
-  return `${base}/storage/v1/object/public/${url}`;
-};
+// Hero cover: 340px, thumbnails: 105px — serve at 680px (2× retina covers)
+const getImageUrl = (url: string | null | undefined): string =>
+  imgUrl(url, 680) ?? "";
 
 // ── NavControls — stable top-level component (not inside GlobalClassics) ─────
 interface NavControlsProps {

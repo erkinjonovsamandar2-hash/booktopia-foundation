@@ -8,6 +8,7 @@ import { useData } from "@/context/DataContext";
 import { useLang, locField } from "@/context/LanguageContext";
 import { LIBRARY_FILTER_MAP } from "@/lib/constants";
 import { getBookSlug } from "@/lib/slugify";
+import { imgUrl } from "@/lib/imageUrl";
 
 // ── Background image import ───────────────────────────────────────────────────
 let bgUrl: string | undefined;
@@ -81,14 +82,8 @@ const BookOfTheMonth = () => {
   const spotlightBook = books.find((b) => b.featured) || books[0];
   if (!spotlightBook) return null;
 
-  const getImageUrl = (url: string | null | undefined): string | null => {
-    if (!url) return null;
-    if (url.startsWith("http://") || url.startsWith("https://")) return url;
-    const base = import.meta.env.VITE_SUPABASE_URL as string;
-    return `${base}/storage/v1/object/public/${url}`;
-  };
-
-  const coverUrl = getImageUrl(spotlightBook.cover_url);
+  // BOTM cover displays at max 320px — serve at 640px (2× retina)
+  const coverUrl = imgUrl(spotlightBook.cover_url, 640);
   const glowColor = `hsl(${spotlightBook.bg_color ?? "40 65% 30%"})`;
   const bookTitle = locField(spotlightBook, "title", lang);
 
