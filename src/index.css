@@ -46,7 +46,8 @@ COMPONENT MAP (Pre-Flight Audit)
 ================================================================================
 */
 
-/* Google Fonts now loaded non-blocking from index.html (was @import here = render-blocking) */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap');
 
 /* stylelint-disable at-rule-no-unknown */
 @tailwind base;
@@ -840,17 +841,6 @@ COMPONENT MAP (Pre-Flight Audit)
       transform: none !important;
       transition: none !important;
     }
-  }
-
-  /* ── Lazy Image Fade-In ──────────────────────────────────────────────────
-     Images start transparent and fade in when the `loaded` class is added
-     (via onLoad handler). Pure CSS — no JS animation framework needed.    */
-  .img-fade {
-    opacity: 0;
-    transition: opacity 0.5s ease;
-  }
-  .img-fade.loaded {
-    opacity: 1;
   }
 
   /* Premium text selection — Mustard Gold */
