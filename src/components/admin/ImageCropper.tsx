@@ -75,22 +75,41 @@ const ImageCropper = ({
   );
 
   // ── Canvas crop → Blob ────────────────────────────────────────────────────────
+  // Cap output to MAX_DIM px on the longest side. Covers display at 60-340px
+  // on the site, so 800px gives 2× retina sharpness with ~80% smaller files.
+  const MAX_DIM = 800;
+
   const getCroppedBlob = (): Promise<Blob | null> => {
     return new Promise((resolve) => {
       if (!imgRef.current || !completedCrop) {
         resolve(null);
         return;
       }
-      const canvas = document.createElement("canvas");
       const scaleX = imgRef.current.naturalWidth / imgRef.current.width;
       const scaleY = imgRef.current.naturalHeight / imgRef.current.height;
-      canvas.width = completedCrop.width * scaleX;
-      canvas.height = completedCrop.height * scaleY;
+
+      // Full-resolution crop dimensions
+      let outW = completedCrop.width * scaleX;
+      let outH = completedCrop.height * scaleY;
+
+      // Downscale if either dimension exceeds MAX_DIM
+      if (outW > MAX_DIM || outH > MAX_DIM) {
+        const ratio = Math.min(MAX_DIM / outW, MAX_DIM / outH);
+        outW = Math.round(outW * ratio);
+        outH = Math.round(outH * ratio);
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = outW;
+      canvas.height = outH;
       const ctx = canvas.getContext("2d");
       if (!ctx) {
         resolve(null);
         return;
       }
+      // High-quality downscale
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
       ctx.drawImage(
         imgRef.current,
         completedCrop.x * scaleX,
@@ -99,10 +118,10 @@ const ImageCropper = ({
         completedCrop.height * scaleY,
         0,
         0,
-        canvas.width,
-        canvas.height,
+        outW,
+        outH,
       );
-      canvas.toBlob((blob) => resolve(blob), "image/webp", 0.85);
+      canvas.toBlob((blob) => resolve(blob), "image/webp", 0.82);
     });
   };
 

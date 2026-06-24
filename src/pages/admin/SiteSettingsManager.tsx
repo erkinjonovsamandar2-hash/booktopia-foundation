@@ -21,12 +21,47 @@ const SiteSettingsManager = () => {
   const [bgUploading, setBgUploading] = useState(false);
   const bgInputRef = useRef<HTMLInputElement>(null);
 
+  // Resize a File to max MAX_BG_DIM px on longest side, output as WebP blob.
+  // Background images are blurred anyway — 1920px is more than enough.
+  const MAX_BG_DIM = 1920;
+  const resizeImage = (file: File): Promise<Blob> =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.naturalWidth;
+        let h = img.naturalHeight;
+        if (w > MAX_BG_DIM || h > MAX_BG_DIM) {
+          const ratio = Math.min(MAX_BG_DIM / w, MAX_BG_DIM / h);
+          w = Math.round(w * ratio);
+          h = Math.round(h * ratio);
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d")!;
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(img, 0, 0, w, h);
+        canvas.toBlob(
+          (blob) => (blob ? resolve(blob) : reject(new Error("Canvas toBlob failed"))),
+          "image/webp",
+          0.80,
+        );
+      };
+      img.onerror = () => reject(new Error("Image load failed"));
+      img.src = URL.createObjectURL(file);
+    });
+
   const handleBgUpload = async (file: File) => {
     setBgUploading(true);
     try {
-      const ext = file.name.split(".").pop();
-      const path = `site/yangi-nashrlar-bg-${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("books").upload(path, file, { upsert: true });
+      // Resize + convert to WebP before uploading (2.6MB PNG → ~200KB WebP)
+      const resizedBlob = await resizeImage(file);
+      const path = `site/yangi-nashrlar-bg-${Date.now()}.webp`;
+      const { error: upErr } = await supabase.storage.from("books").upload(path, resizedBlob, {
+        contentType: "image/webp",
+        upsert: true,
+      });
       if (upErr) throw upErr;
       // Use the real Supabase URL (not the dev proxy) so the stored URL
       // works in both dev and production environments.
