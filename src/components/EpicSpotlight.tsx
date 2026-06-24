@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLang } from "@/context/LanguageContext";
 import { HOTSPOT_IDS, HOTSPOT_POSITIONS } from "@/lib/mockData";
@@ -9,18 +9,30 @@ const hotspotPositions = HOTSPOT_POSITIONS;
 const EpicSpotlight = () => {
   const [activeHotspot, setActiveHotspot] = useState<string | null>(null);
   const { t } = useLang();
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // CSS-only reveal
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      el.querySelectorAll(".reveal,.reveal-scale").forEach(c => c.classList.add("revealed"));
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { el.querySelectorAll(".reveal,.reveal-scale").forEach(c => c.classList.add("revealed")); observer.unobserve(el); } },
+      { threshold: 0.1, rootMargin: "-8% 0px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   return (
-    <section id="spotlight" className="relative section-padding bg-charcoal overflow-hidden">
+    <section id="spotlight" className="section-gpu relative section-padding bg-charcoal overflow-hidden">
       <div className="pointer-events-none absolute right-0 top-0 h-full w-1/2 bg-gradient-to-l from-primary/5 to-transparent" />
 
-      <div className="relative z-10 mx-auto max-w-7xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-        >
+      <div ref={containerRef} className="relative z-10 mx-auto max-w-7xl">
+        <div className="reveal">
           <p className="mb-3 text-xs font-sans font-black uppercase tracking-[0.4em] text-gold">
             {t.spotlight.badge}
           </p>
@@ -30,15 +42,11 @@ const EpicSpotlight = () => {
           <p className="max-w-xl text-muted-foreground mb-10">
             {t.spotlight.desc}
           </p>
-        </motion.div>
+        </div>
 
-        <motion.div
-          className="glass-card relative rounded-xl overflow-hidden"
+        <div
+          className="reveal-scale reveal-d2 glass-card relative rounded-xl overflow-hidden"
           style={{ height: "clamp(300px, 50vw, 500px)" }}
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.2 }}
         >
           <div className="absolute inset-0 bg-secondary">
             <svg className="absolute inset-0 w-full h-full opacity-20" viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -100,7 +108,7 @@ const EpicSpotlight = () => {
           <div className="absolute bottom-4 right-4 text-xs font-sans text-muted-foreground/50 uppercase tracking-widest">
             {t.spotlight.mapLabel}
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );

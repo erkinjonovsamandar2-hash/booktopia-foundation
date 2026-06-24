@@ -1,4 +1,4 @@
-import { useState, useMemo, startTransition } from "react";
+import { useState, useMemo, startTransition, useEffect, useRef } from "react";
 import BookCover from "@/components/BookCover";
 import { BookOpen, Library, ChevronRight, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -49,8 +49,25 @@ const CuratedLibrary = () => {
   const { books, loading: dataLoading, booksError } = useData() as ReturnType<typeof useData> & { booksError?: boolean };
   const { lang, t } = useLang();
   const navigate = useNavigate();
+  const headerRef = useRef<HTMLDivElement>(null);
 
   const [activeTab, setActiveTab] = useState<string>("all");
+
+  // ── CSS-only reveal for header ──────────────────────────────────────────
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      el.classList.add("revealed");
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { el.classList.add("revealed"); observer.unobserve(el); } },
+      { threshold: 0.1, rootMargin: "-8% 0px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   // ── Filter Logic ───────────────────────────────────────────────────────────
   const filtered = useMemo(() => {
@@ -63,7 +80,7 @@ const CuratedLibrary = () => {
   const displayedBooks = useMemo(() => filtered.slice(0, 4), [filtered]);
 
   return (
-    <section id="library" className="relative isolate overflow-hidden section-padding bg-charcoal">
+    <section id="library" className="section-gpu relative isolate overflow-hidden section-padding bg-charcoal">
 
       {/* ── Parchment Texture Overlay ── */}
       <div
@@ -78,13 +95,8 @@ const CuratedLibrary = () => {
 
       <div className="mx-auto max-w-7xl">
 
-        {/* ── Section Header ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="relative text-center mb-16 pt-8 md:pt-12"
-        >
+        {/* ── Section Header — pure CSS reveal ── */}
+        <div ref={headerRef} className="reveal relative text-center mb-16 pt-8 md:pt-12">
           {/* Giant Watermark */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full text-[80px] md:text-[130px] lg:text-[160px] font-serif font-black text-foreground/5 uppercase tracking-widest select-none pointer-events-none -z-10 leading-none whitespace-nowrap">
             Kutubxona
@@ -108,12 +120,10 @@ const CuratedLibrary = () => {
           <p className="font-serif text-lg leading-loose text-muted-foreground text-center max-w-2xl mx-auto">
             Nashriyotimizning eng sara, jahon va o'zbek adabiyoti durdonalari bilan tanishing. O'zingiz uchun yangi olam kashf eting.
           </p>
-        </motion.div>
+        </div>
 
         {/* ── Category Pill Tabs ── */}
-        {/* Wrapper: on mobile adds right-fade to signal horizontal scroll */}
         <div className="relative mb-12 sm:mb-12">
-          {/* Right-edge fade — mobile only, signals "swipe to see more" */}
           <div
             className="absolute right-0 top-0 bottom-1 w-16 pointer-events-none z-10 sm:hidden"
             style={{ background: "linear-gradient(to right, transparent, hsl(var(--charcoal)))" }}
@@ -145,14 +155,12 @@ const CuratedLibrary = () => {
 
         {/* ── 3D Book Grid ── */}
         {dataLoading ? (
-          /* Skeleton: same 3-column grid, same dimensions as real cards */
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 max-w-3xl md:max-w-5xl mx-auto px-4" aria-label="Yuklanmoqda...">
             {Array.from({ length: GRID_COUNT }).map((_, i) => (
               <BookSkeleton key={i} />
             ))}
           </div>
         ) : booksError ? (
-          /* Error state */
           <div className="flex flex-col items-center justify-center py-12 text-center" role="alert">
             <AlertTriangle className="w-8 h-8 text-muted-foreground mb-3" />
             <p className="font-sans text-sm text-muted-foreground">Kitoblarni yuklashda xatolik yuz berdi</p>
@@ -167,10 +175,10 @@ const CuratedLibrary = () => {
                 return (
                   <motion.div
                     key={book.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 20 }}
-                    transition={{ duration: 0.3, delay: i * 0.05 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.25, delay: i * 0.04 }}
                     onClick={() => navigate(`/book/${getBookSlug(book)}`)}
                     className="group flex flex-col gap-2 max-w-[220px] mx-auto w-full cursor-pointer"
                   >
@@ -184,7 +192,7 @@ const CuratedLibrary = () => {
                         loading="lazy"
                       />
 
-                      {/* Ribbon Badge (first book only) — outside BookCover so it isn't clipped */}
+                      {/* Ribbon Badge (first book only) */}
                       {i === 0 && (
                         <div className="absolute top-4 right-0 z-20 translate-x-1 transition-all duration-500 [@media(hover:hover)]:group-hover:-translate-y-3 [@media(hover:hover)]:group-hover:-rotate-1">
                           <div className="bg-gradient-to-r from-amber-500 to-amber-600 text-foreground text-[9px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-l-sm shadow-[0_4px_10px_rgba(245,158,11,0.4)]">

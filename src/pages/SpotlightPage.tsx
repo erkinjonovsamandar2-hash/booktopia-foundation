@@ -148,12 +148,8 @@ const SpotlightPage = () => {
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
               {kolleksiyaBooks.map((book, i) => (
-                <motion.div
+                <div
                   key={book.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.05 }}
                   className="bg-black/40 border border-white/10 backdrop-blur-md rounded-xl overflow-visible group hover:border-amber-500/50 transition-all duration-300"
                 >
                   <div className="p-3">
@@ -173,7 +169,7 @@ const SpotlightPage = () => {
                       {locField(book, "author", lang)}
                     </p>
                   </div>
-                </motion.div>
+                </div>
               ))}
             </div>
           </section>

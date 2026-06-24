@@ -5,10 +5,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Preconnect to Supabase — starts DNS + TLS handshake immediately
-       instead of waiting for JS to execute (saves 100-300ms) -->
   <link rel="preconnect" href="https://ovlqfgjdmbvstqibrqrl.supabase.co" crossorigin />
   <link rel="dns-prefetch" href="https://ovlqfgjdmbvstqibrqrl.supabase.co" />
+
+  <!-- Preconnect to Google Fonts — starts DNS + TLS early -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Non-render-blocking font load (was @import in CSS = render-blocking) -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" media="print" onload="this.media='all'" />
 
   <title>Booktopia Nashriyoti | Eng sara kitoblar va tarjimalar</title>
   <meta name="description"

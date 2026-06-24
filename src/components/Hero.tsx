@@ -395,15 +395,11 @@ const MiniShelf = ({
             >
               {imgSrc
                 ? (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    whileInView={{ opacity: 1 }}
-                    viewport={{ once: true, amount: 0.1, margin: "50px" }}
-                    transition={{ duration: 1.2 }}
+                  <div
                     className="w-full h-full bg-muted aspect-[2/3] transform-gpu"
                   >
-                    <img src={imgSrc} alt="" width={76} height={114} loading="lazy" decoding="async" className="w-full h-full object-cover transition-transform group-hover:scale-105" draggable={false} />
-                  </motion.div>
+                    <img src={imgSrc} alt="" width={76} height={114} loading="lazy" decoding="async" className="img-fade w-full h-full object-cover transition-transform group-hover:scale-105" draggable={false} onLoad={(e) => (e.currentTarget as HTMLImageElement).classList.add('loaded')} />
+                  </div>
                 )
                 : <div className="w-full h-full bg-muted aspect-[2/3]" />
               }

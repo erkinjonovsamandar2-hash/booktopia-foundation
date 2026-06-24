@@ -7,7 +7,10 @@ import "./YangiNashrlar.css";
 const resolveBgUrl = (url: string | null | undefined): string | null => {
   if (!url) return null;
   if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("/")) return url;
-  return `${import.meta.env.VITE_SUPABASE_URL as string}/storage/v1/object/public/${url}`;
+  const base = import.meta.env.VITE_SUPABASE_URL as string;
+  // Use Supabase image transformation to serve as WebP at reduced quality
+  // This turns the 2.6MB PNG background into ~200KB WebP
+  return `${base}/storage/v1/render/image/public/${url}?width=1920&quality=75&format=origin`;
 };
 
 // ── Per-book tag metadata ──────────────────────────────────────────────────────

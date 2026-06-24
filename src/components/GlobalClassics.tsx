@@ -233,7 +233,7 @@ export default function GlobalClassics() {
   return (
     <section
       id="global-classics"
-      className="relative w-full min-h-screen bg-cover bg-center transition-all duration-1000 ease-in-out overflow-hidden transform-gpu"
+      className="section-gpu relative w-full min-h-screen bg-cover bg-center transition-all duration-1000 ease-in-out overflow-hidden transform-gpu"
       style={{ backgroundImage: `url(${BOOK_BACKGROUNDS[displayIndex] || BOOK_BACKGROUNDS[0]})` }}
     >
       {/* Overlay */}
@@ -311,7 +311,6 @@ export default function GlobalClassics() {
 
                   {/* CTA */}
                   <motion.button
-                    initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.5 }}
                     whileTap={{ scale: 0.985 }}
                     onClick={() => navigate(`/book/${getBookSlug(activeBook)}`)}
                     className="btn-glass"
@@ -433,14 +432,12 @@ export default function GlobalClassics() {
                   {/* FIX: aspect-[2/3] + bg-muted on wrapper = stable placeholder
                       before image loads, preventing cumulative layout shift    */}
                   <div className="w-full aspect-[2/3] rounded-md bg-muted overflow-hidden shadow-2xl relative z-10">
-                    <motion.img
+                    <img
                       src={getImageUrl(book.cover_url)}
                       alt={book.title}
-                      initial={{ opacity: 0 }}
-                      whileInView={{ opacity: 1 }}
-                      viewport={{ once: true, amount: 0.1, margin: "50px" }}
-                      transition={{ duration: 0.8 }}
-                      className="w-full h-full object-cover"
+                      className="img-fade w-full h-full object-cover"
+                      loading="lazy"
+                      onLoad={(e) => (e.currentTarget as HTMLImageElement).classList.add('loaded')}
                     />
                   </div>
                 </div>

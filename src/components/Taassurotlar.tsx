@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState, useCallback } from "react";
-import { motion, AnimatePresence, useInView, useReducedMotion } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ChevronLeft, ChevronRight, PenLine } from "lucide-react";
 import { useLang } from "@/context/LanguageContext";
 import { useData } from "@/context/DataContext";
@@ -139,28 +139,19 @@ const ReviewCard = ({ review, index }: { review: Review; index: number }) => {
   const rotateDeg = reduced ? 0 : index % 2 === 0 ? 1.6 : -1.6;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      whileInView={{
-        opacity: 1, y: 0,
-        transition: {
-          duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94],
-          delay: Math.min(index * 0.04, 0.24),
-        },
-      }}
-      viewport={{ once: true, margin: "-10% 0px" }}
-      whileHover={reduced ? {} : { rotate: 0, y: -8, zIndex: 30, transition: { duration: 0.2 } }}
+    <div
       className="
         relative w-[85vw] max-w-[400px] shrink-0 snap-center whitespace-normal
         rounded-xl p-6 cursor-default select-none
         bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md
         shadow-2xl border border-white/50 dark:border-neutral-700/50
+        transition-transform duration-200 hover:-translate-y-2
       "
-      style={{ rotate: rotateDeg, transformOrigin: "center bottom" }}
+      style={{ rotate: `${rotateDeg}deg`, transformOrigin: "center bottom" }}
     >
       <img
         src={waxSeal} alt="" aria-hidden draggable={false}
-        className="absolute -top-4 -right-4 w-14 h-14 object-contain pointer-events-none select-none drop-shadow-xl hover:scale-110 transition-transform duration-300"
+        className="absolute -top-4 -right-4 w-14 h-14 object-contain pointer-events-none select-none drop-shadow-xl"
       />
       <div
         className="font-serif text-accent/20 dark:text-accent/15 select-none mb-1 leading-none"
@@ -180,7 +171,7 @@ const ReviewCard = ({ review, index }: { review: Review; index: number }) => {
       <p className="font-sans text-[11px] text-neutral-500 dark:text-neutral-400 mt-1 font-medium">
         {[review.role, review.city].filter(Boolean).join(" · ")}
       </p>
-    </motion.div>
+    </div>
   );
 };
 
@@ -190,7 +181,7 @@ const Taassurotlar = () => {
   const { reviews: dbReviews = [] } = useData() as any;
   const sectionRef = useRef<HTMLElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const headerInView = useInView(sectionRef, { once: true, margin: "0px" });
+  const headerRef = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
 
   const [isPaused, setIsPaused] = useState(false);
@@ -267,12 +258,8 @@ const Taassurotlar = () => {
       <div className="relative z-10">
 
         {/* ── HIGH-CONTRAST HEADER ── */}
-        <motion.div
-          // REDUCED MARGIN BOTTOM
+        <div
           className="text-center px-6 mb-8"
-          initial={{ opacity: 0, y: 10 }}
-          animate={headerInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
         >
           <div className="inline-flex items-center justify-center gap-4 mb-4">
             {/* Left Pen - Darker for visibility */}
@@ -300,7 +287,7 @@ const Taassurotlar = () => {
           <p className="font-serif italic text-amber-950 dark:text-neutral-100 text-lg md:text-xl leading-loose max-w-md mx-auto drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)] dark:drop-shadow-md">
             {tx.subtitle}
           </p>
-        </motion.div>
+        </div>
 
         {/* Carousel - REDUCED VERTICAL PADDING */}
         <div
@@ -375,19 +362,13 @@ const Taassurotlar = () => {
         </AnimatePresence>
 
         {/* Bottom flourish - REDUCED MARGIN & THICKER, BOLDER LINES */}
-        <motion.div
-          className="flex items-center justify-center gap-4 mt-8 pb-2"
-          initial={{ opacity: 0 }}
-          animate={headerInView ? { opacity: 1 } : {}}
-          transition={{ delay: 0.7, duration: 0.6 }}
-        >
-          {/* Thicker h-[2px] and solid amber colors */}
+        <div className="flex items-center justify-center gap-4 mt-8 pb-2">
           <div className="h-[2px] w-20 bg-gradient-to-r from-amber-600/10 to-amber-600/80 dark:from-amber-500/10 dark:to-amber-500/80" />
           <img src={waxSeal} alt="" aria-hidden draggable={false}
             className="w-10 h-10 object-contain drop-shadow-md"
           />
           <div className="h-[2px] w-20 bg-gradient-to-l from-amber-600/10 to-amber-600/80 dark:from-amber-500/10 dark:to-amber-500/80" />
-        </motion.div>
+        </div>
 
       </div>
     </section>
