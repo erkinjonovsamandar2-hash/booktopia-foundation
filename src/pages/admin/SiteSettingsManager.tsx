@@ -60,6 +60,7 @@ const SiteSettingsManager = () => {
       const path = `site/yangi-nashrlar-bg-${Date.now()}.webp`;
       const { error: upErr } = await supabase.storage.from("books").upload(path, resizedBlob, {
         contentType: "image/webp",
+        cacheControl: "31536000, public, immutable",
         upsert: true,
       });
       if (upErr) throw upErr;

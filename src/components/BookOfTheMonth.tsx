@@ -44,7 +44,7 @@ function useSectionReveal() {
           observer.unobserve(container);
         }
       },
-      { threshold: 0.1, rootMargin: "-10% 0px" }
+      { threshold: 0.01, rootMargin: "0px" }
     );
     observer.observe(container);
     return () => observer.disconnect();

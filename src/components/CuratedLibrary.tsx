@@ -59,7 +59,7 @@ const CuratedLibrary = () => {
     }
     const observer = new IntersectionObserver(
       ([entry]) => { if (entry.isIntersecting) { el.classList.add("revealed"); observer.unobserve(el); } },
-      { threshold: 0.1, rootMargin: "-8% 0px" }
+      { threshold: 0.01, rootMargin: "0px" }
     );
     observer.observe(el);
     return () => observer.disconnect();

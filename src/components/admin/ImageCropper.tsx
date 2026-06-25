@@ -138,7 +138,7 @@ const ImageCropper = ({
         .from(bucket)
         .upload(fileName, blob, {
           contentType: "image/webp",
-          cacheControl: "3600",
+          cacheControl: "31536000, public, immutable",
           upsert: false,
         });
 

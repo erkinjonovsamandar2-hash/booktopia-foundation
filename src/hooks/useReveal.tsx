@@ -33,7 +33,7 @@ export function useReveal<T extends HTMLElement = HTMLDivElement>(): RefObject<T
           observer.unobserve(el); // once: true
         }
       },
-      { threshold: 0.08, rootMargin: "-8% 0px -5% 0px" }
+      { threshold: 0.01, rootMargin: "0px" }
     );
 
     observer.observe(el);

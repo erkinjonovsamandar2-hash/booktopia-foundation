@@ -31,7 +31,7 @@ const RevealOnScroll = ({ children, className = "", delay = 0 }: RevealProps) =>
           observer.unobserve(el);
         }
       },
-      { threshold: 0.08, rootMargin: "-8% 0px -5% 0px" }
+      { threshold: 0.01, rootMargin: "0px" }
     );
     observer.observe(el);
     return () => observer.disconnect();
