@@ -37,7 +37,16 @@ export function useReveal<T extends HTMLElement = HTMLDivElement>(): RefObject<T
     );
 
     observer.observe(el);
-    return () => observer.disconnect();
+
+    const fallbackTimer = setTimeout(() => {
+      el.classList.add("revealed");
+      observer.disconnect();
+    }, 600);
+
+    return () => {
+      observer.disconnect();
+      clearTimeout(fallbackTimer);
+    };
   }, []);
 
   return ref;

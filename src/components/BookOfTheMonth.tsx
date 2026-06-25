@@ -27,27 +27,44 @@ const FloatingBookVisual = ({ coverUrl, title }: { coverUrl: string | null; titl
   </>
 );
 
+
+
 // ── Hook: observe one container, reveal all `.reveal` children ────────────────
 function useSectionReveal() {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const container = ref.current;
     if (!container) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+
+    const revealAll = () => {
       container.querySelectorAll(".reveal,.reveal-scale,.reveal-fade").forEach(el => el.classList.add("revealed"));
+    };
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      revealAll();
       return;
     }
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          container.querySelectorAll(".reveal,.reveal-scale,.reveal-fade").forEach(el => el.classList.add("revealed"));
+          revealAll();
           observer.unobserve(container);
         }
       },
       { threshold: 0.01, rootMargin: "0px" }
     );
     observer.observe(container);
-    return () => observer.disconnect();
+
+    const fallbackTimer = setTimeout(() => {
+      revealAll();
+      observer.disconnect();
+    }, 600);
+
+    return () => {
+      observer.disconnect();
+      clearTimeout(fallbackTimer);
+    };
   }, []);
   return ref;
 }

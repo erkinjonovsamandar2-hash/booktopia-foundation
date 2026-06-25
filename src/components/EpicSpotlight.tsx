@@ -24,7 +24,16 @@ const EpicSpotlight = () => {
       { threshold: 0.01, rootMargin: "0px" }
     );
     observer.observe(el);
-    return () => observer.disconnect();
+
+    const fallbackTimer = setTimeout(() => {
+      el.querySelectorAll(".reveal,.reveal-scale").forEach(c => c.classList.add("revealed"));
+      observer.disconnect();
+    }, 600);
+
+    return () => {
+      observer.disconnect();
+      clearTimeout(fallbackTimer);
+    };
   }, []);
 
   return (
