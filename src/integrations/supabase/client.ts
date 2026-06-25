@@ -12,20 +12,29 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   );
 }
 
-// Use Vercel edge/Vite proxy in the browser for ultra-fast connection routing.
-// Node environment (build-time) uses the direct env URL.
-const effectiveUrl = typeof window !== "undefined"
-  ? (window.location.origin + "/_sb")
-  : (SUPABASE_URL ?? "https://ovlqfgjdmbvstqibrqrl.supabase.co");
+const directUrl = SUPABASE_URL ?? "https://ovlqfgjdmbvstqibrqrl.supabase.co";
 
 export const supabase = createClient<Database>(
-  effectiveUrl,
+  directUrl,
   SUPABASE_ANON_KEY ?? "placeholder",
   {
     auth: {
       storage: localStorage,
       persistSession: true,
       autoRefreshToken: true,
+    },
+    global: {
+      fetch: (url, options) => {
+        // Swap direct Supabase URL with relative proxy path in the browser
+        if (typeof window !== "undefined") {
+          const urlStr = url.toString();
+          if (urlStr.startsWith(directUrl)) {
+            const proxiedUrl = urlStr.replace(directUrl, window.location.origin + "/_sb");
+            return fetch(proxiedUrl, options);
+          }
+        }
+        return fetch(url, options);
+      },
     },
   }
 );

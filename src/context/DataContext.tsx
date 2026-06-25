@@ -455,6 +455,10 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
 
   // ── Realtime subscriptions ───────────────────────────────────────────────
   useEffect(() => {
+    // Only subscribe in dev mode or in admin/bot areas to keep the console clean in production
+    const shouldSubscribe = import.meta.env.DEV || window.location.pathname.includes("/admin") || window.location.pathname.includes("/bot");
+    if (!shouldSubscribe) return;
+
     const channel = supabase
       .channel("new_books_realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "new_books" }, () => { fetchNewBooks(); })
@@ -465,6 +469,10 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   }, [fetchNewBooks]);
 
   useEffect(() => {
+    // Only subscribe in dev mode or in admin/bot areas to keep the console clean in production
+    const shouldSubscribe = import.meta.env.DEV || window.location.pathname.includes("/admin") || window.location.pathname.includes("/bot");
+    if (!shouldSubscribe) return;
+
     const channel = supabase
       .channel("site_settings_realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "site_settings" }, () => { fetchSiteSettings(); })
