@@ -13,6 +13,7 @@ import SpotlightCard from "@/components/SpotlightCard";
 import { useData } from "@/context/DataContext";
 import { useLang, locField, type Lang } from "@/context/LanguageContext";
 import { getBookSlug } from "@/lib/slugify";
+import { imgUrl } from "@/lib/imageUrl";
 
 // ── Page-level translations (all static text, 3 languages) ───────────────────
 const CONTENT = {
@@ -315,9 +316,7 @@ const BizHaqimizda = () => {
   const T = CONTENT[lang as Lang] ?? CONTENT.uz;
 
   const getImgUrl = (url?: string | null): string | null => {
-    if (!url) return null;
-    if (url.startsWith("http://") || url.startsWith("https://")) return url;
-    return `${import.meta.env.VITE_SUPABASE_URL as string}/storage/v1/object/public/${url}`;
+    return imgUrl(url);
   };
 
   const publishedBooks = books.slice(0, 8);

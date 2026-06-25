@@ -6,10 +6,7 @@ import "./YangiNashrlar.css";
 import { imgUrl } from "@/lib/imageUrl";
 
 const resolveBgUrl = (url: string | null | undefined): string | null => {
-  if (!url) return null;
-  if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("/")) return url;
-  const base = import.meta.env.VITE_SUPABASE_URL as string;
-  return `${base}/storage/v1/object/public/${url}`;
+  return imgUrl(url);
 };
 
 // ── Per-book tag metadata ──────────────────────────────────────────────────────

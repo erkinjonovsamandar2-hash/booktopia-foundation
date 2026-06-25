@@ -17,6 +17,7 @@ import kashfiyotchiImg from "@/assets/quiz/archetypes/kashfiyotchi.webp";
 import ovchiImg from "@/assets/quiz/archetypes/ovchi.webp";
 import doktorImg from "@/assets/quiz/archetypes/doktor.webp";
 import { getBookSlug } from "@/lib/slugify";
+import { imgUrl } from "@/lib/imageUrl";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type ArchetypeKey = "faylasuf" | "kashfiyotchi" | "ovchi" | "doktor";
@@ -422,9 +423,9 @@ const MatchmakerQuiz = () => {
   };
 
   const getImgUrl = (url?: string | null): string | null => {
-    if (!url) return null;
-    if (url.startsWith("http://") || url.startsWith("https://")) return url;
-    return `${import.meta.env.VITE_SUPABASE_URL as string}/storage/v1/object/public/${url}`;
+
+
+    return imgUrl(url);
   };
 
   const handleAnswer = (scores: Scores) => {

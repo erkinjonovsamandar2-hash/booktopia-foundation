@@ -12,8 +12,11 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   );
 }
 
-// Use the direct Supabase URL. The local proxy (/_sb) is no longer necessary.
-const effectiveUrl = SUPABASE_URL ?? "https://placeholder.supabase.co";
+// Use Vercel edge/Vite proxy in the browser for ultra-fast connection routing.
+// Node environment (build-time) uses the direct env URL.
+const effectiveUrl = typeof window !== "undefined"
+  ? (window.location.origin + "/_sb")
+  : (SUPABASE_URL ?? "https://ovlqfgjdmbvstqibrqrl.supabase.co");
 
 export const supabase = createClient<Database>(
   effectiveUrl,

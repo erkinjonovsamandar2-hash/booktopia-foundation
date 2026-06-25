@@ -40,8 +40,9 @@ export function imgUrl(
     return url;
   }
 
-  // Raw storage path (most common case from the DB)
-  return `${SUPABASE_URL}/storage/v1/object/public/${url}`;
+  // Raw storage path — proxy through Vercel/Vite in browser for fast routing
+  const base = typeof window !== "undefined" ? (window.location.origin + "/_sb") : SUPABASE_URL;
+  return `${base}/storage/v1/object/public/${url}`;
 }
 
 /**

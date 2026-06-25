@@ -1,6 +1,10 @@
 {
   "routes": [
     {
+      "src": "/_sb/(.*)",
+      "dest": "https://ovlqfgjdmbvstqibrqrl.supabase.co/$1"
+    },
+    {
       "src": "/api/bot",
       "dest": "/api/bot.js"
     },

@@ -2,13 +2,12 @@ import { useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/context/CartContext";
+import { imgUrl } from "@/lib/imageUrl";
 import "./MiniCart.css";
 
 // ── Resolve cover URL ─────────────────────────────────────────────────────────
 const resolveUrl = (url: string | null | undefined): string => {
-  if (!url) return "";
-  if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("/")) return url;
-  return `${import.meta.env.VITE_SUPABASE_URL as string}/storage/v1/object/public/${url}`;
+  return imgUrl(url) || "";
 };
 
 // ── Qty stepper (big touch targets) ──────────────────────────────────────────
