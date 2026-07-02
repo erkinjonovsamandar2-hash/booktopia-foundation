@@ -311,6 +311,8 @@ function OrderRow({
 }
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
+const PAGE_SIZES = [5, 10, 20, 0] as const; // 0 = show all
+
 export default function OrdersManager() {
   const [orders, setOrders]       = useState<Order[]>([]);
   const [loading, setLoading]     = useState(true);
@@ -320,6 +322,8 @@ export default function OrdersManager() {
   const [working, setWorking]     = useState(false);
   const [confirm, setConfirm]     = useState<{ order: Order; nextStatus: string; label: string } | null>(null);
   const [toast, setToast]         = useState<{ msg: string; type: "success" | "error" } | null>(null);
+  const [pageSize, setPageSize]   = useState<number>(5);
+  const [visibleCount, setVisibleCount] = useState<number>(5);
 
   // ── Fetch orders ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -487,14 +491,14 @@ export default function OrdersManager() {
       </div>
 
       {/* Status tabs */}
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 20 }}>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 20, alignItems: "center" }}>
         {STATUS_TABS.map((t) => {
           const count = countByTab(t.key);
           const active = tab === t.key;
           return (
             <button
               key={t.key}
-              onClick={() => setTab(t.key)}
+              onClick={() => { setTab(t.key); setVisibleCount(pageSize || 9999); }}
               style={{
                 padding: "6px 12px", borderRadius: 20, border: "none",
                 background: active ? "#265999" : "#f3f4f6",
@@ -508,6 +512,29 @@ export default function OrdersManager() {
             </button>
           );
         })}
+
+        {/* Page size selector */}
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4 }}>
+          <span style={{ fontSize: 11, color: "#9ca3af", fontWeight: 600 }}>Ko'rsatish:</span>
+          {PAGE_SIZES.map((size) => {
+            const active = pageSize === size;
+            return (
+              <button
+                key={size}
+                onClick={() => { setPageSize(size); setVisibleCount(size || 9999); }}
+                style={{
+                  padding: "4px 8px", borderRadius: 6, border: "none",
+                  background: active ? "#265999" : "transparent",
+                  color: active ? "#fff" : "#6b7280",
+                  fontWeight: 700, fontSize: 11, cursor: "pointer",
+                  transition: "all 0.15s",
+                }}
+              >
+                {size === 0 ? "Barchasi" : size}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Orders list */}
@@ -520,7 +547,7 @@ export default function OrdersManager() {
         </div>
       ) : (
         <div>
-          {filtered.map((order) => (
+          {filtered.slice(0, visibleCount).map((order) => (
             <OrderRow
               key={order.id}
               order={order}
@@ -531,8 +558,39 @@ export default function OrdersManager() {
               onArchive={archiveOrder}
             />
           ))}
-          <p style={{ textAlign: "center", color: "#9ca3af", fontSize: 12, marginTop: 12 }}>
-            {filtered.length} ta buyurtma
+
+          {/* Pagination footer */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginTop: 16, paddingBottom: 8 }}>
+            {visibleCount < filtered.length && (
+              <button
+                onClick={() => setVisibleCount((prev) => Math.min(prev + (pageSize || 5), filtered.length))}
+                style={{
+                  padding: "8px 20px", borderRadius: 10, border: "1px solid #e5e7eb",
+                  background: "#fff", color: "#265999", fontWeight: 700, fontSize: 13,
+                  cursor: "pointer", transition: "all 0.15s",
+                }}
+                onMouseEnter={(e) => { (e.target as HTMLElement).style.background = "#EBF4FF"; }}
+                onMouseLeave={(e) => { (e.target as HTMLElement).style.background = "#fff"; }}
+              >
+                Ko'proq ko'rsatish ({Math.min(pageSize || 5, filtered.length - visibleCount)} ta)
+              </button>
+            )}
+            {visibleCount < filtered.length && filtered.length > (pageSize || 5) && (
+              <button
+                onClick={() => setVisibleCount(filtered.length)}
+                style={{
+                  padding: "8px 14px", borderRadius: 10, border: "none",
+                  background: "transparent", color: "#9ca3af", fontWeight: 600, fontSize: 12,
+                  cursor: "pointer",
+                }}
+              >
+                Barchasini ko'rsatish ({filtered.length})
+              </button>
+            )}
+          </div>
+
+          <p style={{ textAlign: "center", color: "#9ca3af", fontSize: 12, marginTop: 4 }}>
+            {Math.min(visibleCount, filtered.length)} / {filtered.length} ta buyurtma
           </p>
         </div>
       )}
