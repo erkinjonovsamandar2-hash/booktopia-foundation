@@ -342,16 +342,13 @@ export default function BotBooksManager() {
                     />
                   </div>
 
-                  {/* Stock (inline edit) */}
+                  {/* Stock (inline edit — always editable) */}
                   <div onClick={e => e.stopPropagation()}>
-                    {book.stock !== null && book.stock !== undefined ? (
-                      <InlineEdit
-                        value={String(book.stock)}
-                        onSave={v => updateField(book.id, "stock", v !== "" ? Number(v) : null)}
-                      />
-                    ) : (
-                      <StockBadge stock={book.stock} />
-                    )}
+                    <InlineEdit
+                      value={book.stock != null ? String(book.stock) : ""}
+                      onSave={v => updateField(book.id, "stock", v !== "" ? Number(v) : null)}
+                      placeholder="♾️ Cheksiz"
+                    />
                   </div>
 
                   {/* Shop visible toggle */}
