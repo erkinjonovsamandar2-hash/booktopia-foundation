@@ -75,7 +75,17 @@ export default function MiniCart() {
 
   const handleOrder = () => {
     closeMiniCart();
-    window.open("https://t.me/booktopia_press", "_blank", "noopener,noreferrer");
+    // Encode cart items as compact startapp parameter for Telegram miniapp deep-link
+    // Format: cart_<8charID>x<qty>_<8charID>x<qty>  (fits within 256 char limit)
+    const cartPayload = items
+      .map((item) => `${item.id.replace(/-/g, "").slice(0, 8)}x${item.qty}`)
+      .join("_");
+    const startapp = cartPayload ? `cart_${cartPayload}` : "";
+    window.open(
+      `https://t.me/Booktopiapress_bot/app${startapp ? `?startapp=${startapp}` : ""}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
   };
 
   const handleContinue = () => {
@@ -242,10 +252,10 @@ export default function MiniCart() {
                     </div>
                   )}
 
-                  {/* Primary CTA */}
+                  {/* Primary CTA — opens Telegram bot miniapp with cart */}
                   <button id="mc-order-btn" className="mc-btn-order" onClick={handleOrder}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.99 12 19.79 19.79 0 0 1 1.89 3.38 2 2 0 0 1 3.87 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                      <path d="M22 2 11 13M22 2l-7 20-4-9-9-4z" />
                     </svg>
                     Buyurtma berish
                   </button>
