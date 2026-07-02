@@ -41,6 +41,10 @@ export interface Database {
           /** Path/URL to a PDF excerpt stored in Supabase Storage (books/excerpts/) */
           excerpt_url: string | null;
           slug: string | null;
+          /** Whether this book is visible in the Telegram Mini App shop */
+          shop_visible: boolean | null;
+          /** Inventory count: NULL = unlimited, 0 = out of stock, >0 = available */
+          stock: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -66,6 +70,8 @@ export interface Database {
           img_focus_y?: number | null;
           excerpt_url?: string | null;
           slug?: string | null;
+          shop_visible?: boolean | null;
+          stock?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -91,6 +97,8 @@ export interface Database {
           img_focus_y?: number | null;
           excerpt_url?: string | null;
           slug?: string | null;
+          shop_visible?: boolean | null;
+          stock?: number | null;
           updated_at?: string;
         };
       };

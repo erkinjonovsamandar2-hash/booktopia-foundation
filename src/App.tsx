@@ -60,6 +60,7 @@ const OrdersManager = lazy(() => import("./pages/admin/bot/OrdersManager"));
 const BotCustomers = lazy(() => import("./pages/admin/bot/BotCustomers"));
 const BotStats = lazy(() => import("./pages/admin/bot/BotStats"));
 const BotBroadcast = lazy(() => import("./pages/admin/bot/BotBroadcast"));
+const BotBooksManager = lazy(() => import("./pages/admin/bot/BotBooksManager"));
 
 const queryClient = new QueryClient();
 
@@ -304,6 +305,7 @@ const AppInner = () => {
             }
           >
             <Route index element={<Lazy component={OrdersManager} />} />
+            <Route path="books" element={<Lazy component={BotBooksManager} />} />
             <Route path="customers" element={<Lazy component={BotCustomers} />} />
             <Route path="stats" element={<Lazy component={BotStats} />} />
             <Route path="broadcast" element={<Lazy component={BotBroadcast} />} />

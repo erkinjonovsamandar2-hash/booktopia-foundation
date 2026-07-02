@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { Package, Users, BarChart3, Megaphone, Menu, X, Home, LogOut, ArrowLeft } from "lucide-react";
+import { Package, Users, BarChart3, Megaphone, Menu, X, Home, LogOut, ArrowLeft, BookOpen } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -29,6 +29,7 @@ const BotLayout = () => {
 
   const navItems = [
     { label: "Buyurtmalar",  to: "/admin/bot",          icon: Package,    end: true, badge: pendingCount },
+    { label: "Kitoblar",     to: "/admin/bot/books",    icon: BookOpen },
     { label: "Mijozlar",     to: "/admin/bot/customers", icon: Users },
     { label: "Statistika",   to: "/admin/bot/stats",     icon: BarChart3 },
     { label: "Xabarnoma",    to: "/admin/bot/broadcast", icon: Megaphone },
