@@ -221,7 +221,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     };
 
-    initializeSession();
+    // Run auth immediately on admin routes (they need it to render). On public
+    // pages, defer it until the browser is idle so the token-refresh round-trip
+    // never competes with the homepage's critical data fetch — this is what made
+    // an admin's own homepage load slower than a guest's on a slow link. The
+    // public UI never blocks on auth, so a brief delay is invisible.
+    let deferTimer: ReturnType<typeof setTimeout> | undefined;
+    const onAdminPath = window.location.pathname.startsWith("/admin");
+    if (onAdminPath || !hasStoredSession()) {
+      initializeSession();
+    } else {
+      const ric = (window as typeof window & {
+        requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+      }).requestIdleCallback;
+      if (ric) ric(() => { if (isMounted) initializeSession(); }, { timeout: 3000 });
+      else deferTimer = setTimeout(() => { if (isMounted) initializeSession(); }, 1500);
+    }
 
     // ── Step 2: Listen for FUTURE auth state changes ──────────────────────
     // Handles sign-in and sign-out events that happen AFTER initial load.
@@ -267,6 +282,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // ── Cleanup ───────────────────────────────────────────────────────────
     return () => {
       isMounted = false;
+      if (deferTimer) clearTimeout(deferTimer);
       subscription.unsubscribe();
     };
   }, []); // Empty dep array — runs once on mount only
