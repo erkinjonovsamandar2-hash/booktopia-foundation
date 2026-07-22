@@ -30,17 +30,16 @@ export function imgUrl(
 ): string | null {
   if (!url) return null;
 
-  // Full Supabase storage URL → rewrite through the same-origin /_sb proxy so
-  // <img> tags take the fast Vercel-edge path instead of hitting supabase.co
-  // directly. A direct storage fetch from Uzbekistan/Central Asia can take 2s+;
-  // the proxy routes it via Vercel's edge, matching how the supabase client
-  // already proxies REST/auth traffic. Covers are stored as full URLs in the
-  // DB, so without this they bypassed the proxy entirely.
-  if (typeof window !== "undefined" && SUPABASE_URL && url.startsWith(SUPABASE_URL)) {
-    return url.replace(SUPABASE_URL, window.location.origin + "/_sb");
-  }
+  // IMPORTANT: images go DIRECT to Supabase storage, never through /_sb.
+  // Unlike the REST/auth API (which lives at the DB origin and is slow to reach
+  // directly from Central Asia — hence the proxy), Supabase storage is served
+  // by Cloudflare's global CDN. A direct storage fetch is cached at the nearest
+  // Cloudflare PoP: measured ~65ms from this region vs ~550ms through the Vercel
+  // /_sb proxy (which adds a Singapore hop and does not edge-cache). So for
+  // <img> we always want the direct, CDN-backed URL.
 
-  // Other absolute / data / http URLs — pass through unchanged
+  // Absolute / data / full http(s) URL (incl. full Supabase storage URLs) —
+  // pass through unchanged so they hit the Cloudflare CDN directly.
   if (
     url.startsWith("/") ||
     url.startsWith("data:") ||
@@ -50,9 +49,8 @@ export function imgUrl(
     return url;
   }
 
-  // Raw storage path — proxy through Vercel/Vite in browser for fast routing
-  const base = typeof window !== "undefined" ? (window.location.origin + "/_sb") : SUPABASE_URL;
-  return `${base}/storage/v1/object/public/${url}`;
+  // Raw storage path — build the DIRECT public URL (Cloudflare-CDN backed).
+  return `${SUPABASE_URL}/storage/v1/object/public/${url}`;
 }
 
 /**
