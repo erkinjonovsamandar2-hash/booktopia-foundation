@@ -30,7 +30,17 @@ export function imgUrl(
 ): string | null {
   if (!url) return null;
 
-  // Already an absolute or full URL — pass through unchanged
+  // Full Supabase storage URL → rewrite through the same-origin /_sb proxy so
+  // <img> tags take the fast Vercel-edge path instead of hitting supabase.co
+  // directly. A direct storage fetch from Uzbekistan/Central Asia can take 2s+;
+  // the proxy routes it via Vercel's edge, matching how the supabase client
+  // already proxies REST/auth traffic. Covers are stored as full URLs in the
+  // DB, so without this they bypassed the proxy entirely.
+  if (typeof window !== "undefined" && SUPABASE_URL && url.startsWith(SUPABASE_URL)) {
+    return url.replace(SUPABASE_URL, window.location.origin + "/_sb");
+  }
+
+  // Other absolute / data / http URLs — pass through unchanged
   if (
     url.startsWith("/") ||
     url.startsWith("data:") ||
