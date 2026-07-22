@@ -30,7 +30,11 @@ const FloatingBookVisual = ({ coverUrl, title }: { coverUrl: string | null; titl
 
 
 // ── Hook: observe one container, reveal all `.reveal` children ────────────────
-function useSectionReveal() {
+// `ready` must reflect when the observed container is actually in the DOM.
+// This component renders a skeleton (no containerRef) while data loads, so the
+// effect has to re-run once the real content mounts — otherwise the observer
+// attaches to nothing and the `.reveal` children stay at opacity:0 forever.
+function useSectionReveal(ready: boolean) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const container = ref.current;
@@ -65,7 +69,7 @@ function useSectionReveal() {
       observer.disconnect();
       clearTimeout(fallbackTimer);
     };
-  }, []);
+  }, [ready]);
   return ref;
 }
 
@@ -73,10 +77,15 @@ const BookOfTheMonth = () => {
   const { books, loading, booksError, siteSettings } = useData() as ReturnType<typeof useData> & { booksError?: boolean };
   const { lang } = useLang();
   const navigate = useNavigate();
-  const containerRef = useSectionReveal();
+
+  // The real content (with containerRef) only renders when this is true.
+  // Passing it as the effect dependency re-arms the reveal observer at that
+  // point — see useSectionReveal above.
+  const contentReady = !(loading || books.length === 0 || booksError);
+  const containerRef = useSectionReveal(contentReady);
 
   // ── Loading / Error State ────────────────────────────────────────────────
-  if (loading || books.length === 0 || booksError) {
+  if (!contentReady) {
     return (
       <section className="relative flex flex-col justify-center min-h-[auto] lg:min-h-[85vh] overflow-hidden bg-card py-24 lg:py-32 border-y border-border z-10">
         <div className="relative z-10 mx-auto w-full max-w-6xl px-6 sm:px-12">

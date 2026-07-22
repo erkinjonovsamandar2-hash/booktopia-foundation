@@ -47,7 +47,10 @@ COMPONENT MAP (Pre-Flight Audit)
 */
 
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap');
+/* Google Fonts are loaded via <link> in index.html <head>, not @import.
+   An @import here is render-blocking AND serialized: the browser can't even
+   discover the font request until this whole CSS bundle has downloaded and
+   parsed. The <link> lets the fetch start in parallel with everything else. */
 
 /* stylelint-disable at-rule-no-unknown */
 @tailwind base;
@@ -769,9 +772,12 @@ COMPONENT MAP (Pre-Flight Audit)
      will-change: transform → promotes to its own GPU layer.
      transform: translateZ(0) → triggers layer promotion on older browsers.   */
   .section-gpu {
+    /* `contain` isolates each section's reflow/repaint — cheap and always safe.
+       We deliberately DO NOT set a permanent `will-change: transform` here:
+       pinning 5 large sections into their own GPU layers for the whole page
+       lifetime wastes compositor memory and makes interaction sluggish on
+       mid/low-end phones. will-change should be transient, not baked in. */
     contain: layout style paint;
-    will-change: transform;
-    transform: translateZ(0);
   }
 
   /* ── CSS-Only Scroll Reveal System ──────────────────────────────────────────
