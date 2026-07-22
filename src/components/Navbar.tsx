@@ -65,7 +65,12 @@ const Navbar = () => {
     <>
       {/* CSS-only scroll progress bar — see index.css .scroll-progress-bar */}
       <div className="scroll-progress-bar" aria-hidden="true" />
-      <nav className="fixed top-0 left-0 right-0 z-[999] bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-white/60 dark:border-white/10 shadow-[0_8px_30px_rgba(38,89,153,0.08)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.12)] transition-colors duration-500 ease-out">
+      {/* NOTE: no backdrop-blur here on purpose. This nav is `fixed`, so a
+          backdrop-filter would re-blur the whole viewport width behind it on
+          every scroll frame — the single biggest cause of scroll jank. A near-
+          opaque solid background gives the same premium look with zero per-frame
+          paint cost. */}
+      <nav className="fixed top-0 left-0 right-0 z-[999] bg-white/95 dark:bg-black/90 border-b border-white/60 dark:border-white/10 shadow-[0_8px_30px_rgba(38,89,153,0.08)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.12)] transition-colors duration-500 ease-out">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 md:px-8">
 
           {/* ── Logo ── */}
