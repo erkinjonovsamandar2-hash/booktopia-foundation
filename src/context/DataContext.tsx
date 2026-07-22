@@ -6,7 +6,7 @@ import {
   useCallback,
   ReactNode,
 } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, supabasePublic } from "@/integrations/supabase/client";
 import { DEFAULT_QUIZ_CONFIG, DEFAULT_SITE_SETTINGS } from "@/lib/mockData";
 import type { Book, NewBook, Article } from "@/types/database";
 
@@ -217,7 +217,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   const fetchBooks = useCallback(async () => {
     try {
       console.log("[DataContext] Attempting to fetch books...");
-      const { data, error } = await supabase
+      const { data, error } = await supabasePublic
         .from("books")
         .select("*")
         .order("sort_order", { ascending: true, nullsFirst: false });
@@ -245,7 +245,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchNewBooks = useCallback(async () => {
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await (supabasePublic as any)
         .from("new_books")
         .select("*")
         .order("sort_order", { ascending: true, nullsFirst: false });
@@ -264,7 +264,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   const fetchBlogPosts = useCallback(async () => {
     try {
       console.log("[DataContext] Attempting to fetch blog posts...");
-      const { data, error } = await supabase
+      const { data, error } = await supabasePublic
         .from("blog_posts")
         .select("*")
         .order("published_at", { ascending: false });
@@ -293,7 +293,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   // fetchReviews — silently handles missing table (42P01)
   const fetchReviews = useCallback(async () => {
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await (supabasePublic as any)
         .from("reviews")
         .select("*")
         .eq("status", "published")
@@ -312,7 +312,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchTeamMembers = useCallback(async () => {
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await (supabasePublic as any)
         .from("team_members")
         .select("*")
         .order("sort_order", { ascending: true });
@@ -324,7 +324,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchAuthorSpotlights = useCallback(async () => {
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await (supabasePublic as any)
         .from("author_spotlights")
         .select("*")
         .order("sort_order", { ascending: true });
@@ -336,7 +336,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchPartners = useCallback(async () => {
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await (supabasePublic as any)
         .from("partners")
         .select("*")
         .order("sort_order", { ascending: true });
@@ -352,7 +352,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   // exist, which causes a noisy console error and a slow request cycle.
   const fetchQuiz = useCallback(async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabasePublic
         .from("quiz_config")
         .select("*")
         .limit(1);
@@ -372,7 +372,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   // fetchSiteSettings — silently handles missing table (42P01)
   const fetchSiteSettings = useCallback(async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabasePublic
         .from("site_settings")
         .select("*");
 
