@@ -115,6 +115,21 @@ const fetchIsAdmin = async (
   }
 };
 
+// Detects whether a Supabase login token exists in localStorage WITHOUT making
+// any network call. Anonymous visitors (no token) can skip the entire auth
+// bootstrap — getSession() would otherwise attempt a token refresh over the
+// network, which hangs for far-away users and competes with the data queries
+// for the connection. Only users who have actually signed in have this key.
+const hasStoredSession = (): boolean => {
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith("sb-") && k.endsWith("-auth-token")) return true;
+    }
+  } catch { /* localStorage blocked — treat as anonymous */ }
+  return false;
+};
+
 // ── Provider ──────────────────────────────────────────────────────────────────
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -138,6 +153,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // onAuthStateChange below handles FUTURE changes only — it never
     // touches the loading state.
     const initializeSession = async () => {
+      // Fast path for anonymous visitors: no stored login token means there is
+      // nothing to restore, so skip getSession() entirely. This removes the
+      // token-refresh network round-trip (and its 15s hang on slow links) for
+      // everyone who hasn't signed in — i.e. the entire public audience.
+      if (!hasStoredSession()) {
+        setSession(null);
+        setUser(null);
+        setIsAdmin(false);
+        setLoading(false);
+        return;
+      }
+
       try {
         console.log("[AuthContext] Fetching session...");
 
