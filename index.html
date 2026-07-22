@@ -8,9 +8,14 @@
   <link rel="preconnect" href="https://ovlqfgjdmbvstqibrqrl.supabase.co" crossorigin />
   <link rel="dns-prefetch" href="https://ovlqfgjdmbvstqibrqrl.supabase.co" />
 
-  <!-- Preconnect to Google Fonts — starts DNS + TLS early (font loaded via CSS @import) -->
+  <!-- Preconnect to Google Fonts — starts DNS + TLS early -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Load fonts via <link> (not CSS @import) so the fetch starts in parallel
+       with the main bundle instead of waiting for CSS to download + parse. -->
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" />
 
   <title>Booktopia Nashriyoti | Eng sara kitoblar va tarjimalar</title>
   <meta name="description"

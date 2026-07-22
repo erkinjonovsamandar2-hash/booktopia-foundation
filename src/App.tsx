@@ -2,7 +2,6 @@ import { useEffect, lazy, Suspense, useState } from "react";
 import { BrowserRouter, Route, Navigate, useLocation } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AnimatePresence } from "framer-motion";
-import LoadingSplash from "@/components/LoadingSplash";
 import logoImg from "@/assets/Logo-blue.png";
 import { useData } from "@/context/DataContext";
 
@@ -165,9 +164,14 @@ const Lazy = ({
   </Suspense>
 );
 
-// Shows LoadingSplash on first load of ANY page, fades out when data is ready.
+// Applies the primary-color theme override. No longer gates rendering on data
+// load — every section renders immediately and shows its own skeleton while
+// data streams in (Hero, BookOfTheMonth, YangiNashrlar all handle empty state).
+// The old full-screen splash blocked the entire app — including the navbar and
+// every non-home route — behind 4 Supabase queries, which was the single
+// biggest cause of perceived slowness.
 const AppLoader = ({ children }: { children: React.ReactNode }) => {
-  const { loading, siteSettings } = useData();
+  const { siteSettings } = useData();
 
   // Apply primary color override via data attribute
   useEffect(() => {
@@ -175,7 +179,6 @@ const AppLoader = ({ children }: { children: React.ReactNode }) => {
     document.documentElement.dataset.primary = color;
   }, [siteSettings.theme?.primary_color]);
 
-  if (loading) return <LoadingSplash />;
   return <>{children}</>;
 };
 

@@ -25,8 +25,11 @@ export const supabase = createClient<Database>(
     },
     global: {
       fetch: (url, options) => {
-        // Swap direct Supabase URL with relative proxy path in the browser
-        if (typeof window !== "undefined") {
+        // DEV ONLY: route through the local /_sb Vite proxy to bypass CORS in
+        // Lovable's preview iframe. In production we hit Supabase directly —
+        // the /_sb reverse proxy added a browser→Vercel→Supabase hop that cost
+        // ~800ms–1s per query (measured), with no caching benefit.
+        if (import.meta.env.DEV && typeof window !== "undefined") {
           const urlStr = url.toString();
           if (urlStr.startsWith(directUrl)) {
             const proxiedUrl = urlStr.replace(directUrl, window.location.origin + "/_sb");
