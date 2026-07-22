@@ -25,11 +25,14 @@ export const supabase = createClient<Database>(
     },
     global: {
       fetch: (url, options) => {
-        // DEV ONLY: route through the local /_sb Vite proxy to bypass CORS in
-        // Lovable's preview iframe. In production we hit Supabase directly —
-        // the /_sb reverse proxy added a browser→Vercel→Supabase hop that cost
-        // ~800ms–1s per query (measured), with no caching benefit.
-        if (import.meta.env.DEV && typeof window !== "undefined") {
+        // Route ALL Supabase traffic (REST + auth + storage + realtime) through
+        // the same-origin /_sb proxy. This is NOT just a dev CORS shim — it is a
+        // real performance fix for the target audience: a direct browser->
+        // supabase.co connection from Uzbekistan/Central Asia takes the slow
+        // international route and can hang for 8-20s. The /_sb rewrite (see
+        // vercel.json) sends the request through Vercel's edge, which has fast,
+        // well-peered connectivity to Supabase. In DEV, Vite's proxy handles /_sb.
+        if (typeof window !== "undefined") {
           const urlStr = url.toString();
           if (urlStr.startsWith(directUrl)) {
             const proxiedUrl = urlStr.replace(directUrl, window.location.origin + "/_sb");
