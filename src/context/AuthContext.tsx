@@ -1,5 +1,6 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useRef,
@@ -18,6 +19,10 @@ interface AuthContextType {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
+  // Wakes the auth bootstrap. Auth stays dormant on public pages (so an admin's
+  // token never runs getSession/role checks while just browsing the site);
+  // admin route guards call this to initialize auth when it's actually needed.
+  ensureAuth: () => void;
 }
 
 // ── Context ───────────────────────────────────────────────────────────────────
@@ -138,12 +143,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAdminLoading, setIsAdminLoading] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Auth stays DORMANT on public pages when an admin token is present, so the
+  // token's getSession/refresh + role check never run (and never log their slow
+  // warnings) while just browsing. It's requested eagerly only when auth is
+  // actually needed: on admin routes, or when there's no token at all (that path
+  // is instant and just marks the user as an anonymous guest).
+  const [authRequested, setAuthRequested] = useState(
+    () =>
+      (typeof window !== "undefined" &&
+        window.location.pathname.startsWith("/admin")) ||
+      !hasStoredSession()
+  );
+  const ensureAuth = useCallback(() => setAuthRequested(true), []);
+
   // Tracks the last userId we fetched a role for.
   // Passed into fetchIsAdmin to prevent triple-fetch:
   //   (1) initializeSession  (2) INITIAL_SESSION event  (3) StrictMode remount
   const lastCheckedUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
+    // Stay dormant until auth is actually requested (see authRequested above).
+    // On public pages with an admin token this never runs, so the token's
+    // getSession/refresh + role check simply don't happen while browsing.
+    if (!authRequested) return;
+
     // isMounted guard — prevents setState calls after unmount (StrictMode safe)
     let isMounted = true;
 
@@ -221,22 +244,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     };
 
-    // Run auth immediately on admin routes (they need it to render). On public
-    // pages, defer it until the browser is idle so the token-refresh round-trip
-    // never competes with the homepage's critical data fetch — this is what made
-    // an admin's own homepage load slower than a guest's on a slow link. The
-    // public UI never blocks on auth, so a brief delay is invisible.
-    let deferTimer: ReturnType<typeof setTimeout> | undefined;
-    const onAdminPath = window.location.pathname.startsWith("/admin");
-    if (onAdminPath || !hasStoredSession()) {
-      initializeSession();
-    } else {
-      const ric = (window as typeof window & {
-        requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
-      }).requestIdleCallback;
-      if (ric) ric(() => { if (isMounted) initializeSession(); }, { timeout: 3000 });
-      else deferTimer = setTimeout(() => { if (isMounted) initializeSession(); }, 1500);
-    }
+    initializeSession();
 
     // ── Step 2: Listen for FUTURE auth state changes ──────────────────────
     // Handles sign-in and sign-out events that happen AFTER initial load.
@@ -282,10 +290,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // ── Cleanup ───────────────────────────────────────────────────────────
     return () => {
       isMounted = false;
-      if (deferTimer) clearTimeout(deferTimer);
       subscription.unsubscribe();
     };
-  }, []); // Empty dep array — runs once on mount only
+  }, [authRequested]); // Runs once auth is requested (immediately, or on admin entry)
 
   // ── signIn ────────────────────────────────────────────────────────────────
   // onAuthStateChange fires SIGNED_IN after this resolves —
@@ -313,7 +320,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, session, isAdmin, isAdminLoading, loading, signIn, signOut }}
+      value={{ user, session, isAdmin, isAdminLoading, loading, signIn, signOut, ensureAuth }}
     >
       {children}
     </AuthContext.Provider>

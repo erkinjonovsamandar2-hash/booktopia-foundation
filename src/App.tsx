@@ -96,7 +96,10 @@ const SuspenseFallback = () => (
 
 // ── Auth Guard ────────────────────────────────────────────────────────────────
 const RequireAdmin = ({ children }: { children: React.ReactNode }) => {
-  const { user, isAdmin, isAdminLoading, loading, signOut } = useAuth();
+  const { user, isAdmin, isAdminLoading, loading, signOut, ensureAuth } = useAuth();
+  // Wake the auth bootstrap now that we're on an admin route. Auth stays dormant
+  // while browsing public pages, so this is where it actually initializes.
+  useEffect(() => { ensureAuth(); }, [ensureAuth]);
   // Show spinner during initial session load OR while role is being fetched
   if (loading || isAdminLoading)
     return (

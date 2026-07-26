@@ -8,8 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookOpen, Loader2 } from "lucide-react";
 
 const AdminLogin = () => {
-  const { signIn, user } = useAuth();
+  const { signIn, user, ensureAuth } = useAuth();
   const navigate = useNavigate();
+  // Wake auth on the login page too, so an already-signed-in admin who lands
+  // here directly is detected and redirected instead of seeing the form.
+  useEffect(() => { ensureAuth(); }, [ensureAuth]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
