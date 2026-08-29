@@ -36,7 +36,7 @@ export default function Wishlist() {
           .select('*')
           .in('id', savedIds);
           
-        if (data) setBooks(data);
+        if (data) setBooks(data.filter(b => b.shop_visible !== false));
       } catch (err) {
         console.error('Wishlist error', err);
       } finally {
