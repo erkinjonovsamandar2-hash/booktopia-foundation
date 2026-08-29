@@ -35,6 +35,7 @@ export default function Catalog() {
   const t = (k) => T[k]?.[lang] ?? T[k]?.uz;
 
   const filtered = books.filter(b => {
+    if (b.shop_visible === false) return false;
     const q = search.toLowerCase();
     const matchQ = !q ||
       (b.title || '').toLowerCase().includes(q) ||

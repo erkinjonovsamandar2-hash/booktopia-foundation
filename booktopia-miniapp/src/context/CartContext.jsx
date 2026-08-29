@@ -42,8 +42,8 @@ export const CartProvider = ({ children }) => {
     const importCart = async () => {
       const { data: books } = await supabase
         .from('books')
-        .select('id, title, author, cover_url, price, category')
-        .eq('shop_visible', true);
+        .select('id, title, author, cover_url, price, stock, category')
+        .neq('shop_visible', false);
 
       if (!books || books.length === 0) return;
 
@@ -51,13 +51,14 @@ export const CartProvider = ({ children }) => {
       const newItems = [];
       for (const entry of entries) {
         const match = books.find(b => b.id.replace(/-/g, '').startsWith(entry.idPrefix));
-        if (match) {
+        if (match && match.stock !== 0) {
           newItems.push({
             id: match.id,
             title: match.title,
             author: match.author,
             cover_url: match.cover_url,
             price: match.price,
+            stock: match.stock,
             category: match.category,
             qty: entry.qty,
           });
@@ -79,6 +80,7 @@ export const CartProvider = ({ children }) => {
   }, []);
 
   const addItem = (book) => {
+    if (book.stock === 0 || (book.stock != null && book.stock <= 0)) return;
     setItems(prev => {
       const exists = prev.find(i => i.id === book.id);
       if (exists) {

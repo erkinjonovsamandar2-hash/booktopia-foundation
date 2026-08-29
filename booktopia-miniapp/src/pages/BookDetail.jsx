@@ -19,6 +19,7 @@ const T = {
   notFound: { uz: 'Kitob topilmadi', ru: 'Книга не найдена', en: 'Book not found' },
   excerpt:  { uz: 'Namuna o\'qish', ru: 'Читать фрагмент', en: 'Read excerpt' },
   wholesaleOffer: { uz: '10+ xarid qiling, har biridan 5 000 so\'m tejab qoling!', ru: 'Купите 10+ и сэкономьте 5 000 сум на каждой!', en: 'Buy 10+ and save 5,000 UZS on each!' },
+  outOfStock: { uz: '🚫 Zaxirada tugagan', ru: '🚫 Нет в наличии', en: '🚫 Out of stock' },
 };
 
 export default function BookDetail() {
@@ -48,14 +49,8 @@ export default function BookDetail() {
   const t = (k) => T[k]?.[lang] ?? T[k]?.uz ?? k;
   const inCart = book && items.some(i => i.id === book.id);
 
-  const handleBuy = () => {
-    haptic('medium');
-    if (!inCart) addItem(book);
-    setShowSheet(true);
-  };
-
   if (loading) return <LoadingState />;
-  if (!book) return (
+  if (!book || book.shop_visible === false) return (
     <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <p style={{ color: 'var(--text-2)' }}>{t('notFound')}</p>
     </div>
@@ -66,6 +61,14 @@ export default function BookDetail() {
   const desc   = book[`description_${lang}`] || book.description || '';
   const shortDesc = desc.slice(0, 200);
   const isLong = desc.length > 200;
+  const isOutOfStock = book.stock === 0 || (book.stock != null && book.stock <= 0);
+
+  const handleBuy = () => {
+    if (isOutOfStock) return;
+    haptic('medium');
+    if (!inCart) addItem(book);
+    setShowSheet(true);
+  };
 
   return (
     <PageTransition>
@@ -93,6 +96,7 @@ export default function BookDetail() {
                 src={book.cover_url}
                 alt={title}
                 className="book-card__cover"
+                style={isOutOfStock ? { filter: 'grayscale(0.5)', opacity: 0.85 } : undefined}
               />
               <div className="book-card__spine" />
             </div>
@@ -111,15 +115,21 @@ export default function BookDetail() {
             {t('author')}: <strong style={{ color: 'var(--text-1)' }}>{author}</strong>
           </p>
 
-          {/* Price */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+          {/* Price & Stock Badge */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8, flexWrap: 'wrap' }}>
             {book.price ? (
               <span className="price" style={{ fontSize: 24 }}>{formatPrice(book.price)}</span>
             ) : (
               <span style={{ color: 'var(--text-2)', fontSize: 16, fontWeight: 700 }}>{t('noPrice')}</span>
             )}
+
+            {isOutOfStock && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, background: 'var(--discount)', color: '#fff', padding: '4px 10px', borderRadius: 6, fontWeight: 700 }}>
+                ⚠️ {t('outOfStock')}
+              </span>
+            )}
           </div>
-          {book.price && book.price >= 10000 && (
+          {!isOutOfStock && book.price && book.price >= 10000 && (
             <div style={{ marginBottom: 20 }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, background: 'var(--discount)', color: '#fff', padding: '4px 8px', borderRadius: 6, fontWeight: 700 }}>
                 <span style={{ fontSize: 14 }}>🔥</span> {t('wholesaleOffer')}
@@ -181,12 +191,16 @@ export default function BookDetail() {
           <motion.button
             className="btn-primary"
             onClick={handleBuy}
-            whileTap={{ scale: 0.97, y: 1 }}
+            disabled={isOutOfStock}
+            whileTap={isOutOfStock ? {} : { scale: 0.97, y: 1 }}
             transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+            style={isOutOfStock ? { background: 'var(--surface-2)', color: 'var(--text-3)', cursor: 'not-allowed' } : undefined}
           >
-            {inCart
+            {isOutOfStock
+              ? t('outOfStock')
+              : inCart
               ? (lang === 'ru' ? '✓ Оформить заказ' : lang === 'en' ? '✓ Place order' : '✓ Buyurtma berish')
-              : t('buy')} &nbsp;·&nbsp; {formatPrice(book.price)}
+              : t('buy')} {!isOutOfStock && <>&nbsp;·&nbsp; {formatPrice(book.price)}</>}
           </motion.button>
         </div>
       )}

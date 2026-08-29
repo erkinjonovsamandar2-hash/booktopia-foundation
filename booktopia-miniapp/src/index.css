@@ -293,6 +293,7 @@ h1, h2, h3, h4 {
 .badge--new  { background: var(--badge-new);  color: #fff; }
 .badge--sale { background: var(--discount);    color: #fff; }
 .badge--soon { background: var(--blue-600);    color: rgba(255,255,255,0.85); }
+.badge--out-of-stock { background: var(--discount); color: #fff; }
 
 /* ── Wishlist heart button ──────────────────────────────────────────────────── */
 .wish-btn {

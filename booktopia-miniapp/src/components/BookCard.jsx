@@ -11,6 +11,7 @@ const T = {
   addedDesc:   { uz: 'Buyurtmani "Savat" bo\'limida rasmiylashtirishingiz mumkin.', ru: 'Вы можете оформить заказ в разделе "Корзина".', en: 'You can finish your order in the Cart tab.' },
   buy:         { uz: '🛒 Sotib olish',      ru: '🛒 Купить',           en: '🛒 Buy now' },
   noPrice:     { uz: 'Narx yo\'q',          ru: 'Цена не указана',     en: 'No price' },
+  outOfStock:  { uz: 'Tugagan',             ru: 'Закончилось',         en: 'Out of stock' },
 };
 
 export default function BookCard({ book, lang = 'uz', onNavigate, index = 0 }) {
@@ -22,9 +23,11 @@ export default function BookCard({ book, lang = 'uz', onNavigate, index = 0 }) {
   const price  = book.price;
   const isNew  = book.category === 'new' || book.featured;
   const isSoon = book.category === 'soon';
+  const isOutOfStock = book.stock === 0 || (book.stock != null && book.stock <= 0);
 
   const handleBuy = (e) => {
     e.stopPropagation();
+    if (isOutOfStock) return;
     haptic('success');
     addItem(book);
     
@@ -58,6 +61,7 @@ export default function BookCard({ book, lang = 'uz', onNavigate, index = 0 }) {
                 src={book.cover_url}
                 alt={title}
                 loading="lazy"
+                style={isOutOfStock ? { filter: 'grayscale(0.5)', opacity: 0.85 } : undefined}
               />
             ) : (
               <div className="book-card__cover-placeholder">📚</div>
@@ -66,8 +70,14 @@ export default function BookCard({ book, lang = 'uz', onNavigate, index = 0 }) {
           </div>
 
           {/* Badge */}
-          {isNew && !isSoon && <span className="badge badge--new">New</span>}
-          {isSoon && <span className="badge badge--soon">Tez kunda</span>}
+          {isOutOfStock ? (
+            <span className="badge badge--out-of-stock">{T.outOfStock[lang] || T.outOfStock.uz}</span>
+          ) : (
+            <>
+              {isNew && !isSoon && <span className="badge badge--new">New</span>}
+              {isSoon && <span className="badge badge--soon">Tez kunda</span>}
+            </>
+          )}
 
           {/* Wishlist */}
           <WishBtn bookId={book.id} />
@@ -81,7 +91,7 @@ export default function BookCard({ book, lang = 'uz', onNavigate, index = 0 }) {
                 ? <span className="price" style={{ fontSize: 14 }}>{formatPrice(price)}</span>
                 : <span style={{ fontSize: 13, color: 'var(--text-3)' }}>{T.noPrice[lang]}</span>
               }
-              {!isSoon && price && (
+              {!isSoon && !isOutOfStock && price && (
                 <button
                   className="book-card__btn-quick"
                   onClick={handleBuy}

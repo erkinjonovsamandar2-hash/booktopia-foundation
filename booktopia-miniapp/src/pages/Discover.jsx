@@ -107,9 +107,10 @@ export default function Discover() {
       const { data: fw } = await supabase
         .from('books').select('*')
         .eq('featured', true)
-        .order('created_at', { ascending: false })
-        .limit(1);
-      if (fw?.[0]) setWeekBook(fw[0]);
+        .order('created_at', { ascending: false });
+      
+      const visibleFw = (fw || []).filter(b => b.shop_visible !== false);
+      if (visibleFw[0]) setWeekBook(visibleFw[0]);
 
       // For each path fetch by specific IDs
       const allIds = PATHS.flatMap(p => p.bookIds);
@@ -118,7 +119,8 @@ export default function Discover() {
         .in('id', allIds);
 
       if (allBooks) {
-        const byId = Object.fromEntries(allBooks.map(b => [b.id, b]));
+        const visibleBooks = allBooks.filter(b => b.shop_visible !== false);
+        const byId = Object.fromEntries(visibleBooks.map(b => [b.id, b]));
         const results = {};
         PATHS.forEach(path => {
           results[path.id] = path.bookIds.map(id => byId[id]).filter(Boolean);
@@ -398,6 +400,7 @@ function PathCard({ path, books, purchased, lang, t, onNavigate, index }) {
               const btitle  = book[`title_${lang}`] || book.title  || '—';
               const bauthor = book[`author_${lang}`] || book.author || '—';
               const done    = purchased.has(book.id);
+              const isOutOfStock = book.stock === 0 || (book.stock != null && book.stock <= 0);
               return (
                 <motion.div
                   key={book.id}
@@ -415,13 +418,13 @@ function PathCard({ path, books, purchased, lang, t, onNavigate, index }) {
                   {/* Step circle */}
                   <div style={{
                     width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
-                    background: done ? path.color : 'var(--surface-2)',
+                    background: done ? path.color : isOutOfStock ? 'var(--discount)' : 'var(--surface-2)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 11, fontWeight: 800,
-                    color: done ? '#fff' : 'var(--text-3)',
+                    color: (done || isOutOfStock) ? '#fff' : 'var(--text-3)',
                     transition: 'background 0.2s',
                   }}>
-                    {done ? '✓' : idx + 1}
+                    {done ? '✓' : isOutOfStock ? '✕' : idx + 1}
                   </div>
 
                   {/* Cover thumb */}
@@ -430,7 +433,8 @@ function PathCard({ path, books, purchased, lang, t, onNavigate, index }) {
                       width: 48, height: 68, objectFit: 'cover',
                       borderRadius: '2px 7px 7px 2px', flexShrink: 0,
                       boxShadow: '-3px 3px 10px rgba(0,0,0,0.2)',
-                      opacity: done ? 0.45 : 1, transition: 'opacity 0.2s',
+                      opacity: (done || isOutOfStock) ? 0.5 : 1, transition: 'opacity 0.2s',
+                      filter: isOutOfStock ? 'grayscale(0.5)' : undefined,
                     }} />
                   ) : (
                     <div style={{
@@ -443,20 +447,28 @@ function PathCard({ path, books, purchased, lang, t, onNavigate, index }) {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{
                       fontSize: 13, fontWeight: 700, lineHeight: 1.25,
-                      color: done ? 'var(--text-3)' : 'var(--text-1)',
+                      color: (done || isOutOfStock) ? 'var(--text-3)' : 'var(--text-1)',
                       textDecoration: done ? 'line-through' : 'none',
                     }}>{btitle}</p>
                     <p style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600, marginTop: 2 }}>{bauthor}</p>
                   </div>
 
-                  {!done && book.price && (
+                  {!done && isOutOfStock ? (
+                    <span style={{
+                      fontSize: 11, fontWeight: 800,
+                      color: 'var(--discount)', flexShrink: 0,
+                      background: '#FEF2F2', padding: '3px 8px', borderRadius: 6,
+                    }}>
+                      Tugagan
+                    </span>
+                  ) : !done && book.price ? (
                     <span style={{
                       fontSize: 12, fontWeight: 800,
                       color: path.color, flexShrink: 0,
                     }}>
                       {formatPrice(book.price)}
                     </span>
-                  )}
+                  ) : null}
                 </motion.div>
               );
             })}

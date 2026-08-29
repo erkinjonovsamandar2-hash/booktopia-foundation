@@ -90,9 +90,10 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
     ? (items.find(i => i.id === book.id) ? items : [...items, { ...book, qty: 1 }])
     : items;
 
+  const hasOutOfStockItems = orderItems.some(i => i.stock === 0 || (i.stock != null && i.stock <= 0));
   const total = orderItems.reduce((s, i) => s + getEffectivePrice(i.price, i.qty) * i.qty, 0);
   const phoneDigits = maskPhone(phone).digits;
-  const canSubmit = phoneDigits.length === 9 && !loading;
+  const canSubmit = phoneDigits.length === 9 && !loading && !hasOutOfStockItems;
 
   const handlePhoneChange = (e) => {
     const { display } = maskPhone(e.target.value);
@@ -101,6 +102,14 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
 
   const handleConfirm = async () => {
     if (!canSubmit) return;
+    if (hasOutOfStockItems) {
+      setError(
+        lang === 'ru' ? 'В вашем заказе есть закончившиеся книги.' :
+        lang === 'en' ? 'Some items in your order are out of stock.' :
+        'Buyurtmangizda zaxirada tugagan kitoblar bor.'
+      );
+      return;
+    }
     haptic('medium');
     setLoading(true);
     setError(null);

@@ -115,11 +115,11 @@ export default async function handler(req, res) {
   // ── Supabase admin client ─────────────────────────────────────────────────
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-  // ── Fetch REAL prices from database ───────────────────────────────────────
+  // ── Fetch REAL prices & stock from database ────────────────────────────────
   const bookIds = items.map(i => i.book_id);
   const { data: books, error: booksError } = await supabase
     .from('books')
-    .select('id, title, price')
+    .select('id, title, price, stock, shop_visible')
     .in('id', bookIds);
 
   if (booksError) {
@@ -133,6 +133,13 @@ export default async function handler(req, res) {
   const missingIds = items.filter(i => !priceMap[i.book_id]).map(i => i.book_id);
   if (missingIds.length > 0) {
     return res.status(400).json({ error: `Books not found: ${missingIds.join(', ')}` });
+  }
+
+  // ── Reject hidden or out-of-stock items ───────────────────────────────────
+  const unavailable = items.map(i => priceMap[i.book_id]).filter(b => b && (b.shop_visible === false || b.stock === 0 || (b.stock != null && b.stock <= 0)));
+  if (unavailable.length > 0) {
+    const titles = unavailable.map(b => `"${b.title}"`).join(', ');
+    return res.status(400).json({ error: `Ushbu kitob(lar) zaxirada tugagan yoki sotuvda yo'q: ${titles}` });
   }
 
   // Build verified order items — prices come from DB, not the client

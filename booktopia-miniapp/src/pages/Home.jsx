@@ -107,8 +107,9 @@ export default function Home() {
     haptic('success');
   };
 
-  // De-duplicate same book across language editions
-  const uniqueBooks = books.reduce((acc, b) => {
+  // De-duplicate same book across language editions & filter hidden books
+  const visibleBooks = books.filter(b => b.shop_visible !== false);
+  const uniqueBooks = visibleBooks.reduce((acc, b) => {
     const key = (b.author || '').toLowerCase().replace(/\s/g, '') +
                 (b.title  || '').toLowerCase().slice(0, 12);
     if (!acc.seen.has(key)) { acc.seen.add(key); acc.list.push(b); }
@@ -430,6 +431,7 @@ export default function Home() {
 function PortraitCard({ book, lang, index, onNavigate, onBuy }) {
   const title  = book[`title_${lang}`] || book.title  || '—';
   const author = book[`author_${lang}`] || book.author || '—';
+  const isOutOfStock = book.stock === 0 || (book.stock != null && book.stock <= 0);
 
   return (
     <motion.div
@@ -454,7 +456,7 @@ function PortraitCard({ book, lang, index, onNavigate, onBuy }) {
           <img
             src={book.cover_url}
             alt={title}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', filter: isOutOfStock ? 'grayscale(0.5)' : undefined, opacity: isOutOfStock ? 0.85 : 1 }}
             loading="lazy"
           />
         ) : (
@@ -471,8 +473,15 @@ function PortraitCard({ book, lang, index, onNavigate, onBuy }) {
           background: 'linear-gradient(to right, rgba(255,255,255,0.4), rgba(255,255,255,0.05) 2px, rgba(0,0,0,0.3) 5px, rgba(0,0,0,0.6) 8px, transparent)',
           pointerEvents: 'none',
         }} />
-        {/* New badge */}
-        {book.category === 'new' && (
+        {/* Out of stock or New badge */}
+        {isOutOfStock ? (
+          <div style={{
+            position: 'absolute', top: 8, right: 8,
+            background: 'var(--discount)', color: '#fff',
+            fontSize: 9, fontWeight: 900, padding: '2px 7px',
+            borderRadius: 20, letterSpacing: '0.05em',
+          }}>TUGAGAN</div>
+        ) : book.category === 'new' && (
           <div style={{
             position: 'absolute', top: 8, right: 8,
             background: '#FF6B35', color: '#fff',
@@ -498,7 +507,7 @@ function PortraitCard({ book, lang, index, onNavigate, onBuy }) {
               {formatPrice(book.price)}
             </span>
           ) : <span style={{ fontSize: 12, color: 'var(--text-3)' }}>—</span>}
-          {book.price && (
+          {!isOutOfStock && book.price && (
             <motion.button
               onClick={onBuy}
               whileTap={{ scale: 0.9 }}

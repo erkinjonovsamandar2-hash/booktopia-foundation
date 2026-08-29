@@ -45,6 +45,8 @@ export default function Cart() {
     );
   }
 
+  const hasOutOfStockItems = items.some(i => i.stock === 0 || (i.stock != null && i.stock <= 0));
+
   return (
     <PageTransition>
     <>
@@ -59,6 +61,13 @@ export default function Cart() {
             {t('clear')}
           </button>
         </div>
+
+        {hasOutOfStockItems && (
+          <div style={{ margin: '0 16px 12px', padding: '10px 14px', background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 12, color: 'var(--discount)', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span>⚠️</span>
+            <span>{lang === 'ru' ? 'В корзине есть закончившиеся товары. Пожалуйста, удалите их.' : lang === 'en' ? 'Some items in your cart are out of stock. Please remove them.' : 'Savatda tugagan kitoblar bor. Iltimos, ularni o\'chiring.'}</span>
+          </div>
+        )}
 
         {/* Items */}
         <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--surface)' }}>
@@ -85,8 +94,10 @@ export default function Cart() {
           <motion.button
             className="btn-primary"
             onClick={() => { haptic('medium'); setShowSheet(true); }}
-            whileTap={{ scale: 0.97, y: 1 }}
+            disabled={hasOutOfStockItems}
+            whileTap={hasOutOfStockItems ? {} : { scale: 0.97, y: 1 }}
             transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+            style={hasOutOfStockItems ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
           >
             {t('checkout')}
           </motion.button>
@@ -196,6 +207,11 @@ function SwipeableCartItem({ item, lang, showSwipeHint, onRemove, onQtyUp, onQty
             {item.qty >= 10 && (
               <span style={{ display: 'inline-block', fontSize: 10, background: 'var(--discount)', color: '#fff', padding: '2px 6px', borderRadius: 4, fontWeight: 700, marginTop: 4 }}>
                 Ulgurji narx
+              </span>
+            )}
+            {(item.stock === 0 || (item.stock != null && item.stock <= 0)) && (
+              <span style={{ display: 'inline-block', fontSize: 10, background: 'var(--discount)', color: '#fff', padding: '2px 6px', borderRadius: 4, fontWeight: 700, marginTop: 4 }}>
+                Zaxirada tugagan
               </span>
             )}
           </div>

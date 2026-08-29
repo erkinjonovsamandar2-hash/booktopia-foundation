@@ -15,6 +15,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import AnimatedRoutes from "@/components/AnimatedRoutes";
 import PageTransition from "@/components/PageTransition";
 import GlobalEffects from "@/components/GlobalEffects";
+import IntroSplash from "@/components/IntroSplash";
 import Navbar from "@/components/Navbar";
 import ScrollToTop from "@/components/ScrollToTop";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -191,6 +192,8 @@ const AppInner = () => {
 
   return (
     <>
+      {/* Brief branded intro overlay — non-blocking; the app renders underneath */}
+      <IntroSplash />
       <ScrollToTop />
       <GlobalEffects />
       <Navbar />
