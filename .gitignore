@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Sensitive — never commit account recovery codes / secrets
+recovery-codes*.txt
+*recovery-codes*

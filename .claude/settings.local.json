@@ -62,7 +62,25 @@
       "Bash(git push *)",
       "Bash(git commit -m 'fix: pass related_book_ids through addArticle and updateArticle *)",
       "Bash(git commit -m 'fix: use library-style BookCover + SpotlightCard for related books *)",
-      "Bash(grep -E \"\\\\.tsx$\")"
+      "Bash(grep -E \"\\\\.tsx$\")",
+      "Bash(git --no-pager diff --stat)",
+      "Bash(git fetch *)",
+      "Bash(git rev-list *)",
+      "Bash(gh repo *)",
+      "Bash(git checkout *)",
+      "Bash(git --no-pager diff --cached --stat)",
+      "Bash(gh pr create --title 'perf: render homepage instantly + drop Supabase reverse-proxy hop' --body ' *)",
+      "Bash(git remote *)",
+      "mcp__claude-in-chrome__list_connected_browsers",
+      "Bash(gh pr *)",
+      "Bash(git pull *)",
+      "Bash(git --no-pager log --oneline -3)",
+      "Bash(curl -sS -D - -o /dev/null https://www.booktopia.uz/)",
+      "Bash(curl -sS -D - -o /dev/null https://zabarjad-media-j04lx67zw-samandars-projects-593e66ec.vercel.app/)",
+      "Bash(git --no-pager log --oneline -4)",
+      "Bash(curl -sS -D - -o /dev/null \"https://www.booktopia.uz/?t=$\\(date +%s\\)\")",
+      "Bash(curl -sS -D - -o /dev/null https://www.booktopia.uz/_sb/storage/v1/object/public/books/1782988882614-41a55ad7-9715-4a85-ab94-49e0a4113809.webp)",
+      "Bash(curl -sS -D - -o /dev/null https://ovlqfgjdmbvstqibrqrl.supabase.co/storage/v1/object/public/books/1782988882614-41a55ad7-9715-4a85-ab94-49e0a4113809.webp)"
     ]
   }
 }
