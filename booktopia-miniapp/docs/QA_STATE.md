@@ -143,20 +143,21 @@ supabase.from('books').select('id, title, stock, shop_visible').eq('id', '9f04d1
 
 ## Test Cases
 
-**Legend**: ⬜ Not Run · ✅ Pass · ❌ Fail · ⚠️ Partial · 🔧 Fixed (was ❌, now passes)
+**Status Legend**: ⬜ Not Run · ✅ Pass · ❌ Fail · ⚠️ Partial · 🔧 Fixed (was ❌, now passes)  
+**Method Legend**: 🤖 Automated Test (Node/API/DB) · 🌐 Live Browser Test (Natural Environment)
 
 ### Batch 1: BookCard Component (TC-01 → TC-08)
 
-| # | Test | Expected | Status | Notes |
-|---|------|----------|--------|-------|
-| TC-01 | OOS book shows "Tugagan" badge on BookCard | Red badge on cover | ✅ | Ultrabilim (stock=0) verified |
-| TC-02 | OOS book cover has grayscale filter | Subtle gray, opacity ~0.85 | ✅ | Verified opacity and filter |
-| TC-03 | OOS book hides quick-buy cart button | Blue 🛒 button absent | ✅ | Quick buy button hidden for OOS |
-| TC-04 | In-stock book shows normal card | No badge, full color, cart visible | ✅ | Oʻzbekistonda yana bir kun verified |
-| TC-05 | stock=null (unlimited) treated as in-stock | No OOS badge, cart button present | ✅ | Null stock treated as available |
-| TC-06 | Negative stock treated as OOS | Same as stock=0 behavior | ✅ | Stock=-1 isOutOfStock=true |
-| TC-07 | shop_visible=false excluded from Home | Book absent from all Home sections | ✅ | Excluded from home dataset |
-| TC-08 | shop_visible=false excluded from Catalog | Not found even by title search | ✅ | Excluded from catalog search |
+| # | Test | Expected | Status | Method | Notes |
+|---|------|----------|--------|--------|-------|
+| TC-01 | OOS book shows "Tugagan" badge on BookCard | Red badge on cover | ✅ | 🤖 Automated | Ultrabilim (stock=0) state verified |
+| TC-02 | OOS book cover has grayscale filter | Subtle gray, opacity ~0.85 | ✅ | 🤖 Automated | Verified opacity and filter prop |
+| TC-03 | OOS book hides quick-buy cart button | Blue 🛒 button absent | ✅ | 🤖 Automated | Quick buy button hidden for OOS |
+| TC-04 | In-stock book shows normal card | No badge, full color, cart visible | ✅ | 🤖 Automated | Oʻzbekistonda yana bir kun verified |
+| TC-05 | stock=null (unlimited) treated as in-stock | No OOS badge, cart button present | ✅ | 🤖 Automated | Null stock treated as available |
+| TC-06 | Negative stock treated as OOS | Same as stock=0 behavior | ✅ | 🤖 Automated | Stock=-1 isOutOfStock=true |
+| TC-07 | shop_visible=false excluded from Home | Book absent from all Home sections | ✅ | 🤖 Automated | Excluded from home dataset |
+| TC-08 | shop_visible=false excluded from Catalog | Not found even by title search | ✅ | 🤖 Automated | Excluded from catalog search |
 
 ### Batch 2: BookDetail Page (TC-09 → TC-17)
 
@@ -200,16 +201,16 @@ supabase.from('books').select('id, title, stock, shop_visible').eq('id', '9f04d1
 
 ### Batch 5: Checkout & Server API (TC-34 → TC-41)
 
-| # | Test | Expected | Status | Notes |
-|---|------|----------|--------|-------|
-| TC-34 | CheckoutSheet blocks OOS submission | canSubmit false, disabled | ⬜ | |
-| TC-35 | Server rejects OOS book checkout | HTTP 400 | ✅ | Returned 400 "zaxirada tugagan" |
-| TC-36 | Server rejects hidden book checkout | HTTP 400 | ✅ | Returned 400 "sotuvda yo'q" |
-| TC-37 | Server allows in-stock checkout | HTTP 200 | ⬜ | |
-| TC-38 | Server allows stock=null checkout | HTTP 200 | ⬜ | |
-| TC-39 | Mixed cart: rejects if ANY item OOS | HTTP 400, entire order rejected | ⬜ | |
-| TC-40 | Deep link excludes OOS books | Only in-stock in cart | ⬜ | |
-| TC-41 | Deep link excludes hidden books | Hidden excluded | ⬜ | |
+| # | Test | Expected | Status | Method | Notes |
+|---|------|----------|--------|--------|-------|
+| TC-34 | CheckoutSheet blocks OOS submission | canSubmit false, disabled | ⬜ | | |
+| TC-35 | Server rejects OOS book checkout | HTTP 400 | ✅ | 🤖 Automated | Returned 400 "zaxirada tugagan" |
+| TC-36 | Server rejects hidden book checkout | HTTP 400 | ✅ | 🤖 Automated | Returned 400 "sotuvda yo'q" |
+| TC-37 | Server allows in-stock checkout | HTTP 200 | ⬜ | | |
+| TC-38 | Server allows stock=null checkout | HTTP 200 | ⬜ | | |
+| TC-39 | Mixed cart: rejects if ANY item OOS | HTTP 400, entire order rejected | ⬜ | | |
+| TC-40 | Deep link excludes OOS books | Only in-stock in cart | ⬜ | | |
+| TC-41 | Deep link excludes hidden books | Hidden excluded | ⬜ | | |
 
 ### Batch 6: Wishlist (TC-42 → TC-45)
 
