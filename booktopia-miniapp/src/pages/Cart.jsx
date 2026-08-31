@@ -1,8 +1,9 @@
-import { useState, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
 import { useCart } from '../context/CartContext';
 import { useLang } from '../context/LangContext';
+import { useToast } from '../context/ToastContext';
 import { formatPrice, haptic, getEffectivePrice } from '../lib/utils';
 import CheckoutSheet from '../components/CheckoutSheet';
 import PageTransition from '../components/PageTransition';
@@ -18,13 +19,27 @@ const T = {
   remove:     { uz: 'O\'chirish',      ru: 'Удалить',    en: 'Remove' },
   browse:     { uz: 'Katalogga o\'tish', ru: 'В каталог', en: 'Go to catalog' },
   addMore:    { uz: '+ Yana kitob qo\'shish', ru: '+ Добавить еще книгу', en: '+ Add another book' },
+  outOfStock: { uz: 'Zaxirada tugagan', ru: 'Нет в наличии', en: 'Out of stock' },
 };
 
 export default function Cart() {
   const navigate = useNavigate();
-  const { items, removeItem, incrementQty, decrementQty, clearCart, totalPrice, totalCount } = useCart();
+  const { items, removeItem, incrementQty, decrementQty, clearCart, totalPrice, totalCount, importNotice, dismissImportNotice } = useCart();
+  const { showToast } = useToast();
   const { lang } = useLang();
   const [showSheet, setShowSheet] = useState(false);
+
+  useEffect(() => {
+    if (importNotice?.added > 0) {
+      const msg = lang === 'ru'
+        ? `Добавлено ${importNotice.added} кн. с сайта`
+        : lang === 'en'
+        ? `Added ${importNotice.added} book(s) from website`
+        : `Veb-saytdan ${importNotice.added} ta kitob savatingizga o'tkazildi!`;
+      showToast(msg, null, 'success');
+      dismissImportNotice();
+    }
+  }, [importNotice, showToast, dismissImportNotice, lang]);
 
   const t = (k) => T[k]?.[lang] ?? T[k]?.uz;
 
@@ -211,7 +226,7 @@ function SwipeableCartItem({ item, lang, showSwipeHint, onRemove, onQtyUp, onQty
             )}
             {(item.stock === 0 || (item.stock != null && item.stock <= 0)) && (
               <span style={{ display: 'inline-block', fontSize: 10, background: 'var(--discount)', color: '#fff', padding: '2px 6px', borderRadius: 4, fontWeight: 700, marginTop: 4 }}>
-                Zaxirada tugagan
+                {T.outOfStock[lang] || T.outOfStock.uz}
               </span>
             )}
           </div>
@@ -231,4 +246,3 @@ function SwipeableCartItem({ item, lang, showSwipeHint, onRemove, onQtyUp, onQty
     </div>
   );
 }
-

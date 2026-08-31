@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import confetti from 'canvas-confetti';
 import { useCart } from '../context/CartContext';
 import { formatPrice, haptic, tg, getEffectivePrice } from '../lib/utils';
 
@@ -65,7 +64,7 @@ const sheetSpring   = { type: 'spring', stiffness: 420, damping: 38 };
 const overlayFade   = { duration: 0.22 };
 
 export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
-  const { items, totalPrice, clearCart, addItem } = useCart();
+  const { items } = useCart();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('+998 ');
   const [address, setAddress] = useState('');
@@ -76,12 +75,45 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
   const [error, setError] = useState(null);
   const [geoCoords, setGeoCoords] = useState(null);
   const [geoLoading, setGeoLoading] = useState(false);
+  const [geoError, setGeoError] = useState(null);
+  // One key per mounted sheet, regenerated after a failure so a genuine retry
+  // is allowed but a double-tap is not.
+  const idempotencyKeyRef = useRef(
+    (crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`)
+  );
+
+  const sheetRef = useRef(null);
+
+  // The sheet is a modal: Escape closes it, and the hardware / Telegram back
+  // gesture closes it instead of navigating the page away mid-order.
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') { e.stopPropagation(); onClose?.(); } };
+    document.addEventListener('keydown', onKey);
+
+    window.history.pushState({ sheet: true }, '');
+    const onPop = () => onClose?.();
+    window.addEventListener('popstate', onPop);
+
+    sheetRef.current?.focus?.();
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      window.removeEventListener('popstate', onPop);
+      document.body.style.overflow = prevOverflow;
+      // If the sheet closed by any route other than back, drop our history entry.
+      if (window.history.state?.sheet) window.history.back();
+    };
+  }, [onClose]);
 
   // Pre-fill from Telegram user data
+  // Telegram profile data is an external input; hydrate the form on mount.
   useEffect(() => {
     const user = tg()?.initDataUnsafe?.user;
     if (user) {
       const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ');
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (fullName) setName(fullName);
     }
   }, []);
@@ -93,7 +125,9 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
   const hasOutOfStockItems = orderItems.some(i => i.stock === 0 || (i.stock != null && i.stock <= 0));
   const total = orderItems.reduce((s, i) => s + getEffectivePrice(i.price, i.qty) * i.qty, 0);
   const phoneDigits = maskPhone(phone).digits;
-  const canSubmit = phoneDigits.length === 9 && !loading && !hasOutOfStockItems;
+  // The server now requires a deliverable destination: a typed address or GPS.
+  const hasDestination = Boolean(address.trim()) || Boolean(geoCoords);
+  const canSubmit = phoneDigits.length === 9 && hasDestination && !loading && !hasOutOfStockItems;
 
   const handlePhoneChange = (e) => {
     const { display } = maskPhone(e.target.value);
@@ -121,6 +155,11 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          // Raw initData lets the server verify who is ordering instead of
+          // trusting a client-supplied id. Absent outside Telegram.
+          init_data:         tg()?.initData ?? null,
+          // Stable per-attempt key so a retry cannot create a second order.
+          idempotency_key:   idempotencyKeyRef.current,
           items: orderItems.map(i => ({
             book_id: i.id,
             title:   i.title,
@@ -169,6 +208,7 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
 
     } catch (err) {
       console.error('[Checkout]', err);
+      idempotencyKeyRef.current = crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`;
       setError(
         lang === 'ru' ? 'Произошла ошибка. Попробуйте ещё раз.' :
         lang === 'en' ? 'An error occurred. Please try again.' :
@@ -196,6 +236,11 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
       {/* Sheet — slides up with spring, drag handle to dismiss */}
       <motion.div
         className="sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('title')}
+        ref={sheetRef}
+        tabIndex={-1}
         initial={{ y: '100%', x: '-50%' }}
         animate={{ y: 0, x: '-50%' }}
         exit={{ y: '100%', x: '-50%' }}
@@ -362,17 +407,39 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
                     <motion.button
                       type="button"
                       onClick={async () => {
-                        if (!navigator.geolocation) return;
+                        if (!navigator.geolocation) {
+                          setGeoError(
+                            lang === 'ru' ? 'Геолокация недоступна в этом браузере.'
+                            : lang === 'en' ? 'Geolocation is not available in this browser.'
+                            : 'Bu brauzerda joylashuv mavjud emas.'
+                          );
+                          return;
+                        }
                         setGeoLoading(true);
+                        setGeoError(null);
                         navigator.geolocation.getCurrentPosition(
                           (pos) => {
                             const { latitude: lat, longitude: lng } = pos.coords;
                             setGeoCoords({ lat, lng });
+                            setGeoError(null);
                             setAddress(`📍 GPS: ${lat.toFixed(5)}, ${lng.toFixed(5)}`);
                             haptic('success');
                             setGeoLoading(false);
                           },
-                          () => { setGeoLoading(false); haptic('error'); },
+                          (err) => {
+                            setGeoLoading(false);
+                            haptic('error');
+                            // Denial used to be a silent no-op with only a haptic.
+                            setGeoError(
+                              err?.code === 1
+                                ? (lang === 'ru' ? 'Доступ к геолокации запрещён. Введите адрес вручную.'
+                                  : lang === 'en' ? 'Location permission denied. Please type your address.'
+                                  : 'Joylashuvga ruxsat berilmadi. Manzilni qo\'lda kiriting.')
+                                : (lang === 'ru' ? 'Не удалось определить местоположение.'
+                                  : lang === 'en' ? 'Could not determine your location.'
+                                  : 'Joylashuvni aniqlab bo\'lmadi.')
+                            );
+                          },
                           { timeout: 8000 }
                         );
                       }}
@@ -389,6 +456,9 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
                     </motion.button>
                   </label>
                   <input className="input" value={address} onChange={e => { setAddress(e.target.value); if (!e.target.value.startsWith('📍 GPS')) setGeoCoords(null); }} placeholder={t('addressPh')} />
+                  {geoError && (
+                    <p role="alert" style={{ fontSize: 11, color: 'var(--discount)', marginTop: 4, fontWeight: 600 }}>{geoError}</p>
+                  )}
                 </div>
 
                 {/* Payment */}

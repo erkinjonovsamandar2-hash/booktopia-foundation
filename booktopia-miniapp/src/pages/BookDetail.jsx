@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { formatPrice, haptic } from '../lib/utils';
@@ -7,6 +7,7 @@ import { useLang } from '../context/LangContext';
 import { useCart } from '../context/CartContext';
 import CheckoutSheet from '../components/CheckoutSheet';
 import PageTransition from '../components/PageTransition';
+import LoadError from '../components/LoadError';
 
 const T = {
   back:     { uz: '← Orqaga',   ru: '← Назад',    en: '← Back' },
@@ -17,6 +18,8 @@ const T = {
   category: { uz: 'Tur',        ru: 'Жанр',        en: 'Category' },
   noPrice:  { uz: 'Narxi so\'rash', ru: 'Узнать цену', en: 'Ask for price' },
   notFound: { uz: 'Kitob topilmadi', ru: 'Книга не найдена', en: 'Book not found' },
+  backToCatalog: { uz: 'Katalogga qaytish', ru: 'Вернуться в каталог', en: 'Back to catalog' },
+  askPrice: { uz: 'Narxni so\'rash', ru: 'Узнать цену', en: 'Ask for price' },
   excerpt:  { uz: 'Namuna o\'qish', ru: 'Читать фрагмент', en: 'Read excerpt' },
   wholesaleOffer: { uz: '10+ xarid qiling, har biridan 5 000 so\'m tejab qoling!', ru: 'Купите 10+ и сэкономьте 5 000 сум на каждой!', en: 'Buy 10+ and save 5,000 UZS on each!' },
   outOfStock: { uz: '🚫 Zaxirada tugagan', ru: '🚫 Нет в наличии', en: '🚫 Out of stock' },
@@ -30,10 +33,11 @@ export default function BookDetail() {
 
   const [book, setBook] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showSheet, setShowSheet] = useState(false);
   const [readMore, setReadMore] = useState(false);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     // The URL param may be a full slug like "title-words-{uuid}" or a bare UUID.
     // Supabase's id column is UUID type — passing a non-UUID string causes a 400.
     // We extract the UUID by grabbing the last 36 characters if the param is longer.
@@ -41,15 +45,29 @@ export default function BookDetail() {
     const match = id.match(UUID_RE);
     const bookId = match ? match[0] : id;
 
+    setLoading(true);
+    setError(null);
     supabase.from('books').select('*').eq('id', bookId).maybeSingle()
-      .then(({ data }) => { if (data) setBook(data); })
+      .then(({ data, error: err }) => {
+        // A failed request must not look identical to a book that does not exist.
+        if (err) { setError(err); return; }
+        setBook(data ?? null);
+      })
+      .catch(err => setError(err))
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => { load(); }, [load]);
 
   const t = (k) => T[k]?.[lang] ?? T[k]?.uz ?? k;
   const inCart = book && items.some(i => i.id === book.id);
 
   if (loading) return <LoadingState />;
+  if (error) return (
+    <div className="page" style={{ paddingTop: 24 }}>
+      <LoadError lang={lang} onRetry={load} />
+    </div>
+  );
   if (!book || book.shop_visible === false) return (
     <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <p style={{ color: 'var(--text-2)' }}>{t('notFound')}</p>
