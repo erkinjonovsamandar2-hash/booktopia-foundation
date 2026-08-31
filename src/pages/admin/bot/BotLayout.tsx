@@ -15,7 +15,9 @@ const BotLayout = () => {
       const { count } = await (supabase as any)
         .from("miniapp_orders")
         .select("*", { count: "exact", head: true })
-        .eq("status", "pending");
+        .eq("status", "pending")
+        // Archived pre-launch orders must not inflate the badge.
+        .is("archived_at", null);
       if (count != null) setPendingCount(count);
     };
     fetchPending();
