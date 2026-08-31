@@ -64,6 +64,11 @@
 /* ── Reset ──────────────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* Form controls do not inherit typography by default, so every button that
+   lacked an inline fontFamily was rendering in the browser's system font while
+   its neighbours used Nunito. */
+button, input, select, textarea { font: inherit; color: inherit; }
+
 html {
   font-size: 16px;
   -webkit-text-size-adjust: 100%;

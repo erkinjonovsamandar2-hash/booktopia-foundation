@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
-import { formatPrice, haptic } from '../lib/utils';
+import { formatPrice, haptic, getCategoryLabel } from '../lib/utils';
 import { useLang } from '../context/LangContext';
 import { useCart } from '../context/CartContext';
 import CheckoutSheet from '../components/CheckoutSheet';
@@ -96,21 +96,45 @@ export default function BookDetail() {
         {/* Back button */}
         <button
           onClick={() => navigate(-1)}
-          style={{ margin: '12px 16px 0', border: 'none', background: 'none', color: 'var(--blue-500)', fontFamily: 'Nunito, sans-serif', fontSize: 15, fontWeight: 700, cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
+          style={{ margin: '12px 16px 0', border: 'none', background: 'none', color: 'var(--blue-500)', fontSize: 15, fontWeight: 700, cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
         >
           {t('back')}
         </button>
 
         {/* Cover hero */}
         <div style={{
+          position: 'relative',
           background: book.bg_color || 'linear-gradient(135deg, #0A192F 0%, #265999 100%)',
           display: 'flex',
           justifyContent: 'center',
-          padding: '24px 40px',
+          padding: '28px 40px 32px',
           margin: '12px 0 0',
+          overflow: 'hidden',
         }}>
+          {/* Backdrop drawn from the cover itself, blurred and dimmed. */}
+          {book.cover_url && (
+            <div
+              aria-hidden="true"
+              style={{
+                position: 'absolute', inset: '-20%',
+                backgroundImage: `url(${book.cover_url})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                filter: 'blur(28px) saturate(1.15)',
+                opacity: 0.55,
+                transform: 'scale(1.1)',
+              }}
+            />
+          )}
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute', inset: 0,
+              background: 'linear-gradient(180deg, rgba(10,25,47,0.34) 0%, rgba(10,25,47,0.62) 100%)',
+            }}
+          />
           {book.cover_url ? (
-            <div className="book-card__cover-wrapper" style={{ height: 240, width: 'auto', aspectRatio: '2/3', margin: '0 auto', boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}>
+            <div className="book-card__cover-wrapper" style={{ height: 240, width: 'auto', aspectRatio: '2/3', margin: '0 auto', position: 'relative', zIndex: 1, boxShadow: '0 22px 44px rgba(0,0,0,0.45)' }}>
               <img
                 src={book.cover_url}
                 alt={title}
@@ -120,7 +144,7 @@ export default function BookDetail() {
               <div className="book-card__spine" />
             </div>
           ) : (
-            <div className="book-card__cover-wrapper" style={{ height: 240, width: 'auto', aspectRatio: '2/3', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 48, boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}>
+            <div className="book-card__cover-wrapper" style={{ height: 240, width: 'auto', aspectRatio: '2/3', margin: '0 auto', position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 48, boxShadow: '0 22px 44px rgba(0,0,0,0.45)' }}>
               📚
               <div className="book-card__spine" />
             </div>
@@ -129,9 +153,19 @@ export default function BookDetail() {
 
         {/* Info */}
         <div style={{ padding: '20px 16px 0' }}>
-          <h1 style={{ fontSize: 22, lineHeight: 1.25, marginBottom: 6 }}>{title}</h1>
+          {/* Category reads as an eyebrow above the title, so the eye lands on
+              the title first rather than on a label-and-value line. */}
+          {book.category && (
+            <p style={{
+              fontSize: 10, fontWeight: 800, letterSpacing: '0.12em',
+              textTransform: 'uppercase', color: 'var(--blue-500)', marginBottom: 6,
+            }}>
+              {getCategoryLabel(book.category, lang)}
+            </p>
+          )}
+          <h1 style={{ fontSize: 24, lineHeight: 1.2, marginBottom: 6, letterSpacing: '-0.01em' }}>{title}</h1>
           <p style={{ fontSize: 14, color: 'var(--text-2)', fontWeight: 600, marginBottom: 16 }}>
-            {t('author')}: <strong style={{ color: 'var(--text-1)' }}>{author}</strong>
+            {author}
           </p>
 
           {/* Price & Stock Badge */}
@@ -162,7 +196,7 @@ export default function BookDetail() {
               <p style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
                 {t('desc')}
               </p>
-              <p style={{ fontSize: 15, lineHeight: 1.6, color: 'var(--text-2)' }}>
+              <p style={{ fontSize: 15, lineHeight: 1.72, color: 'var(--text-2)' }}>
                 {readMore ? desc : shortDesc}
                 {isLong && !readMore && '…'}
               </p>

@@ -207,21 +207,29 @@ function WeekCard({ book, lang, t, onNavigate }) {
       onClick={() => { haptic('light'); onNavigate(`/book/${book.id}`); }}
       style={{
         position: 'relative',
-        background: 'linear-gradient(135deg, #0A192F 0%, #132D55 60%, #1A3D6B 100%)',
+        background: 'var(--surface)',
         borderRadius: 20,
-        padding: '20px 20px 20px',
+        padding: '20px',
         display: 'flex',
         gap: 18,
         alignItems: 'center',
         cursor: 'pointer',
         overflow: 'hidden',
         minHeight: 190,
+        // A single hairline and a soft lift, so the pick reads as one object
+        // set apart rather than a brighter version of the collection cards.
+        border: '1px solid rgba(10,25,47,0.07)',
+        boxShadow: '0 10px 30px rgba(10,25,47,0.10)',
       }}
     >
-      {/* Dot-grid texture overlay (matching website aesthetic) */}
+      {/* A quiet gold rule down the left edge — the only ornament on the card */}
+      <span aria-hidden="true" style={{
+        position: 'absolute', left: 0, top: 18, bottom: 18, width: 3,
+        borderRadius: 3, background: 'linear-gradient(180deg, #D5AD36, #F0D98A)',
+      }} />
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
-        backgroundImage: 'radial-gradient(rgba(0,205,254,0.12) 1px, transparent 1px)',
+        backgroundImage: 'radial-gradient(rgba(10,25,47,0.05) 1px, transparent 1px)',
         backgroundSize: '24px 24px',
         zIndex: 0,
       }} />
@@ -241,7 +249,7 @@ function WeekCard({ book, lang, t, onNavigate }) {
             width: 76, height: 108,
             objectFit: 'cover',
             borderRadius: '3px 9px 9px 3px',
-            boxShadow: '-6px 6px 20px rgba(0,0,0,0.7)',
+            boxShadow: '-4px 6px 18px rgba(10,25,47,0.28)',
           }} />
         ) : (
           <div style={{
@@ -275,7 +283,7 @@ function WeekCard({ book, lang, t, onNavigate }) {
             }} />
             <div style={{
               position: 'absolute', inset: '-4px',
-              background: 'rgba(213,173,54,0.25)', borderRadius: '50%',
+              background: 'rgba(213,173,54,0.30)', borderRadius: '50%',
               animation: 'ping 2s infinite',
             }} />
           </div>
@@ -287,19 +295,19 @@ function WeekCard({ book, lang, t, onNavigate }) {
           </span>
         </div>
 
-        <p style={{ fontSize: 17, fontWeight: 900, color: '#fff', lineHeight: 1.25, marginBottom: 5 }}>
+        <p style={{ fontSize: 17, fontWeight: 900, color: 'var(--text-1)', lineHeight: 1.25, marginBottom: 5 }}>
           {title}
         </p>
-        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', fontWeight: 600 }}>{author}</p>
+        <p style={{ fontSize: 12, color: 'var(--text-2)', fontWeight: 600 }}>{author}</p>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 14 }}>
           {book.price && (
-            <span className="price" style={{ fontSize: 15, color: '#00CDFE' }}>
+            <span className="price" style={{ fontSize: 15 }}>
               {formatPrice(book.price)}
             </span>
           )}
           <span style={{
-            fontSize: 12, fontWeight: 800, color: 'rgba(255,255,255,0.6)',
+            fontSize: 12, fontWeight: 800, color: 'var(--blue-500)',
             marginLeft: 'auto',
           }}>
             {t('explore')}

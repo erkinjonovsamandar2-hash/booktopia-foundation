@@ -145,7 +145,7 @@ export default function Cart() {
             <button
               onClick={() => { haptic('light'); setConfirmClear(true); }}
               aria-label={t('clearConfirm')}
-              style={{ border: 'none', background: 'none', color: 'var(--discount)', fontFamily: 'Nunito, sans-serif', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+              style={{ border: 'none', background: 'none', color: 'var(--discount)', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
             >
               {t('clear')}
             </button>

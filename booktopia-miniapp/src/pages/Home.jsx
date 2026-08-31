@@ -30,7 +30,7 @@ const T = {
   buy:         { uz: 'Sotib olish',       ru: 'Купить',             en: 'Buy' },
   blogTitle:   { uz: '✍️ Maqolalar',      ru: '✍️ Статьи',          en: '✍️ Articles' },
   blogCta:     { uz: 'Barchasini o\'qish →', ru: 'Читать все →',   en: 'Read all →' },
-  openArticle: { uz: 'Maqolani ochish →',  ru: 'Открыть статью →',  en: 'Open article →' },
+  openArticle: { uz: 'Maqolani ochish',    ru: 'Открыть статью',    en: 'Open article' },
   bestsellers: { uz: '🔥 Eng ko\'p sotilgan', ru: '🔥 Бестселлеры',  en: '🔥 Bestsellers' },
   recentTitle: { uz: '👁 So\'nggi ko\'rilgan', ru: '👁 Недавно просмотренные', en: '👁 Recently Viewed' },
   ordersTitle: { uz: '📦 Mening buyurtmalarim', ru: '📦 Мои заказы', en: '📦 My Orders' },
