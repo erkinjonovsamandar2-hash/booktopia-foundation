@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0" />
     <meta name="theme-color" content="#0A192F" />
+    <meta name="background-color" content="#F4F7FA" />
     <meta name="description" content="Booktopia — kitoblar do'koni Telegram miniapp" />
     <title>Booktopia</title>
     <!-- Telegram WebApp SDK -->
@@ -34,7 +35,7 @@
         align-items: center;
         justify-content: center;
         gap: 22px;
-        background: linear-gradient(160deg, #0A192F 0%, #132D55 55%, #265999 100%);
+        background: #F4F7FA;
         font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       }
       #boot .shelf { display: flex; align-items: flex-end; gap: 5px; height: 92px; }
@@ -49,15 +50,10 @@
       }
       #boot .rule {
         width: 104px; height: 3px; border-radius: 3px;
-        background: rgba(255, 255, 255, 0.18); margin-top: -14px;
+        background: rgba(10, 25, 47, 0.10); margin-top: -14px;
       }
-      /* brightness(0) invert(1) flattens the mark to pure white whatever its
-         source colour, so one asset serves both the light and dark surfaces. */
-      #boot .word {
-        width: 132px; height: auto;
-        filter: brightness(0) invert(1);
-        opacity: 0.92;
-      }
+      /* On the light splash the wordmark stays in its own blue. */
+      #boot .word { width: 148px; height: auto; }
       @keyframes boot-in {
         0%   { transform: translateY(14px) rotate(-8deg); opacity: 0; }
         22%  { transform: none; opacity: 1; }
@@ -73,11 +69,11 @@
     <div id="root">
       <div id="boot">
         <div class="shelf">
-          <i style="--d:0s;    width:15px; height:76px; background:#8FB8E0"></i>
+          <i style="--d:0s;    width:15px; height:76px; background:#13387F"></i>
           <i style="--d:0.13s; width:12px; height:92px; background:#D5AD36"></i>
-          <i style="--d:0.26s; width:17px; height:68px; background:#7FD1A6"></i>
-          <i style="--d:0.39s; width:13px; height:88px; background:#B79BE8"></i>
-          <i style="--d:0.52s; width:16px; height:74px; background:#00CDFE"></i>
+          <i style="--d:0.26s; width:17px; height:68px; background:#38A169"></i>
+          <i style="--d:0.39s; width:13px; height:88px; background:#805AD5"></i>
+          <i style="--d:0.52s; width:16px; height:74px; background:#1E90FF"></i>
         </div>
         <span class="rule"></span>
         <img class="word" src="/brand-wordmark.png" alt="Booktopia" />

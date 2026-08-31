@@ -178,16 +178,18 @@ export default function Home() {
           }} />
 
           {/* Logo */}
-          <div style={{
-            position: 'absolute', top: 24, right: 20,
-            width: 36, height: 36,
-            background: 'rgba(255,255,255,0.1)',
-            borderRadius: 8, backdropFilter: 'blur(10px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            zIndex: 10
-          }}>
-            <img src="/brand-mark.png" alt="Booktopia" style={{ width: 22, height: 22, filter: 'brightness(0) invert(1)', opacity: 0.9 }} />
-          </div>
+          {/* The wordmark in white — derived from the one blue asset with
+              brightness(0) invert(1), so there is a single logo file to keep. */}
+          <img
+            src="/brand-wordmark.png"
+            alt="Booktopia"
+            style={{
+              position: 'absolute', top: 22, right: 20,
+              width: 104, height: 'auto',
+              filter: 'brightness(0) invert(1)',
+              opacity: 0.92, zIndex: 10,
+            }}
+          />
 
           {/* Shelf silhouette along the bottom edge — carries the splash motif
               into the app. Deliberately faint: it should register as texture. */}
