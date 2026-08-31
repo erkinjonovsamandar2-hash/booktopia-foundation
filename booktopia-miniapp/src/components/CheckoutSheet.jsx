@@ -17,16 +17,13 @@ const maskPhone = (raw) => {
   return { display: out, digits };
 };
 
+// Brand marks — the same files the main site serves from /public.
 const PaymeLogo = () => (
-  <svg width="34" height="20" viewBox="0 0 74 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M16.9 12.3c0 2.2-1.3 3.6-3.7 3.6H9.1v3.8H5v-15h8.2c2.4 0 3.7 1.3 3.7 3.6 0 1.9-1 3.1-2.6 3.4 1.7.3 2.6 1.5 2.6 3.6zm-3.6 0c0-1.1-.6-1.6-2-1.6H9.1v3.2h2.2c1.4 0 2-.5 2-1.6zm-.6-5c0-1-.6-1.5-1.9-1.5H9.1v3h1.8c1.3 0 1.9-.5 1.9-1.5zM27 19.7h-4V18c-1.1 1.3-2.6 2-4.6 2-3.1 0-5.4-2.1-5.4-5.2 0-3.1 2.3-5.2 5.4-5.2 2 0 3.5.7 4.6 2V9.9h4v9.8zm-4.1-4.9c0-1.8-1.3-3.1-3.2-3.1-1.9 0-3.2 1.3-3.2 3.1 0 1.8 1.3 3.1 3.2 3.1 1.9 0 3.2-1.3 3.2-3.1zM36.1 12.2l-3.3-8h4.2l1.3 3.8c.4 1 .7 1.9.9 2.7.2-.8.5-1.7.9-2.7l1.3-3.8h4l-4.9 11.5c-1 2.3-2 3.1-3.6 3.1h-.8v-3.3h.3c.7 0 1.2-.4 1.5-1l.3-.7-2.1-4.6zM57 19.7h-4V11.2c0-1-.4-1.5-1.3-1.5-1.1 0-2 .8-2 2.3v7.7h-4V11.2c0-1-.4-1.5-1.3-1.5-1.1 0-2 .8-2 2.3v7.7h-4V9.9h4v1.8c1-1.3 2.5-2.1 4.2-2.1 1.5 0 2.8.6 3.6 1.8 1-1.2 2.5-1.8 4.1-1.8 2.2 0 3.7 1.3 3.7 3.8v6.3zM70.9 14.8H61.6c.3 1.9 1.6 3.2 3.6 3.2 1.5 0 2.5-.7 3.1-1.9h4c-.8 2.6-2.9 4-7.1 4-4.5 0-7.7-3.1-7.7-7.6 0-4.5 3-7.5 7.4-7.5 4.3 0 7 2.8 7 7.1 0 .9-.1 1.9-.1 2.7zm-4.1-2.4c-.2-1.7-1.3-2.9-3.2-2.9-1.9 0-3 1.2-3.3 2.9h6.5z" fill="#35B6CB"/>
-  </svg>
+  <img src="/payme-logo.png" alt="" style={{ maxWidth: 34, maxHeight: 20, objectFit: 'contain', display: 'block' }} />
 );
 
 const ClickLogo = () => (
-  <svg width="40" height="14" viewBox="0 0 120 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M28.4 20c0 7.8-5.7 14.1-14.2 14.1S0 27.8 0 20 5.7 5.9 14.2 5.9c3.9 0 7.4 1.5 10 3.9l-4.1 4.4C18.4 12.6 16.4 12 14.2 12c-4.4 0-8 3.6-8 8s3.6 8 8 8c2.2 0 4.2-.6 5.9-2.2l4.3 4.2zM32.2 33.6V.7h6.3v27.2h10.9v5.7H32.2zM52.3 33.6V6.4h6.3v27.2h-6.3zM94.6 20c0 7.8-5.7 14.1-14.2 14.1S66.2 27.8 66.2 20s5.7-14.1 14.2-14.1c3.9 0 7.4 1.5 10 3.9l-4.1 4.4c-1.7-1.6-3.7-2.2-5.9-2.2-4.4 0-8 3.6-8 8s3.6 8 8 8c2.2 0 4.2-.6 5.9-2.2l4.3 4.2zM98.9 33.6V.7h6.3v15.2l9.7-9.5h8.1L109.8 19l13.6 14.6h-8.4l-9.8-10.7-6.3 6.1v8.6h-6.3z" fill="#0073FF"/>
-  </svg>
+  <img src="/click-logo.png" alt="" style={{ maxWidth: 40, maxHeight: 18, objectFit: 'contain', display: 'block' }} />
 );
 
 const PAYMENT_OPTIONS = [
@@ -40,7 +37,10 @@ const PAYMENT_OPTIONS = [
     id: 'click',
     icon: <div style={{ background: '#fff', borderRadius: 4, width: 32, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.05)' }}><ClickLogo /></div>,
     label: { uz: 'Click', ru: 'Click', en: 'Click' },
-    sub: { uz: 'Onlayn to\'lov', ru: 'Онлайн оплата', en: 'Online payment' },
+    sub: { uz: 'Tez kunda', ru: 'Скоро', en: 'Coming soon' },
+    // Click has no payment-confirmation webhook yet, so an order paid through
+    // it could never be marked paid. Shown but not selectable until that lands.
+    comingSoon: true,
   },
 ];
 
@@ -145,7 +145,8 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
     }
     haptic('medium');
     if (!idempotencyKeyRef.current) {
-      idempotencyKeyRef.current = null; // let a genuine retry mint a fresh key
+      idempotencyKeyRef.current =
+        crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`;
     }
     setLoading(true);
     setError(null);
@@ -470,10 +471,14 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
                     {PAYMENT_OPTIONS.map(opt => (
                       <motion.button
                         key={opt.id}
+                        type="button"
                         className={`pay-option${payment === opt.id ? ' selected' : ''}`}
-                        onClick={() => { setPayment(opt.id); haptic('light'); }}
-                        whileTap={{ scale: 0.97 }}
+                        onClick={() => { if (opt.comingSoon) return; setPayment(opt.id); haptic('light'); }}
+                        disabled={opt.comingSoon}
+                        aria-disabled={opt.comingSoon || undefined}
+                        whileTap={opt.comingSoon ? {} : { scale: 0.97 }}
                         transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                        style={opt.comingSoon ? { opacity: 0.45, cursor: 'not-allowed', filter: 'grayscale(1)' } : undefined}
                       >
                         <span className="pay-option__icon">{opt.icon}</span>
                         <div>

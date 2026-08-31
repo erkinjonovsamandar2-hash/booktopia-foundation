@@ -467,7 +467,7 @@ function PortraitCard({ book, lang, index, onNavigate, onBuy }) {
             background: '#FF6B35', color: '#fff',
             fontSize: 9, fontWeight: 900, padding: '2px 7px',
             borderRadius: 20, letterSpacing: '0.05em',
-          }}>NEW</div>
+          }}>{lang === 'ru' ? 'НОВИНКА' : lang === 'en' ? 'NEW' : 'YANGI'}</div>
         )}
       </div>
 

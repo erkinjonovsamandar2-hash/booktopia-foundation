@@ -16,6 +16,7 @@ const T = {
   unsave:      { uz: 'Saqlanganlardan olib tashlash', ru: 'Убрать из избранного', en: 'Remove from wishlist' },
   openBook:    { uz: 'Kitobni ochish',      ru: 'Открыть книгу',       en: 'Open book' },
   soon:        { uz: 'Tez kunda',           ru: 'Скоро',               en: 'Coming soon' },
+  isNew:       { uz: 'Yangi',               ru: 'Новинка',             en: 'New' },
 };
 
 export default function BookCard({ book, lang = 'uz', onNavigate, index = 0 }) {
@@ -79,7 +80,7 @@ export default function BookCard({ book, lang = 'uz', onNavigate, index = 0 }) {
           <span className="badge badge--out-of-stock">{t('outOfStock')}</span>
         ) : (
           <>
-            {isNew && !isSoon && <span className="badge badge--new">New</span>}
+            {isNew && !isSoon && <span className="badge badge--new">{t('isNew')}</span>}
             {isSoon && <span className="badge badge--soon">{t('soon')}</span>}
           </>
         )}

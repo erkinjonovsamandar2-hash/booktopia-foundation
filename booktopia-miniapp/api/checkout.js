@@ -156,8 +156,11 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Phone and items are required' });
   }
 
-  if (!['payme', 'click'].includes(payment_method)) {
-    return res.status(400).json({ error: 'Invalid payment method. Only Payme and Click are accepted.' });
+  // Click is disabled until its confirmation webhook exists — without one a
+  // Click order can never be marked paid. Enforced server-side so a crafted
+  // request cannot bypass the disabled option in the UI.
+  if (payment_method !== 'payme') {
+    return res.status(400).json({ error: 'Hozircha faqat Payme orqali to\'lov qilish mumkin.' });
   }
 
   const digits = phone.replace(/\D/g, '');
