@@ -197,7 +197,7 @@ export default function Home() {
                 transition={{ delay: 0.1 }}
                 style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', fontWeight: 600, marginBottom: 8 }}
               >
-                {t('greeting')}{firstName ? `, ${firstName}` : ''}! 👋
+                {t('greeting')}{firstName ? `, ${firstName}` : ''}!
               </motion.p>
             ) : null}
 
@@ -217,7 +217,7 @@ export default function Home() {
               transition={{ delay: 0.3 }}
               style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginTop: 10, fontWeight: 600 }}
             >
-              📍 {t('heroSub')}
+              {t('heroSub')}
             </motion.p>
 
             <motion.button
@@ -230,7 +230,7 @@ export default function Home() {
                 marginTop: 20, padding: '10px 22px',
                 background: '#00CDFE', color: '#0A192F',
                 border: 'none', borderRadius: 50,
-                fontSize: 13, fontWeight: 900, cursor: 'pointer',
+                fontSize: 15, fontWeight: 800, cursor: 'pointer',
               }}
             >
               {t('heroCta')}

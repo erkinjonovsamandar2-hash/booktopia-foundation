@@ -3,7 +3,7 @@ import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
 import { useWishlist } from '../context/WishlistContext';
 import { formatPrice, haptic } from '../lib/utils';
-import { ShoppingCart } from '@phosphor-icons/react';
+import { ShoppingCart, Books } from '@phosphor-icons/react';
 
 const T = {
   addedToCart: { uz: 'Savatga qo\'shildi!', ru: 'Добавлено в корзину!', en: 'Added to cart!' },
@@ -83,7 +83,9 @@ export default function BookCard({ book, lang = 'uz', onNavigate, index = 0 }) {
               style={isOutOfStock ? { filter: 'grayscale(0.5)', opacity: 0.85 } : undefined}
             />
           ) : (
-            <div className="book-card__cover-placeholder" aria-hidden="true">📚</div>
+            <div className="book-card__cover-placeholder" aria-hidden="true">
+              <Books size={30} weight="duotone" color="var(--text-3)" />
+            </div>
           )}
           <div className="book-card__spine" />
 

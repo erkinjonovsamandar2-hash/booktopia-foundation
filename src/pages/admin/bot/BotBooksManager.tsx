@@ -168,7 +168,13 @@ export default function BotBooksManager() {
 
   // ── Fetch sales data from orders ─────────────────────────────────────────
   const fetchSales = useCallback(async () => {
-    const { data } = await (supabase as any).from("miniapp_orders").select("items, total_uzs, status").neq("status", "cancelled").neq("status", "archived");
+    const { data } = await (supabase as any)
+      .from("miniapp_orders")
+      .select("items, total_uzs, status")
+      .neq("status", "cancelled")
+      .neq("status", "archived")
+      // Pre-launch orders are archived; per-book sales start from zero too.
+      .is("archived_at", null);
     if (!data) return;
     const map: SalesData = {};
     data.forEach((order: any) => {

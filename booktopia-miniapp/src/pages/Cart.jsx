@@ -7,7 +7,7 @@ import { useToast } from '../context/ToastContext';
 import { formatPrice, haptic, getEffectivePrice } from '../lib/utils';
 import CheckoutSheet from '../components/CheckoutSheet';
 import PageTransition from '../components/PageTransition';
-import { ShoppingCart, CheckCircle, Books } from '@phosphor-icons/react';
+import { ShoppingCart, CheckCircle, Books, WarningCircle } from '@phosphor-icons/react';
 
 const T = {
   title:      { uz: 'Savat',           ru: 'Корзина',    en: 'Cart' },
@@ -154,7 +154,7 @@ export default function Cart() {
 
         {hasOutOfStockItems && (
           <div style={{ margin: '0 16px 12px', padding: '10px 14px', background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 12, color: 'var(--discount)', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span>⚠️</span>
+            <WarningCircle size={17} weight="duotone" style={{ flexShrink: 0 }} />
             <span>{lang === 'ru' ? 'В корзине есть закончившиеся товары. Пожалуйста, удалите их.' : lang === 'en' ? 'Some items in your cart are out of stock. Please remove them.' : 'Savatda tugagan kitoblar bor. Iltimos, ularni o\'chiring.'}</span>
           </div>
         )}

@@ -6,7 +6,7 @@ import { useLang } from '../context/LangContext';
 import { formatPrice, tg, haptic } from '../lib/utils';
 import PageTransition from '../components/PageTransition';
 import LoadError from '../components/LoadError';
-import { Package, ClockCounterClockwise, CheckCircle, Truck, XCircle, ArrowLeft } from '@phosphor-icons/react';
+import { Package, ClockCounterClockwise, CheckCircle, Truck, XCircle, ArrowLeft, MapPin, CreditCard } from '@phosphor-icons/react';
 
 // ── Status pipeline (matches miniapp_orders schema) ───────────────────────────
 const ORDER_STEPS = [
@@ -319,12 +319,12 @@ function OrderCard({ order, lang, t, index }) {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 4 }}>
                   {order.payment_method && (
                     <p style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>
-                      💳 {order.payment_method}
+                      <CreditCard size={12} weight="duotone" style={{ verticalAlign: '-1px' }} /> {order.payment_method}
                     </p>
                   )}
                   {order.delivery_address && (
                     <p style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>
-                      📍 {order.delivery_address}
+                      <MapPin size={12} weight="duotone" style={{ verticalAlign: '-1px' }} /> {order.delivery_address}
                     </p>
                   )}
                 </div>

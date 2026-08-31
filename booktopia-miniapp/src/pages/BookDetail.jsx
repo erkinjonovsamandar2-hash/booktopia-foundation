@@ -7,13 +7,13 @@ import { useLang } from '../context/LangContext';
 import { useCart } from '../context/CartContext';
 import CheckoutSheet from '../components/CheckoutSheet';
 import PageTransition from '../components/PageTransition';
-import { Books } from '@phosphor-icons/react';
+import { Books, FileText } from '@phosphor-icons/react';
 import LoadError from '../components/LoadError';
 
 const T = {
   back:     { uz: '← Orqaga',   ru: '← Назад',    en: '← Back' },
   buy:      { uz: 'Sotib olish', ru: 'Купить', en: 'Buy now' },
-  added:    { uz: '✓ Savatga qo\'shildi', ru: '✓ В корзине', en: '✓ In cart' },
+  added:    { uz: 'Savatga qo\'shildi', ru: 'В корзине', en: 'In cart' },
   author:   { uz: 'Muallif',    ru: 'Автор',       en: 'Author' },
   desc:     { uz: 'Tavsif',     ru: 'Описание',    en: 'Description' },
   category: { uz: 'Tur',        ru: 'Жанр',        en: 'Category' },
@@ -23,7 +23,7 @@ const T = {
   askPrice: { uz: 'Narxni so\'rash', ru: 'Узнать цену', en: 'Ask for price' },
   excerpt:  { uz: 'Namuna o\'qish', ru: 'Читать фрагмент', en: 'Read excerpt' },
   wholesaleOffer: { uz: '10+ xarid qiling, har biridan 5 000 so\'m tejab qoling!', ru: 'Купите 10+ и сэкономьте 5 000 сум на каждой!', en: 'Buy 10+ and save 5,000 UZS on each!' },
-  outOfStock: { uz: '🚫 Zaxirada tugagan', ru: '🚫 Нет в наличии', en: '🚫 Out of stock' },
+  outOfStock: { uz: 'Zaxirada tugagan', ru: 'Нет в наличии', en: 'Out of stock' },
 };
 
 export default function BookDetail() {
@@ -179,7 +179,7 @@ export default function BookDetail() {
 
             {isOutOfStock && (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, background: 'var(--discount)', color: '#fff', padding: '4px 10px', borderRadius: 6, fontWeight: 700 }}>
-                ⚠️ {t('outOfStock')}
+                {t('outOfStock')}
               </span>
             )}
           </div>
@@ -223,7 +223,7 @@ export default function BookDetail() {
               className="btn-secondary"
               style={{ textDecoration: 'none', marginBottom: 12 }}
             >
-              📄 {t('excerpt')}
+              <FileText size={16} weight="duotone" /> {t('excerpt')}
             </a>
           )}
 
@@ -254,7 +254,7 @@ export default function BookDetail() {
             {isOutOfStock
               ? t('outOfStock')
               : inCart
-              ? (lang === 'ru' ? '✓ Оформить заказ' : lang === 'en' ? '✓ Place order' : '✓ Buyurtma berish')
+              ? (lang === 'ru' ? 'Оформить заказ' : lang === 'en' ? 'Place order' : 'Buyurtma berish')
               : t('buy')} {!isOutOfStock && <>&nbsp;·&nbsp; {formatPrice(book.price)}</>}
           </motion.button>
         </div>
