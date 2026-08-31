@@ -17,6 +17,25 @@ interface Order {
   total_uzs: number;
   telegram_user_id: number | null;
   telegram_username: string | null;
+  updated_at?: string | null;
+  archived_at?: string | null;
+  payme_transaction_id?: string | null;
+  delivery_lat?: number | null;
+  delivery_lng?: number | null;
+}
+
+interface OrderEvent {
+  id: string;
+  order_id: string;
+  status: string;
+  note: string | null;
+  created_at: string;
+}
+
+interface CustomerSummary {
+  orderCount: number;
+  lifetimeTotal: number;
+  firstOrderAt: string | null;
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -161,11 +180,12 @@ function PaymentStatusBadge({ paymentStatus }: { paymentStatus: string | null })
 
 // ── Order Row / Card ───────────────────────────────────────────────────────────
 function OrderRow({
-  order, expanded, onToggle, working, onAction, onArchive
+  order, expanded, onToggle, working, onAction, onArchive, customer
 }: {
   order: Order; expanded: boolean; onToggle: () => void;
   working: boolean; onAction: (o: Order, nextStatus: string, label: string) => void;
   onArchive: (o: Order) => void;
+  customer?: CustomerSummary;
 }) {
   const actions = NEXT_ACTION_LABELS[order.status] ?? [];
   const firstItem = order.items?.[0];
@@ -266,6 +286,9 @@ function OrderRow({
               </div>
             )}
           </div>
+
+          {/* Full record — everything stored on the order */}
+          <OrderFullDetail order={order} customer={customer} />
 
           {/* Action buttons */}
           {actions.length > 0 && (
@@ -393,6 +416,21 @@ export default function OrdersManager() {
     }
     setWorking(false);
   }, []);
+
+  // Lifetime view of the customer behind an order, keyed on Telegram id when
+  // present and phone otherwise, so the same person is recognised either way.
+  const customerSummary = (order: Order): CustomerSummary => {
+    const key = order.telegram_user_id ?? order.phone;
+    const mine = orders.filter((o) =>
+      (o.telegram_user_id ?? o.phone) === key && o.status !== "cancelled");
+    return {
+      orderCount: mine.length,
+      lifetimeTotal: mine.reduce((s, o) => s + (o.total_uzs || 0), 0),
+      firstOrderAt: mine.length
+        ? mine.map((o) => o.created_at).sort()[0]
+        : null,
+    };
+  };
 
   // ── Filter logic ──────────────────────────────────────────────────────────
   // Pre-launch orders carry archived_at; they are kept in full but excluded
@@ -564,6 +602,7 @@ export default function OrdersManager() {
               working={working}
               onAction={(o, ns, label) => setConfirm({ order: o, nextStatus: ns, label })}
               onArchive={archiveOrder}
+              customer={customerSummary(order)}
             />
           ))}
 
@@ -602,6 +641,141 @@ export default function OrdersManager() {
           </p>
         </div>
       )}
+    </div>
+  );
+}
+
+
+// ── Full order + customer record ──────────────────────────────────────────────
+// Everything miniapp_orders stores, plus the event timeline and a lifetime view
+// of the customer. Previously the expanded row showed only items, payment
+// method, address and Telegram handle.
+function Field({ label, children, wide }: { label: string; children: React.ReactNode; wide?: boolean }) {
+  return (
+    <div style={{
+      background: "#f9fafb", borderRadius: 8, padding: "8px 12px",
+      gridColumn: wide ? "1 / -1" : undefined, minWidth: 0,
+    }}>
+      <p style={{ fontSize: 10, color: "#9ca3af", fontWeight: 600, margin: "0 0 2px", letterSpacing: "0.04em" }}>{label}</p>
+      <div style={{ fontSize: 13, fontWeight: 600, color: "#374151", margin: 0, wordBreak: "break-word" }}>{children}</div>
+    </div>
+  );
+}
+
+function OrderFullDetail({ order, customer }: { order: Order; customer?: CustomerSummary }) {
+  const [events, setEvents] = useState<OrderEvent[]>([]);
+  const [eventsState, setEventsState] = useState<"loading" | "ready" | "error">("loading");
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await (supabase as any)
+        .from("miniapp_order_events")
+        .select("id, order_id, status, note, created_at")
+        .eq("order_id", order.id)
+        .order("created_at", { ascending: true });
+      if (cancelled) return;
+      if (error) { setEventsState("error"); return; }
+      setEvents(data ?? []);
+      setEventsState("ready");
+    })();
+    return () => { cancelled = true; };
+  }, [order.id]);
+
+  const dt = (iso?: string | null) =>
+    iso ? new Date(iso).toLocaleString("ru-RU", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
+
+  const hasCoords = typeof order.delivery_lat === "number" && typeof order.delivery_lng === "number";
+
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <p style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>
+        To'liq ma'lumot
+      </p>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        <Field label="BUYURTMA ID">
+          <span style={{ fontFamily: "monospace", fontSize: 11 }}>{order.id}</span>
+        </Field>
+        <Field label="TO'LOV HOLATI">
+          <span style={{ color: order.payment_status === "paid" ? "#38A169" : "#D5AD36" }}>
+            {order.payment_status === "paid" ? "To'langan" : order.payment_status || "To'lanmagan"}
+          </span>
+        </Field>
+
+        <Field label="MIJOZ">{order.full_name || "—"}</Field>
+        <Field label="TELEFON">
+          {order.phone
+            ? <a href={`tel:+${order.phone}`} style={{ color: "#265999", textDecoration: "none" }}>+{order.phone}</a>
+            : "—"}
+        </Field>
+
+        <Field label="TELEGRAM ID">
+          {order.telegram_user_id ?? <span style={{ color: "#9ca3af" }}>Tasdiqlanmagan</span>}
+        </Field>
+        <Field label="TELEGRAM">
+          {order.telegram_username
+            ? <a href={`https://t.me/${order.telegram_username}`} target="_blank" rel="noopener noreferrer" style={{ color: "#265999", textDecoration: "none" }}>@{order.telegram_username}</a>
+            : "—"}
+        </Field>
+
+        <Field label="MANZIL" wide>{order.delivery_address || <span style={{ color: "#9ca3af" }}>Kiritilmagan</span>}</Field>
+
+        {hasCoords && (
+          <Field label="GPS" wide>
+            <a
+              href={`https://maps.google.com/?q=${order.delivery_lat},${order.delivery_lng}`}
+              target="_blank" rel="noopener noreferrer"
+              style={{ color: "#265999", textDecoration: "none" }}
+            >
+              {order.delivery_lat!.toFixed(5)}, {order.delivery_lng!.toFixed(5)} — xaritada ochish
+            </a>
+          </Field>
+        )}
+
+        {order.payme_transaction_id && (
+          <Field label="PAYME TRANZAKSIYA" wide>
+            <span style={{ fontFamily: "monospace", fontSize: 11 }}>{order.payme_transaction_id}</span>
+          </Field>
+        )}
+
+        <Field label="YARATILGAN">{dt(order.created_at)}</Field>
+        <Field label="YANGILANGAN">{dt(order.updated_at)}</Field>
+
+        {order.archived_at && (
+          <Field label="ARXIVLANGAN" wide>{dt(order.archived_at)}</Field>
+        )}
+      </div>
+
+      {/* Customer lifetime view */}
+      {customer && (
+        <div style={{ marginTop: 12, background: "#EBF8FF", border: "1px solid #bee3f8", borderRadius: 8, padding: "10px 12px" }}>
+          <p style={{ fontSize: 10, color: "#2c5282", fontWeight: 700, margin: "0 0 4px", letterSpacing: "0.04em" }}>MIJOZ TARIXI</p>
+          <div style={{ display: "flex", gap: 16, flexWrap: "wrap", fontSize: 13, color: "#2c5282", fontWeight: 600 }}>
+            <span>{customer.orderCount} ta buyurtma</span>
+            <span>Jami: {fmt(customer.lifetimeTotal)}</span>
+            {customer.firstOrderAt && <span>Birinchi: {dt(customer.firstOrderAt)}</span>}
+          </div>
+        </div>
+      )}
+
+      {/* Event timeline */}
+      <div style={{ marginTop: 12 }}>
+        <p style={{ fontSize: 10, color: "#9ca3af", fontWeight: 700, margin: "0 0 6px", letterSpacing: "0.04em" }}>TARIX</p>
+        {eventsState === "loading" && <p style={{ fontSize: 12, color: "#9ca3af", margin: 0 }}>Yuklanmoqda...</p>}
+        {eventsState === "error" && <p style={{ fontSize: 12, color: "#E53E3E", margin: 0 }}>Tarixni yuklab bo'lmadi.</p>}
+        {eventsState === "ready" && events.length === 0 && (
+          <p style={{ fontSize: 12, color: "#9ca3af", margin: 0 }}>Hodisalar yo'q.</p>
+        )}
+        {eventsState === "ready" && events.map((ev) => (
+          <div key={ev.id} style={{ display: "flex", gap: 8, alignItems: "baseline", fontSize: 12, color: "#374151", padding: "3px 0" }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: STATUS_META[ev.status]?.color ?? "#9ca3af", flexShrink: 0 }} />
+            <span style={{ fontWeight: 700 }}>{STATUS_META[ev.status]?.label ?? ev.status}</span>
+            <span style={{ color: "#9ca3af" }}>{dt(ev.created_at)}</span>
+            {ev.note && <span style={{ color: "#6b7280" }}>— {ev.note}</span>}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
