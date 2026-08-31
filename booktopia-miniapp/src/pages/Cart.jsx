@@ -7,7 +7,7 @@ import { useToast } from '../context/ToastContext';
 import { formatPrice, haptic, getEffectivePrice } from '../lib/utils';
 import CheckoutSheet from '../components/CheckoutSheet';
 import PageTransition from '../components/PageTransition';
-import { ShoppingCart } from '@phosphor-icons/react';
+import { ShoppingCart, CheckCircle } from '@phosphor-icons/react';
 
 const T = {
   title:      { uz: 'Savat',           ru: 'Корзина',    en: 'Cart' },
@@ -21,6 +21,11 @@ const T = {
   addMore:    { uz: '+ Yana kitob qo\'shish', ru: '+ Добавить еще книгу', en: '+ Add another book' },
   outOfStock: { uz: 'Zaxirada tugagan', ru: 'Нет в наличии', en: 'Out of stock' },
   clearConfirm: { uz: 'Savatni tozalash?', ru: 'Очистить корзину?', en: 'Clear the cart?' },
+  paidTitle:  { uz: 'Toʻlov qabul qilindi', ru: 'Оплата получена', en: 'Payment received' },
+  paidDesc:   { uz: 'Buyurtmangiz tasdiqlandi. Holatini Buyurtmalarim boʻlimida kuzating.',
+                ru: 'Ваш заказ подтверждён. Статус — в разделе «Мои заказы».',
+                en: 'Your order is confirmed. Track it under My Orders.' },
+  paidCta:    { uz: 'Buyurtmalarim', ru: 'Мои заказы', en: 'My Orders' },
   cleared:    { uz: 'Savat tozalandi',  ru: 'Корзина очищена', en: 'Cart cleared' },
   cancel:     { uz: 'Bekor qilish',     ru: 'Отмена',          en: 'Cancel' },
   swipeHint:  { uz: 'suring',           ru: 'смахните',        en: 'swipe' },
@@ -33,7 +38,7 @@ const T = {
 
 export default function Cart() {
   const navigate = useNavigate();
-  const { items, removeItem, incrementQty, decrementQty, clearCart, revalidate, atStockCeiling, totalPrice, totalCount, importNotice, dismissImportNotice } = useCart();
+  const { items, removeItem, incrementQty, decrementQty, clearCart, revalidate, atStockCeiling, totalPrice, totalCount, importNotice, dismissImportNotice, paidNotice, dismissPaidNotice } = useCart();
   const { showToast } = useToast();
   const { lang } = useLang();
   const [showSheet, setShowSheet] = useState(false);
@@ -69,6 +74,33 @@ export default function Cart() {
     return (
       <PageTransition>
       <div className="page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '70dvh' }}>
+        {/* After paying, the customer lands back here on an empty cart. Without
+            this the cart just silently emptied, with no confirmation anywhere. */}
+        {paidNotice ? (
+          <div className="empty-state" role="status">
+            <div className="empty-state__icon">
+              <CheckCircle size={64} weight="fill" color="var(--success, #38A169)" />
+            </div>
+            <h2 className="empty-state__title">{t('paidTitle')}</h2>
+            <p className="empty-state__desc">{t('paidDesc')}</p>
+            <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+              <button
+                className="btn-primary"
+                style={{ width: 'auto', padding: '10px 20px' }}
+                onClick={() => { haptic('light'); dismissPaidNotice(); navigate('/orders'); }}
+              >
+                {t('paidCta')}
+              </button>
+              <button
+                className="btn-secondary"
+                style={{ width: 'auto', padding: '10px 20px' }}
+                onClick={() => { dismissPaidNotice(); navigate('/catalog'); }}
+              >
+                {t('browse')}
+              </button>
+            </div>
+          </div>
+        ) : (
         <div className="empty-state">
           <div className="empty-state__icon"><ShoppingCart size={56} weight="thin" color="var(--text-3)" /></div>
           <h2 className="empty-state__title">{t('empty')}</h2>
@@ -77,6 +109,7 @@ export default function Cart() {
             <button className="btn-primary" style={{ marginTop: 8 }}>{t('browse')}</button>
           </Link>
         </div>
+        )}
       </div>
       </PageTransition>
     );

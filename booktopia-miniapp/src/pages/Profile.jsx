@@ -133,7 +133,7 @@ export default function Profile() {
         <MenuItem
           icon={<Icon component={Info} color="#3182CE" />}
           iconBg="#EBF8FF"
-          label={t('about')} sub="Booktopia Publishing House" href="https://booktopia.uz/about" external
+          label={t('about')} sub="Booktopia Publishing House" href="https://booktopia.uz/biz-haqimizda" external
         />
       </div>
 
@@ -145,13 +145,13 @@ export default function Profile() {
           icon={<Icon component={ShieldCheck} color="#3182CE" />}
           iconBg="#EBF8FF"
           label={t('privacy')} sub={t('privacyDesc')}
-          href="https://booktopia.uz/privacy-policy" external
+          href="https://booktopia.uz/maxfiylik" external
         />
         <MenuItem
           icon={<Icon component={FileText} color="#718096" />}
           iconBg="#EDF2F7"
           label={t('terms')} sub={t('termsDesc')}
-          href="https://booktopia.uz/terms-of-use" external
+          href="https://booktopia.uz/shartlar" external
         />
       </div>
 

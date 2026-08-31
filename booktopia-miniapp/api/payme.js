@@ -257,7 +257,7 @@ async function performTransaction({ id }) {
       // Fetch full order details for the notification
       const { data: fullOrder } = await db
         .from('miniapp_orders')
-        .select('id, full_name, phone, delivery_address, items, total_uzs, payment_method, telegram_user_id, telegram_username')
+        .select('id, full_name, phone, delivery_address, delivery_lat, delivery_lng, items, total_uzs, payment_method, telegram_user_id, telegram_username')
         .eq('id', order.id)
         .single();
 
@@ -279,6 +279,11 @@ async function performTransaction({ id }) {
           `👤 Ism: <b>${fullOrder.full_name || 'Noma\'lum'}</b>${tgLink}\n` +
           `📞 Tel: <code>${fullOrder.phone}</code>\n` +
           (fullOrder.delivery_address ? `📍 Manzil: ${fullOrder.delivery_address}\n` : '') +
+          // A courier cannot navigate to a pair of numbers. Give a link that
+          // opens the point in a maps app; the pin itself is sent separately.
+          (fullOrder.delivery_lat != null && fullOrder.delivery_lng != null
+            ? `🗺 <a href="https://maps.google.com/?q=${fullOrder.delivery_lat},${fullOrder.delivery_lng}">Xaritada ochish</a>\n`
+            : '') +
           `💳 To'lov: ${paymentLabel} ✅\n\n` +
           `📚 <b>Buyurtma:</b>\n${itemLines}\n\n` +
           `💰 <b>Jami: ${fullOrder.total_uzs.toLocaleString('ru-RU')} so'm</b>\n\n` +
@@ -294,6 +299,20 @@ async function performTransaction({ id }) {
             disable_web_page_preview: true,
           }),
         });
+
+        // A Telegram location message the courier can open in their maps app
+        // and follow turn by turn — far more useful than printed coordinates.
+        if (fullOrder.delivery_lat != null && fullOrder.delivery_lng != null) {
+          await fetch(`${TG_API}/sendLocation`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: ADMIN_GROUP_ID,
+              latitude: fullOrder.delivery_lat,
+              longitude: fullOrder.delivery_lng,
+            }),
+          });
+        }
       }
     } catch (notifErr) {
       // Never fail the payment because of a notification error

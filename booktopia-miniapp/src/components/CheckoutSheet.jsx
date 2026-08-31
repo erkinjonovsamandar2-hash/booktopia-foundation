@@ -50,10 +50,15 @@ const T = {
   phone:        { uz: 'Telefon raqam *',      ru: 'Телефон *',          en: 'Phone *' },
   phonePh:      { uz: '+998 __ ___ __ __',   ru: '+998 __ ___ __ __', en: '+998 __ ___ __ __' },
   address:      { uz: 'Yetkazish manzili *',  ru: 'Адрес доставки *',   en: 'Delivery address *' },
-  addressHint:  { uz: 'Manzilni yozing yoki joylashuvingizni yuboring — kuryer shu manzilga keladi.',
-                  ru: 'Введите адрес или отправьте геолокацию — курьер приедет по нему.',
-                  en: 'Type an address or share your location — the courier uses it.' },
+  addressHint:  { uz: 'Koʻcha va uy raqamini yozing. Joylashuvni ham yuborsangiz, kuryer sizni tezroq topadi.',
+                  ru: 'Укажите улицу и дом. Если добавите геолокацию, курьер найдёт вас быстрее.',
+                  en: 'Give the street and building. Adding your location helps the courier find you faster.' },
   gpsBtn:       { uz: 'Joylashuvni yuborish', ru: 'Отправить геолокацию', en: 'Share location' },
+  gpsAttached:  { uz: 'Joylashuv biriktirildi — kuryer shu nuqtaga keladi',
+                  ru: 'Геолокация прикреплена — курьер приедет сюда',
+                  en: 'Location attached — the courier will come here' },
+  gpsCheck:     { uz: 'Xaritada tekshirish', ru: 'Проверить на карте', en: 'Check on map' },
+  gpsRemove:    { uz: 'Olib tashlash',      ru: 'Убрать',            en: 'Remove' },
   gpsBusy:      { uz: 'Aniqlanmoqda...',      ru: 'Определяем...',        en: 'Locating...' },
   gpsDone:      { uz: 'Joylashuv qoʻshildi', ru: 'Геолокация добавлена', en: 'Location added' },
   addressPh:    { uz: 'Shahar, ko\'cha...',   ru: 'Город, улица...',    en: 'City, street...' },
@@ -434,7 +439,9 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
                             const { latitude: lat, longitude: lng } = pos.coords;
                             setGeoCoords({ lat, lng });
                             setGeoError(null);
-                            setAddress(`📍 GPS: ${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+                            // The address field stays human-readable: a courier
+                            // needs a street and a landmark, not coordinates.
+                            // The point is attached separately.
                             haptic('success');
                             setGeoLoading(false);
                           },
@@ -467,7 +474,34 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
                       {geoLoading ? t('gpsBusy') : geoCoords ? `✓ ${t('gpsDone')}` : `📍 ${t('gpsBtn')}`}
                     </motion.button>
                   </label>
-                  <input className="input" value={address} onChange={e => { setAddress(e.target.value); if (!e.target.value.startsWith('📍 GPS')) setGeoCoords(null); }} placeholder={t('addressPh')} />
+                  <input className="input" value={address} onChange={e => setAddress(e.target.value)} placeholder={t('addressPh')} />
+                  {geoCoords && (
+                    <div style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+                      marginTop: 6, padding: '8px 10px', borderRadius: 10,
+                      background: '#EBF8F0', border: '1px solid #C6F6D5',
+                    }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: '#276749' }}>
+                        ✓ {t('gpsAttached')}
+                      </span>
+                      <span style={{ display: 'flex', gap: 10 }}>
+                        <a
+                          href={`https://maps.google.com/?q=${geoCoords.lat},${geoCoords.lng}`}
+                          target="_blank" rel="noopener noreferrer"
+                          style={{ fontSize: 12, fontWeight: 700, color: '#276749' }}
+                        >
+                          {t('gpsCheck')}
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => setGeoCoords(null)}
+                          style={{ border: 'none', background: 'none', fontSize: 12, fontWeight: 700, color: 'var(--text-2)', cursor: 'pointer' }}
+                        >
+                          {t('gpsRemove')}
+                        </button>
+                      </span>
+                    </div>
+                  )}
                   <p style={{ fontSize: 11, color: 'var(--text-2)', marginTop: 4, lineHeight: 1.4 }}>{t('addressHint')}</p>
                   {geoError && (
                     <p role="alert" style={{ fontSize: 11, color: 'var(--discount)', marginTop: 4, fontWeight: 600 }}>{geoError}</p>
