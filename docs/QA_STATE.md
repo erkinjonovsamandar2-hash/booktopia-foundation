@@ -93,8 +93,8 @@ const isOutOfStock = book.stock === 0 || (book.stock != null && book.stock <= 0)
 
 ```
 Supabase URL:  https://ovlqfgjdmbvstqibrqrl.supabase.co
-Anon Key:      eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im92bHFmZ2pkbWJ2c3RxaWJycXJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1NTMxMDMsImV4cCI6MjA4NzEyOTEwM30.1uN1tvS3oWaGLCJr8fVJqEAEr7HdarS3aD-6RKMV7gs
-Service Key:   eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im92bHFmZ2pkbWJ2c3RxaWJycXJsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTU1MzEwMywiZXhwIjoyMDg3MTI5MTAzfQ.D5kezWVVtY5zlmA9FAzAEX1o99pCI50i9hXX-QT4gLI
+Anon Key:      <see VITE_SUPABASE_ANON_KEY in .env>
+Service Key:   <REDACTED — rotate this key; never commit it>
 ```
 
 ### Test Book

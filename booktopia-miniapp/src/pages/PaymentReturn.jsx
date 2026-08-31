@@ -28,11 +28,12 @@ export default function PaymentReturn() {
     if (!orderId) { setStatus('error'); return; }
 
     try {
-      const { data, error } = await supabase
-        .from('miniapp_orders')
-        .select('payment_status, status')
-        .eq('id', orderId)
-        .single();
+      // Status-only RPC: knowing an order id reveals nothing but whether it is
+      // paid. The table itself is no longer readable with the anon key.
+      const { data: rows, error } = await supabase.rpc('get_order_payment_status', {
+        p_order_id: orderId,
+      });
+      const data = Array.isArray(rows) ? rows[0] : rows;
 
       if (error || !data) {
         setStatus('error');
@@ -62,7 +63,9 @@ export default function PaymentReturn() {
   }, [orderId, clearCart]);
 
   // Initial check + start polling
+  // Initial status check starts the payment polling lifecycle.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     checkStatus();
 
     pollRef.current = setInterval(() => {

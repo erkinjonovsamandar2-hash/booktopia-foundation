@@ -6,6 +6,8 @@ import { createClient } from '@supabase/supabase-js';
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 const BOT_TOKEN = process.env.BOT_TOKEN;
+const ADMIN_API_SECRET = process.env.ADMIN_API_SECRET;
+const ADMIN_ORIGIN = process.env.ADMIN_ORIGIN || 'https://booktopia.uz';
 
 const TG_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
@@ -13,17 +15,24 @@ const TG_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
 export default async function handler(req, res) {
-  // Allow CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', ADMIN_ORIGIN);
+  res.setHeader('Vary', 'Origin');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  // Basic security check - require the frontend to pass the service key or a custom secret
-  const authHeader = req.headers.authorization || '';
-  if (authHeader !== `Bearer ${SUPABASE_SERVICE_KEY}`) {
+  // ── Admin authentication ──────────────────────────────────────────────────
+  // This previously accepted `Bearer ${SUPABASE_SERVICE_KEY}` — a key that was
+  // committed to a public repo, making mass-messaging effectively open. It now
+  // uses a dedicated admin secret that is never shipped to a client.
+  if (!ADMIN_API_SECRET) {
+    console.error('[Broadcast] ADMIN_API_SECRET is not set — refusing all requests');
+    return res.status(503).json({ error: 'Server not configured' });
+  }
+  const provided = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  if (provided !== ADMIN_API_SECRET) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 

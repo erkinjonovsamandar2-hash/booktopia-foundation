@@ -18,7 +18,6 @@ import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL        = process.env.VITE_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
-const PAYME_MERCHANT_ID   = process.env.PAYME_MERCHANT_ID || '';
 const PAYME_SECRET_KEY    = process.env.PAYME_TEST_MODE === 'true'
   ? (process.env.PAYME_TEST_SECRET_KEY || '')
   : (process.env.PAYME_SECRET_KEY || '');
@@ -195,7 +194,7 @@ async function performTransaction({ id }) {
 
   const { data: order, error } = await db
     .from('miniapp_orders')
-    .select('id, payment_status, total_uzs, updated_at')
+    .select('id, payment_status, total_uzs, updated_at, items')
     .eq('payme_transaction_id', id)
     .maybeSingle();
 
@@ -223,6 +222,21 @@ async function performTransaction({ id }) {
     status: 'confirmed',   // auto-confirm paid orders
     updated_at: performDate,
   }).eq('id', order.id);
+
+  // Decrement stock for each purchased line item. Atomic per book via RPC so two
+  // concurrent orders for the last copy cannot both succeed. Books with NULL
+  // stock are treated as untracked and left alone by the function.
+  for (const item of (order.items || [])) {
+    if (!item?.book_id) continue;
+    const { error: stockErr } = await db.rpc('decrement_stock', {
+      p_book_id: item.book_id,
+      p_qty: Math.max(1, parseInt(item.qty) || 1),
+    });
+    if (stockErr) {
+      // Never fail the payment over stock bookkeeping — log loudly instead.
+      console.error(`[Payme] Stock decrement failed for ${item.book_id}:`, stockErr);
+    }
+  }
 
   // Log the payment event with the exact same timestamp we return
   await db.from('miniapp_order_events').insert({

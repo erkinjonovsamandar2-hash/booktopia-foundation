@@ -18,4 +18,6 @@ export default defineConfig([
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
   },
+  { files: ['api/**/*.js'], languageOptions: { globals: globals.node } },
+  { files: ['src/context/**/*.{js,jsx}'], rules: { 'react-refresh/only-export-components': 'off' } },
 ])

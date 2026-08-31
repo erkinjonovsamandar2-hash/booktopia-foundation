@@ -77,6 +77,7 @@ body {
   min-height: 100%;
   -webkit-font-smoothing: antialiased;
   overscroll-behavior: none;
+  overflow-x: hidden;
 }
 
 #root {
@@ -86,6 +87,24 @@ body {
   max-width: 480px;
   margin: 0 auto;
   position: relative;
+}
+
+/* Telegram follows the host theme; this fallback also covers browser/device
+   dark preference previews and keeps semantic OOS colors high contrast. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #101923;
+    --surface: #182431;
+    --surface-2: #223242;
+    --text-1: #F5F7FA;
+    --text-2: #C5D0DB;
+    --text-3: #9AA9B8;
+    --price: #F5F7FA;
+    --nav-bg: #182431;
+    --nav-active: #6EB3D9;
+    --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.3);
+    --shadow-nav: 0 -1px 0 rgba(255, 255, 255, 0.08);
+  }
 }
 
 /* ── Scrollbar ──────────────────────────────────────────────────────────────── */
@@ -878,4 +897,84 @@ h1, h2, h3, h4 {
   font-size: 15px;
   font-weight: 800;
   color: var(--text-1);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   QA hardening — 2026-08-30 (QA_FIXES.md W2-11, W2-15, W1H-3, W1H-4, W3H-4)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* W2-11 — .book-card is now a <button> so it is keyboard reachable and exposed
+   to assistive tech. Strip the UA button styling so it still looks like a card. */
+button.book-card {
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  border: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+/* The wishlist heart is a sibling of the card button now (a button cannot nest
+   inside a button), so the grid cell provides its positioning context. */
+.books-grid > * { position: relative; }
+
+/* W1H-4 — contrast. --text-3 (#9BAAB8) scored 2.38:1 on white; AA needs 4.5:1.
+   The author line is the only place it was used for body copy. */
+.book-card__author { color: var(--text-2); }
+
+/* W3H-4 — keep grid rows aligned when titles wrap to one vs two lines. */
+.book-card__title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.6em;
+}
+
+/* W1H-3 — touch targets. 29 of 34 controls measured under 44x44 px.
+   Small icon buttons keep their visual size; the hit area is expanded with a
+   pseudo-element so the design is unchanged but the target meets the minimum. */
+.wish-btn,
+.book-card__btn-quick,
+.qty-btn,
+.lang-btn { position: relative; }
+
+.wish-btn::after,
+.book-card__btn-quick::after,
+.qty-btn::after,
+.lang-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
+  width: 100%;
+  height: 100%;
+}
+
+/* Category pills were 31 px tall. */
+.pill { min-height: 44px; display: inline-flex; align-items: center; }
+
+/* Bottom-nav items get a full-height target. */
+.nav-item { min-height: 48px; }
+
+/* Visible focus for keyboard users — there was effectively none before. */
+:where(button, a, input, [role='button'], [tabindex]):focus-visible {
+  outline: 2px solid var(--blue-500);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Respect users who ask for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -19,12 +19,29 @@ const STATUS_MESSAGES = {
     `❌ <b>Buyurtma bekor qilindi</b>\n\nSalom, ${name}. Afsuski buyurtmangiz bekor qilindi.\n\nSavollar bo'lsa @booktopia_support ga murojaat qiling.`,
 };
 
+const ADMIN_API_SECRET = process.env.ADMIN_API_SECRET;
+const ADMIN_ORIGIN     = process.env.ADMIN_ORIGIN || 'https://booktopia.uz';
+
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', ADMIN_ORIGIN);
+  res.setHeader('Vary', 'Origin');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  // ── Admin authentication ──────────────────────────────────────────────────
+  // This endpoint changes order status AND messages the customer on Telegram.
+  // It was previously unauthenticated with CORS "*", so anyone who knew an
+  // order id could cancel orders and push notifications to customers.
+  if (!ADMIN_API_SECRET) {
+    console.error('[UpdateOrderStatus] ADMIN_API_SECRET is not set — refusing all requests');
+    return res.status(503).json({ error: 'Server not configured' });
+  }
+  const provided = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  if (provided !== ADMIN_API_SECRET) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
 
   const { order_id, status } = req.body || {};
   const VALID_STATUSES = ['approved', 'delivering', 'delivered', 'cancelled'];

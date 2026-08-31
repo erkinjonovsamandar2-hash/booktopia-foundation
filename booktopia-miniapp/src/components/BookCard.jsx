@@ -1,9 +1,8 @@
-import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
+import { useWishlist } from '../context/WishlistContext';
 import { formatPrice, haptic } from '../lib/utils';
-import PageTransition from './PageTransition';
 import { ShoppingCart } from '@phosphor-icons/react';
 
 const T = {
@@ -12,11 +11,18 @@ const T = {
   buy:         { uz: '🛒 Sotib olish',      ru: '🛒 Купить',           en: '🛒 Buy now' },
   noPrice:     { uz: 'Narx yo\'q',          ru: 'Цена не указана',     en: 'No price' },
   outOfStock:  { uz: 'Tugagan',             ru: 'Закончилось',         en: 'Out of stock' },
+  addToCart:   { uz: 'Savatga qo\'shish',   ru: 'Добавить в корзину',  en: 'Add to cart' },
+  save:        { uz: 'Saqlash',             ru: 'Сохранить',           en: 'Save' },
+  unsave:      { uz: 'Saqlanganlardan olib tashlash', ru: 'Убрать из избранного', en: 'Remove from wishlist' },
+  openBook:    { uz: 'Kitobni ochish',      ru: 'Открыть книгу',       en: 'Open book' },
+  soon:        { uz: 'Tez kunda',           ru: 'Скоро',               en: 'Coming soon' },
 };
 
 export default function BookCard({ book, lang = 'uz', onNavigate, index = 0 }) {
   const { addItem } = useCart();
   const { showToast } = useToast();
+
+  const t = (k) => T[k]?.[lang] ?? T[k]?.uz;
 
   const title  = book[`title_${lang}`]  || book.title  || '—';
   const author = book[`author_${lang}`] || book.author || '—';
@@ -30,115 +36,108 @@ export default function BookCard({ book, lang = 'uz', onNavigate, index = 0 }) {
     if (isOutOfStock) return;
     haptic('success');
     addItem(book);
-    
-    // Show beautiful custom in-app toast
-    showToast(
-      T.addedToCart[lang] || T.addedToCart.uz,
-      T.addedDesc[lang] || T.addedDesc.uz
-    );
+    showToast(t('addedToCart'), t('addedDesc'));
   };
 
   return (
-    <>
-      {/* Staggered fade-up on initial render */}
-      <motion.div
-        initial={{ opacity: 0, y: 18 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 28, delay: index * 0.06 }}
+    <motion.div
+      initial={{ opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 28, delay: index * 0.06 }}
+    >
+      {/* The card itself is a button so it is reachable by keyboard and exposed
+          to assistive tech — it used to be a bare <div onClick>. */}
+      <motion.button
+        type="button"
+        className="book-card"
+        whileTap={{ scale: 0.96, y: 2 }}
+        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+        onClick={() => onNavigate?.(`/book/${book.id}`)}
+        aria-label={`${title} — ${author}${price ? `, ${formatPrice(price)}` : ''}`}
       >
-        {/* Tap feedback: spring scale + slight y push */}
-        <motion.div
-          className="book-card"
-          whileTap={{ scale: 0.96, y: 2 }}
-          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-          onClick={() => onNavigate?.(`/book/${book.id}`)}
-        >
-          {/* Cover */}
-          <div className="book-card__cover-wrapper">
-            {book.cover_url ? (
-              <img
-                className="book-card__cover"
-                src={book.cover_url}
-                alt={title}
-                loading="lazy"
-                style={isOutOfStock ? { filter: 'grayscale(0.5)', opacity: 0.85 } : undefined}
-              />
-            ) : (
-              <div className="book-card__cover-placeholder">📚</div>
-            )}
-            <div className="book-card__spine" />
-          </div>
-
-          {/* Badge */}
-          {isOutOfStock ? (
-            <span className="badge badge--out-of-stock">{T.outOfStock[lang] || T.outOfStock.uz}</span>
+        {/* Cover */}
+        <div className="book-card__cover-wrapper">
+          {book.cover_url ? (
+            <img
+              className="book-card__cover"
+              src={book.cover_url}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              width="300"
+              height="400"
+              style={isOutOfStock ? { filter: 'grayscale(0.5)', opacity: 0.85 } : undefined}
+            />
           ) : (
-            <>
-              {isNew && !isSoon && <span className="badge badge--new">New</span>}
-              {isSoon && <span className="badge badge--soon">Tez kunda</span>}
-            </>
+            <div className="book-card__cover-placeholder" aria-hidden="true">📚</div>
           )}
+          <div className="book-card__spine" />
+        </div>
 
-          {/* Wishlist */}
-          <WishBtn bookId={book.id} />
+        {/* Badge */}
+        {isOutOfStock ? (
+          <span className="badge badge--out-of-stock">{t('outOfStock')}</span>
+        ) : (
+          <>
+            {isNew && !isSoon && <span className="badge badge--new">New</span>}
+            {isSoon && <span className="badge badge--soon">{t('soon')}</span>}
+          </>
+        )}
 
-          {/* Body */}
-          <div className="book-card__body">
-            <p className="book-card__title">{title}</p>
-            <p className="book-card__author">{author}</p>
-            <div className="book-card__price-row">
-              {price
-                ? <span className="price" style={{ fontSize: 14 }}>{formatPrice(price)}</span>
-                : <span style={{ fontSize: 13, color: 'var(--text-3)' }}>{T.noPrice[lang]}</span>
-              }
-              {!isSoon && !isOutOfStock && price && (
-                <button
-                  className="book-card__btn-quick"
-                  onClick={handleBuy}
-                  aria-label="Savatga qo'shish"
-                >
-                  <ShoppingCart size={18} weight="bold" />
-                </button>
-              )}
-            </div>
+        {/* Body */}
+        <div className="book-card__body">
+          <p className="book-card__title">{title}</p>
+          <p className="book-card__author">{author}</p>
+          <div className="book-card__price-row">
+            {price
+              ? <span className="price" style={{ fontSize: 14 }}>{formatPrice(price)}</span>
+              : <span style={{ fontSize: 13, color: 'var(--text-3)' }}>{t('noPrice')}</span>
+            }
+            {!isSoon && !isOutOfStock && price && (
+              <span
+                role="button"
+                tabIndex={0}
+                className="book-card__btn-quick"
+                onClick={handleBuy}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleBuy(e); } }}
+                aria-label={`${t('addToCart')}: ${title}`}
+              >
+                <ShoppingCart size={18} weight="bold" />
+              </span>
+            )}
           </div>
-        </motion.div>
-      </motion.div>
-    </>
+        </div>
+      </motion.button>
+
+      {/* Wishlist heart lives outside the card button — nested buttons are invalid */}
+      <WishBtn bookId={book.id} title={title} t={t} />
+    </motion.div>
   );
 }
 
 // ── Wishlist heart button ───────────────────────────────────────────────────────
-function WishBtn({ bookId }) {
-  const [liked, setLiked] = useState(() => {
-    try {
-      const w = JSON.parse(localStorage.getItem('booktopia_wish') ?? '[]');
-      return w.includes(bookId);
-    } catch { return false; }
-  });
+function WishBtn({ bookId, title, t }) {
+  const { isSaved, toggle } = useWishlist();
+  const liked = isSaved(bookId);
 
-  const toggle = (e) => {
+  const onToggle = (e) => {
     e.stopPropagation();
     haptic('light');
-    const next = !liked;
-    setLiked(next);
-    try {
-      const w = JSON.parse(localStorage.getItem('booktopia_wish') ?? '[]');
-      const updated = next ? [...w, bookId] : w.filter(id => id !== bookId);
-      localStorage.setItem('booktopia_wish', JSON.stringify(updated));
-    } catch {}
+    toggle(bookId);
   };
 
   return (
     <motion.button
+      type="button"
       className="wish-btn"
-      onClick={toggle}
-      aria-label="Saqlash"
+      onClick={onToggle}
+      aria-label={`${liked ? t('unsave') : t('save')}: ${title}`}
+      aria-pressed={liked}
       whileTap={{ scale: 0.75 }}
       animate={liked ? { scale: [1, 1.3, 1] } : {}}
       transition={{ type: 'spring', stiffness: 400, damping: 20 }}
     >
-      <svg viewBox="0 0 24 24" fill={liked ? '#E53E3E' : 'none'} stroke={liked ? '#E53E3E' : '#9BAAB8'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill={liked ? '#E53E3E' : 'none'} stroke={liked ? '#E53E3E' : '#7A8A99'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
       </svg>
     </motion.button>

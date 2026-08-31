@@ -7,7 +7,7 @@ import { useLang } from '../context/LangContext';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
 import PageTransition from '../components/PageTransition';
-import { Books, ShoppingCart, RocketLaunch, Package, CaretDown, CaretUp, ArrowRight } from '@phosphor-icons/react';
+import { Books, ShoppingCart, RocketLaunch, CaretDown, ArrowRight } from '@phosphor-icons/react';
 
 // ── Translations ───────────────────────────────────────────────────────────────
 const T = {
@@ -26,25 +26,19 @@ const T = {
   newBooks:    { uz: '✨ Yangi nashrlar',  ru: '✨ Новинки',         en: '✨ New Releases' },
   seeAll:      { uz: 'Barchasini ko\'rish →', ru: 'Смотреть все →', en: 'See all →' },
   catalogCta:  { uz: 'Butun katalogni ko\'rish', ru: 'Открыть каталог', en: 'Open catalog' },
+  heroCta:     { uz: 'Katalogni ko\'rish',  ru: 'Открыть каталог',   en: 'Browse catalog' },
   buy:         { uz: 'Sotib olish',       ru: 'Купить',             en: 'Buy' },
   blogTitle:   { uz: '✍️ Maqolalar',      ru: '✍️ Статьи',          en: '✍️ Articles' },
   blogCta:     { uz: 'Barchasini o\'qish →', ru: 'Читать все →',   en: 'Read all →' },
-  readMore:    { uz: 'Batafsil o\'qish',  ru: 'Читать dalеj',       en: 'Read more' },
   openArticle: { uz: 'Maqolani ochish →',  ru: 'Открыть статью →',  en: 'Open article →' },
-  soonTitle:   { uz: '⏳ Tez kunda',      ru: '⏳ Скоро',           en: '⏳ Coming Soon' },
-  notify:      { uz: 'Xabar bering',      ru: 'Уведомить меня',     en: 'Notify me' },
-  notified:    { uz: '✅ Xabar beriladi', ru: '✅ Уведомим вас',    en: '✅ You\'re on the list' },
   bestsellers: { uz: '🔥 Eng ko\'p sotilgan', ru: '🔥 Бестселлеры',  en: '🔥 Bestsellers' },
   recentTitle: { uz: '👁 So\'nggi ko\'rilgan', ru: '👁 Недавно просмотренные', en: '👁 Recently Viewed' },
-  trustOrders: { uz: 'buyurtma bajarildi', ru: 'заказов выполнено', en: 'orders fulfilled' },
-  trustOfficial:{ uz: 'Rasmiy nashriyot', ru: 'Официальное изд-во', en: 'Official publisher' },
-  trustDelivery:{ uz: '24 soat kafolat', ru: 'Гарантия 24 часа',   en: '24-hour guarantee' },
   ordersTitle: { uz: '📦 Mening buyurtmalarim', ru: '📦 Мои заказы', en: '📦 My Orders' },
   ordersAll:   { uz: 'Barchasi →',        ru: 'Все →',              en: 'All →' },
   orderNum:    { uz: 'Buyurtma',          ru: 'Заказ',              en: 'Order' },
-  collapse:    { uz: 'Yopish',            ru: 'Свернуть',           en: 'Collapse' },
   addedToCart: { uz: 'Savatga qo\'shildi!', ru: 'Добавлено в корзину!', en: 'Added to cart!' },
   addedDesc:   { uz: 'Buyurtmani "Savat" bo\'limida rasmiylashtirishingiz mumkin.', ru: 'Вы можете оформить заказ в разделе "Корзина".', en: 'You can finish your order in the Cart tab.' },
+  outOfStock:  { uz: 'Tugagan', ru: 'Нет в наличии', en: 'Out of stock' },
 };
 
 const STEPS = [
@@ -62,10 +56,6 @@ export default function Home() {
   const [articles, setArticles]         = useState([]);
   const [myOrders, setMyOrders]         = useState([]);
   const [loading, setLoading]           = useState(true);
-  const [notified, setNotified]         = useState(() => {
-    try { return JSON.parse(localStorage.getItem('booktopia_notified') ?? '{}'); }
-    catch { return {}; }
-  });
   const [recentIds, setRecentIds]       = useState(() => {
     try { return JSON.parse(localStorage.getItem('booktopia_recent') ?? '[]'); }
     catch { return []; }
@@ -74,11 +64,8 @@ export default function Home() {
   // Get Telegram user info
   const user      = tg()?.initDataUnsafe?.user;
   const firstName = user?.first_name ?? '';
-  const tgUserId  = user?.id ?? null;
 
   const t = (k) => T[k]?.[lang] ?? T[k]?.uz ?? k;
-
-  useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
     try {
@@ -89,23 +76,20 @@ export default function Home() {
       ];
       if (uid) {
         queries.push(
-          supabase.from('miniapp_orders').select('id,status,created_at,items,total_uzs').eq('telegram_user_id', uid).order('created_at', { ascending: false }).limit(3)
+          supabase.rpc('get_my_orders', { p_telegram_user_id: uid })
         );
       }
       const [booksRes, articlesRes, ordersRes] = await Promise.all(queries);
       if (booksRes.data)    setBooks(booksRes.data);
       if (articlesRes.data) setArticles(articlesRes.data);
-      if (ordersRes?.data)  setMyOrders(ordersRes.data);
+      if (ordersRes?.data)  setMyOrders((ordersRes.data ?? []).slice(0, 3));
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };
 
-  const handleNotify = (bookId) => {
-    const next = { ...notified, [bookId]: true };
-    setNotified(next);
-    localStorage.setItem('booktopia_notified', JSON.stringify(next));
-    haptic('success');
-  };
+  // Initial data load synchronizes the page with Supabase.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { loadData(); }, []);
 
   // De-duplicate same book across language editions & filter hidden books
   const visibleBooks = books.filter(b => b.shop_visible !== false);
@@ -116,9 +100,7 @@ export default function Home() {
     return acc;
   }, { seen: new Set(), list: [] }).list;
 
-  const featured      = uniqueBooks.filter(b => b.featured).slice(0, 8);
   const newReleases   = uniqueBooks.filter(b => b.category === 'new').slice(0, 6);
-  const comingSoon    = uniqueBooks.filter(b => b.status === 'soon' || b.price === null).slice(0, 5);
   // Bestsellers: featured books ordered by sort_order (lowest = most popular)
   const bestsellers   = uniqueBooks.filter(b => b.featured && b.price).slice(0, 6);
   // Recently viewed: match stored IDs to loaded books, keep order
@@ -225,7 +207,7 @@ export default function Home() {
                 fontSize: 13, fontWeight: 900, cursor: 'pointer',
               }}
             >
-              {t('seeAll')}
+              {t('heroCta')}
             </motion.button>
           </div>
         </div>
@@ -364,7 +346,7 @@ export default function Home() {
                 : newReleases.map((book, i) => (
                     <PortraitCard
                       key={book.id} book={book} lang={lang} index={i}
-                      onNavigate={navigate}
+                      onNavigate={(path) => { trackView(book.id); navigate(path); }}
                       onBuy={(e) => { e.stopPropagation(); handleAddToCart(book); }}
                     />
                   ))
@@ -406,8 +388,6 @@ export default function Home() {
             </div>
           </div>
         )}
-
-        {/* ── 6. CATALOG CTA ───────────────────────────────────────────────────── */}
 
         {/* ── 7. CATALOG CTA ───────────────────────────────────────────────────── */}
         <div style={{ padding: '12px 16px 0' }}>
@@ -480,7 +460,7 @@ function PortraitCard({ book, lang, index, onNavigate, onBuy }) {
             background: 'var(--discount)', color: '#fff',
             fontSize: 9, fontWeight: 900, padding: '2px 7px',
             borderRadius: 20, letterSpacing: '0.05em',
-          }}>TUGAGAN</div>
+          }}>{T.outOfStock[lang] || T.outOfStock.uz}</div>
         ) : book.category === 'new' && (
           <div style={{
             position: 'absolute', top: 8, right: 8,
@@ -799,4 +779,3 @@ function BlogCard({ article, lang, t, index }) {
     </motion.div>
   );
 }
-

@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { useLang } from '../context/LangContext';
 import { formatPrice, tg, haptic } from '../lib/utils';
 import PageTransition from '../components/PageTransition';
+import LoadError from '../components/LoadError';
 import { Package, ClockCounterClockwise, CheckCircle, Truck, XCircle, ArrowLeft } from '@phosphor-icons/react';
 
 // ── Status pipeline (matches miniapp_orders schema) ───────────────────────────
@@ -33,6 +34,7 @@ const T = {
   items:       { uz: 'kitob',                ru: 'кн.',                  en: 'book(s)' },
   noTg:        { uz: 'Telegram orqali kiring', ru: 'Войдите через Telegram', en: 'Open via Telegram' },
   noTgDesc:    { uz: 'Buyurtmalarni ko\'rish uchun Telegram Mini App orqali oching', ru: 'Откройте через Telegram Mini App', en: 'Open via Telegram to see orders' },
+  collapse:    { uz: 'Yopish',               ru: 'Свернуть',             en: 'Collapse' },
 };
 
 const formatDate = (iso, lang) => {
@@ -50,6 +52,8 @@ export default function Orders() {
   const [orders, setOrders]   = useState([]);
   const [loading, setLoading] = useState(true);
   const [noTg, setNoTg]       = useState(false);
+  const [error, setError]     = useState(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const t = (k) => T[k]?.[lang] ?? T[k]?.uz ?? k;
 
@@ -63,20 +67,34 @@ export default function Orders() {
       }
 
       try {
-        const { data } = await supabase
-          .from('miniapp_orders')
-          .select('id, status, created_at, items, total_uzs, payment_method, delivery_address')
-          .eq('telegram_user_id', userId)
-          .order('created_at', { ascending: false });
-
+        // Reads go through a SECURITY DEFINER RPC. Direct table access is
+        // closed by RLS, so the anon key can no longer enumerate every order.
+        const { data, error: err } = await supabase.rpc('get_my_orders', {
+          p_telegram_user_id: userId,
+        });
+        if (err) throw err;
         setOrders(data ?? []);
       } catch (err) {
+        // A failed request must not render as "you have no orders".
         console.error('[Orders]', err);
+        setError(err);
       } finally {
         setLoading(false);
       }
     };
     load();
+  }, [reloadKey]);
+
+  // Order status is changed by an admin elsewhere; refresh when the user
+  // returns to the screen instead of showing whatever was true at mount.
+  useEffect(() => {
+    const onFocus = () => setReloadKey(k => k + 1);
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onFocus);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onFocus);
+    };
   }, []);
 
   return (
@@ -106,6 +124,9 @@ export default function Orders() {
               <div key={i} className="skeleton" style={{ height: 180, borderRadius: 16 }} />
             ))}
           </div>
+
+        ) : error ? (
+          <LoadError lang={lang} onRetry={() => { setError(null); setLoading(true); setReloadKey(k => k + 1); }} />
 
         ) : noTg ? (
           /* Not in Telegram */
@@ -324,7 +345,7 @@ function OrderCard({ order, lang, t, index }) {
         }}
         whileTap={{ opacity: 0.6 }}
       >
-        {open ? '▴ Yopish' : `▾ ${items.length} ${t('items')}`}
+        {open ? `▴ ${t('collapse')}` : `▾ ${items.length} ${t('items')}`}
       </motion.div>
     </motion.div>
   );

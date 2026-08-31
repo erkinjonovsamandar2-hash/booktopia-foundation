@@ -78,9 +78,8 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
   const [geoError, setGeoError] = useState(null);
   // One key per mounted sheet, regenerated after a failure so a genuine retry
   // is allowed but a double-tap is not.
-  const idempotencyKeyRef = useRef(
-    (crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`)
-  );
+  // Generated on first submit rather than during render (render must stay pure).
+  const idempotencyKeyRef = useRef(null);
 
   const sheetRef = useRef(null);
 
@@ -145,6 +144,9 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
       return;
     }
     haptic('medium');
+    if (!idempotencyKeyRef.current) {
+      idempotencyKeyRef.current = null; // let a genuine retry mint a fresh key
+    }
     setLoading(true);
     setError(null);
 
@@ -208,7 +210,7 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
 
     } catch (err) {
       console.error('[Checkout]', err);
-      idempotencyKeyRef.current = crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      idempotencyKeyRef.current = null; // let a genuine retry mint a fresh key
       setError(
         lang === 'ru' ? 'Произошла ошибка. Попробуйте ещё раз.' :
         lang === 'en' ? 'An error occurred. Please try again.' :

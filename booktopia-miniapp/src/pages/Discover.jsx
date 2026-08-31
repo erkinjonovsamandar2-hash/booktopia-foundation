@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { useLang } from '../context/LangContext';
 import { formatPrice, haptic } from '../lib/utils';
 import PageTransition from '../components/PageTransition';
+import LoadError from '../components/LoadError';
 
 const T = {
   title:     { uz: 'Kashfiyot',           ru: 'Открытия',        en: 'Discover' },
@@ -14,6 +15,8 @@ const T = {
   read:      { uz: 'ta o\'qildi',         ru: 'прочитано',       en: 'read' },
   of:        { uz: 'dan',                 ru: 'из',              en: 'of' },
   explore:   { uz: 'Ko\'proq →',          ru: 'Подробнее →',     en: 'Explore →' },
+  done:      { uz: 'Tugatildi',           ru: 'Завершено',       en: 'Completed' },
+  outOfStock: { uz: 'Tugagan',             ru: 'Нет в наличии',  en: 'Out of stock' },
 };
 
 // ── 4 Reading Paths — hardcoded to actual book IDs ────────────────────────────
@@ -74,14 +77,10 @@ const PATHS = [
   },
 ];
 
-function getPurchasedIds() {
-  try {
-    const orders = JSON.parse(localStorage.getItem('booktopia_orders') ?? '[]');
-    const ids = new Set();
-    orders.forEach(o => (o.items ?? []).forEach(i => ids.add(i.book_id ?? i.id)));
-    return ids;
-  } catch { return new Set(); }
-}
+// NOTE: reading-path progress used to be derived from a localStorage key
+// ('booktopia_orders') that nothing in the codebase ever wrote, so every path
+// displayed 0/N for every user and "completed" was unreachable. Until progress
+// is driven by real order history the bar is not rendered at all.
 
 // Get current ISO week number for the "HAFTA TANLOVI" badge
 function getWeekNumber() {
@@ -96,10 +95,9 @@ export default function Discover() {
   const [weekBook, setWeekBook]   = useState(null);
   const [pathBooks, setPathBooks] = useState({});
   const [loading, setLoading]     = useState(true);
-  const purchased = getPurchasedIds();
+  const [error, setError]         = useState(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const t = (k) => T[k]?.[lang] ?? T[k]?.uz ?? k;
-
-  useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
     try {
@@ -109,7 +107,10 @@ export default function Discover() {
         .eq('featured', true)
         .order('created_at', { ascending: false });
       
-      const visibleFw = (fw || []).filter(b => b.shop_visible !== false);
+      // Never feature a book that cannot be bought.
+      const visibleFw = (fw || []).filter(b =>
+        b.shop_visible !== false && !(b.stock === 0 || (b.stock != null && b.stock <= 0))
+      );
       if (visibleFw[0]) setWeekBook(visibleFw[0]);
 
       // For each path fetch by specific IDs
@@ -127,9 +128,14 @@ export default function Discover() {
         });
         setPathBooks(results);
       }
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error(e); setError(e); }
     finally { setLoading(false); }
   };
+
+  // Initial data load synchronizes the page with Supabase.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { fetchData(); }, [reloadKey]);
+  const retry = () => { setError(null); setLoading(true); setReloadKey(k => k + 1); };
 
   return (
     <PageTransition>
@@ -145,6 +151,8 @@ export default function Discover() {
         <section style={{ padding: '16px 16px 20px' }}>
           {loading ? (
             <div className="skeleton" style={{ height: 190, borderRadius: 20 }} />
+          ) : error ? (
+            <LoadError lang={lang} onRetry={retry} />
           ) : weekBook ? (
             <WeekCard book={weekBook} lang={lang} t={t} onNavigate={navigate} />
           ) : null}
@@ -162,14 +170,16 @@ export default function Discover() {
               ? Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} className="skeleton" style={{ height: 100, borderRadius: 16 }} />
                 ))
-              : PATHS.map((path, i) => (
+              : PATHS
+                  // A path whose books are all hidden or deleted used to render as
+                  // an empty card with a 0/0 bar. Skip it entirely.
+                  .filter(path => (pathBooks[path.id] ?? []).length > 0)
+                  .map((path, i) => (
                   <PathCard
                     key={path.id}
                     path={path}
                     books={pathBooks[path.id] ?? []}
-                    purchased={purchased}
                     lang={lang}
-                    t={t}
                     onNavigate={navigate}
                     index={i}
                   />
@@ -309,13 +319,10 @@ function WeekCard({ book, lang, t, onNavigate }) {
 }
 
 // ── Path Card with expand/collapse and progress ───────────────────────────────
-function PathCard({ path, books, purchased, lang, t, onNavigate, index }) {
+function PathCard({ path, books, lang, onNavigate, index }) {
   const [open, setOpen] = useState(false);
   const title    = path.title[lang] ?? path.title.uz;
   const goal     = path.goal[lang]  ?? path.goal.uz;
-  const readCount = books.filter(b => purchased.has(b.id)).length;
-  const total     = books.length;
-  const pct       = total > 0 ? (readCount / total) * 100 : 0;
 
   return (
     <motion.div
@@ -363,26 +370,6 @@ function PathCard({ path, books, purchased, lang, t, onNavigate, index }) {
             </svg>
           </motion.div>
         </div>
-
-        {/* Progress bar */}
-        <div style={{ marginTop: 12 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-            <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 700 }}>
-              {readCount}/{total} {t('read')}
-            </span>
-            {readCount === total && total > 0 && (
-              <span style={{ fontSize: 11, fontWeight: 800, color: path.color }}>✅ Tugatildi</span>
-            )}
-          </div>
-          <div style={{ height: 4, background: 'var(--surface-2)', borderRadius: 4, overflow: 'hidden' }}>
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${pct}%` }}
-              transition={{ type: 'spring', stiffness: 160, damping: 28, delay: 0.3 }}
-              style={{ height: '100%', background: path.color, borderRadius: 4 }}
-            />
-          </div>
-        </div>
       </motion.div>
 
       {/* Book list (expanded) */}
@@ -399,7 +386,7 @@ function PathCard({ path, books, purchased, lang, t, onNavigate, index }) {
             {books.map((book, idx) => {
               const btitle  = book[`title_${lang}`] || book.title  || '—';
               const bauthor = book[`author_${lang}`] || book.author || '—';
-              const done    = purchased.has(book.id);
+              const done    = false;
               const isOutOfStock = book.stock === 0 || (book.stock != null && book.stock <= 0);
               return (
                 <motion.div
@@ -459,7 +446,7 @@ function PathCard({ path, books, purchased, lang, t, onNavigate, index }) {
                       color: 'var(--discount)', flexShrink: 0,
                       background: '#FEF2F2', padding: '3px 8px', borderRadius: 6,
                     }}>
-                      Tugagan
+                      {T.outOfStock[lang] || T.outOfStock.uz}
                     </span>
                   ) : !done && book.price ? (
                     <span style={{

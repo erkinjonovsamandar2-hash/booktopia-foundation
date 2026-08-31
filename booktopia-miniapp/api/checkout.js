@@ -8,11 +8,10 @@
 //   never exposed to the browser)
 
 import { createClient } from '@supabase/supabase-js';
+import crypto from 'node:crypto';
 
 const SUPABASE_URL         = process.env.VITE_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
-const BOT_TOKEN            = process.env.BOT_TOKEN;
-const ADMIN_GROUP_ID       = process.env.ADMIN_GROUP_ID;
 
 // ── Payment gateway credentials (set in Vercel env / .env) ───────────────────
 const PAYME_TEST_MODE    = process.env.PAYME_TEST_MODE === 'true';
@@ -24,12 +23,6 @@ const CLICK_SERVICE_ID   = process.env.CLICK_SERVICE_ID   || '';   // from merch
 // Base URL of the miniapp — used as the return_url after payment
 const MINIAPP_URL        = process.env.MINIAPP_URL || 'https://booktopia-miniapp.vercel.app';
 
-const TG_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
-
-const PAYMENT_LABELS = {
-  payme: 'Payme',
-  click: 'Click',
-};
 
 // ── Payme checkout URL builder ────────────────────────────────────────────────
 // Docs: https://developer.help.paycom.uz/ru/initsializatsiya-platezhey/
@@ -69,15 +62,58 @@ function buildClickUrl(orderId, amountUzs) {
   );
 }
 
-// Calculate effective price with wholesale discount (10+ items)
+// Calculate effective price with wholesale discount (10+ items).
+// The discount is capped so a cheap book can never be discounted to (or near) zero —
+// a flat 5 000 so'm off a 3 000 so'm book used to floor it at 0.
+const WHOLESALE_MIN_QTY = 10;
+const WHOLESALE_DISCOUNT = 5000;
 function getEffectivePrice(price, qty) {
   if (!price) return 0;
-  return qty >= 10 ? Math.max(0, price - 5000) : price;
+  if (qty < WHOLESALE_MIN_QTY) return price;
+  // never discount by more than 20% of the unit price
+  const discount = Math.min(WHOLESALE_DISCOUNT, Math.floor(price * 0.2));
+  return price - discount;
+}
+
+// ── Telegram initData verification ────────────────────────────────────────────
+// Docs: https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
+// Returns the verified user object, or null when the payload is absent/invalid.
+function verifyInitData(initData) {
+  if (!initData || !BOT_TOKEN) return null;
+  try {
+    const params = new URLSearchParams(initData);
+    const hash = params.get('hash');
+    if (!hash) return null;
+    params.delete('hash');
+
+    const dataCheckString = [...params.entries()]
+      .map(([k, v]) => `${k}=${v}`)
+      .sort()
+      .join('\n');
+
+    const secretKey = crypto.createHmac('sha256', 'WebAppData').update(BOT_TOKEN).digest();
+    const computed = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
+
+    // timing-safe compare
+    const a = Buffer.from(computed, 'hex');
+    const b = Buffer.from(hash, 'hex');
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+
+    // reject payloads older than 24h to limit replay
+    const authDate = Number(params.get('auth_date') || 0);
+    if (!authDate || Date.now() / 1000 - authDate > 86400) return null;
+
+    const userRaw = params.get('user');
+    return userRaw ? JSON.parse(userRaw) : null;
+  } catch {
+    return null;
+  }
 }
 
 export default async function handler(req, res) {
-  // CORS headers for miniapp origin
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // CORS — restricted to the miniapp origin instead of "*"
+  res.setHeader('Access-Control-Allow-Origin', MINIAPP_URL);
+  res.setHeader('Vary', 'Origin');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
@@ -91,12 +127,23 @@ export default async function handler(req, res) {
     name,
     phone,
     address,
-    lat,
-    lng,
     payment_method,
     telegram_user_id,
     telegram_username,
+    init_data,            // raw Telegram WebApp initData — verified below
+    idempotency_key,
   } = req.body || {};
+
+  // ── Identity: never trust a client-supplied telegram_user_id ───────────────
+  // The verified user wins. If initData is absent or invalid the order is still
+  // accepted (the miniapp is usable outside Telegram) but it is stored
+  // unattributed, so it can never be read back as somebody else's order.
+  const verifiedUser = verifyInitData(init_data);
+  const verifiedUserId = verifiedUser?.id ?? null;
+  const verifiedUsername = verifiedUser?.username ?? null;
+  if (!verifiedUserId && telegram_user_id) {
+    console.warn('[Checkout] Unverified telegram_user_id supplied by client — discarding');
+  }
 
   // ── Basic validation ──────────────────────────────────────────────────────
   if (!phone || !items?.length) {
@@ -110,6 +157,12 @@ export default async function handler(req, res) {
   const digits = phone.replace(/\D/g, '');
   if (digits.length < 9) {
     return res.status(400).json({ error: 'Invalid phone number' });
+  }
+
+  // An order must be deliverable: either a written address or GPS coordinates.
+  const hasCoords = typeof lat === 'number' && typeof lng === 'number';
+  if (!address?.trim() && !hasCoords) {
+    return res.status(400).json({ error: 'Manzil yoki GPS joylashuvi kerak' });
   }
 
   // ── Supabase admin client ─────────────────────────────────────────────────
@@ -164,17 +217,39 @@ export default async function handler(req, res) {
 
   // ── Insert order ──────────────────────────────────────────────────────────
   const method = payment_method;
+  // Idempotency: if the client retries with the same key, return the existing order
+  // instead of creating a duplicate.
+  if (idempotency_key) {
+    const { data: existing } = await supabase
+      .from('miniapp_orders')
+      .select('id, total_uzs, payment_method')
+      .eq('idempotency_key', idempotency_key)
+      .maybeSingle();
+    if (existing) {
+      return res.status(200).json({
+        ok: true,
+        order_id: existing.id,
+        payme_url: existing.payment_method === 'payme' ? buildPaymeUrl(existing.id, existing.total_uzs) : null,
+        click_url: existing.payment_method === 'click' ? buildClickUrl(existing.id, existing.total_uzs) : null,
+        deduplicated: true,
+      });
+    }
+  }
+
   const { data: order, error: insertError } = await supabase
     .from('miniapp_orders')
     .insert({
-      telegram_user_id:  telegram_user_id  ?? null,
-      telegram_username: telegram_username ?? null,
+      telegram_user_id:  verifiedUserId,
+      telegram_username: verifiedUsername ?? (verifiedUserId ? telegram_username ?? null : null),
       full_name:         name || 'Noma\'lum',
       phone:             phone.trim(),
       items:             orderItems,
       total_uzs,
       payment_method:    method,
       delivery_address:  address || null,
+      delivery_lat:      typeof lat === 'number' ? lat : null,
+      delivery_lng:      typeof lng === 'number' ? lng : null,
+      idempotency_key:   idempotency_key ?? null,
       status:            'pending',
       payment_status:    'unpaid',
     })

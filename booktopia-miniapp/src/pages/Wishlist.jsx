@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useLang } from '../context/LangContext';
+import { useWishlist } from '../context/WishlistContext';
 import BookCard from '../components/BookCard';
-import { haptic, tg } from '../lib/utils';
 import PageTransition from '../components/PageTransition';
+import LoadError from '../components/LoadError';
+import { haptic, tg } from '../lib/utils';
 import { Heart, Export } from '@phosphor-icons/react';
 
 const T = {
@@ -13,49 +15,66 @@ const T = {
   emptyDesc:  { uz: 'Yoqtirgan kitoblaringizni saqlang', ru: 'Сохраняйте понравившиеся книги', en: 'Save your favorite books' },
   share:      { uz: 'Ulashish',        ru: 'Поделиться',      en: 'Share' },
   shareMsg:   { uz: 'Men Booktopia\'da ushbu kitobni o\'qimoqchiman:', ru: 'Я хочу прочитать эту книгу в Booktopia:', en: 'I want to read this book on Booktopia:' },
+  back:       { uz: 'Orqaga',          ru: 'Назад',           en: 'Back' },
 };
+
+// Bot username lives in one place — Profile and Wishlist used to disagree.
+const BOT_USERNAME = import.meta.env.VITE_BOT_USERNAME || 'Booktopiapress_bot';
 
 export default function Wishlist() {
   const navigate = useNavigate();
   const { lang } = useLang();
-  
+  const { ids } = useWishlist();
+
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Snapshot the ids we fetched for, so removing one does not refetch everything.
+  const [fetchedIds] = useState(() => ids);
+
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
-    const loadWishlist = async () => {
-      try {
-        const savedIds = JSON.parse(localStorage.getItem('booktopia_wish') || '[]');
-        if (savedIds.length === 0) {
-          setLoading(false);
-          return;
-        }
+    let cancelled = false;
+    (async () => {
+    try {
+      if (fetchedIds.length === 0) { if (!cancelled) setBooks([]); return; }
+      const { data, error: err } = await supabase
+        .from('books')
+        .select('id, title, title_ru, title_en, author, author_ru, author_en, cover_url, price, stock, category, featured, shop_visible')
+        .in('id', fetchedIds);
+      if (err) throw err;
+      if (!cancelled) setBooks((data ?? []).filter(b => b.shop_visible !== false));
+    } catch (err) {
+      console.error('Wishlist error', err);
+      if (!cancelled) setError(err);
+    } finally {
+      if (!cancelled) setLoading(false);
+    }
+    })();
+    return () => { cancelled = true; };
+  }, [fetchedIds, reloadKey]);
 
-        const { data } = await supabase
-          .from('books')
-          .select('*')
-          .in('id', savedIds);
-          
-        if (data) setBooks(data.filter(b => b.shop_visible !== false));
-      } catch (err) {
-        console.error('Wishlist error', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadWishlist();
-  }, []);
+  // Retry runs from a click, so setting state here is safe.
+  const load = () => { setLoading(true); setError(null); setReloadKey(k => k + 1); };
+
+  // Render straight from the wishlist context, so un-hearting a book removes its
+  // card immediately instead of leaving it on screen until a reload.
+  const visible = useMemo(() => books.filter(b => ids.includes(b.id)), [books, ids]);
 
   const handleShare = (book) => {
     haptic('light');
     const title = book[`title_${lang}`] || book.title || '';
-    const text = `${T.shareMsg[lang]} "${title}"`;
-    // We assume the bot username is booktopia_bot. You can change this if the real bot is different.
-    const url = `https://t.me/share/url?url=https://t.me/Booktopiapress_bot&text=${encodeURIComponent(text)}`;
+    const text = `${T.shareMsg[lang] ?? T.shareMsg.uz} "${title}"`;
+    // Share a link to the book itself, not just to the bot.
+    const deepLink = `https://t.me/${BOT_USERNAME}?startapp=book_${book.id.replace(/-/g, '').slice(0, 8)}`;
+    const url = `https://t.me/share/url?url=${encodeURIComponent(deepLink)}&text=${encodeURIComponent(text)}`;
     if (tg()?.openTelegramLink) {
       tg().openTelegramLink(url);
     } else {
-      window.open(url, '_blank');
+      const win = window.open(url, '_blank', 'noopener');
+      if (!win) window.location.href = url;
     }
   };
 
@@ -68,6 +87,7 @@ export default function Wishlist() {
       <div style={{ padding: '16px 16px 0', display: 'flex', alignItems: 'center' }}>
         <button
           onClick={() => navigate(-1)}
+          aria-label={t('back')}
           style={{ border: 'none', background: 'none', color: 'var(--blue-500)', fontSize: 20, marginRight: 12, cursor: 'pointer' }}
         >
           ←
@@ -79,7 +99,9 @@ export default function Wishlist() {
 
       {loading ? (
         <div style={{ padding: '0 16px' }}><div className="skeleton" style={{ height: 200, width: '100%', borderRadius: 12 }} /></div>
-      ) : books.length === 0 ? (
+      ) : error ? (
+        <LoadError lang={lang} onRetry={load} />
+      ) : visible.length === 0 ? (
         <div className="empty-state" style={{ marginTop: 40 }}>
           <div className="empty-state__icon"><Heart size={56} weight="thin" color="var(--text-3)" /></div>
           <h3 className="empty-state__title">{t('empty')}</h3>
@@ -87,17 +109,16 @@ export default function Wishlist() {
         </div>
       ) : (
         <div className="books-grid">
-          {books.map((book, i) => (
-            <div key={book.id} style={{ display: 'flex', flexDirection: 'column' }}>
+          {visible.map((book, i) => (
+            <div key={book.id} style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
               <BookCard book={book} lang={lang} onNavigate={navigate} index={i} />
-              
-              {/* Viral Sharing Feature */}
-              <button 
+
+              <button
                 onClick={() => handleShare(book)}
                 className="btn-secondary"
-                style={{ marginTop: 8, padding: '8px', fontSize: 13, gap: 4 }}
+                style={{ marginTop: 8, padding: '10px', fontSize: 13, gap: 4 }}
               >
-                <Export size={14} weight="bold" /> {t('share')}
+                <Export size={14} weight="bold" aria-hidden="true" /> {t('share')}
               </button>
             </div>
           ))}

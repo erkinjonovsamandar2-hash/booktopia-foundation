@@ -1,10 +1,11 @@
 import { useLang } from '../context/LangContext';
 import { useCart } from '../context/CartContext';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { tg } from '../lib/utils';
 import PageTransition from '../components/PageTransition';
 import {
+  ShieldCheck,
+  FileText,
   Package,
   Heart,
   ShoppingCart,
@@ -28,6 +29,10 @@ const T = {
   contact:     { uz: 'Bog\'lanish',         ru: 'Контакты',         en: 'Contact' },
   cart:        { uz: 'Savat',               ru: 'Корзина',          en: 'Cart' },
   items:       { uz: 'ta kitob',            ru: 'книг',             en: 'books' },
+  privacy:     { uz: 'Maxfiylik siyosati',  ru: 'Политика конфиденциальности', en: 'Privacy Policy' },
+  privacyDesc: { uz: 'Ma\'lumotlaringiz qanday ishlatiladi', ru: 'Как используются ваши данные', en: 'How your data is used' },
+  terms:       { uz: 'Foydalanish shartlari', ru: 'Условия использования', en: 'Terms of Use' },
+  termsDesc:   { uz: 'Xizmatdan foydalanish qoidalari', ru: 'Правила пользования сервисом', en: 'Rules for using the service' },
 };
 
 // Icon wrapper — consistent size + color
@@ -132,6 +137,24 @@ export default function Profile() {
         />
       </div>
 
+      <div style={{ height: 8 }} />
+
+      {/* Legal — required: the app collects name, phone, address and location */}
+      <div style={{ background: 'var(--surface)', overflow: 'hidden' }}>
+        <MenuItem
+          icon={<Icon component={ShieldCheck} color="#3182CE" />}
+          iconBg="#EBF8FF"
+          label={t('privacy')} sub={t('privacyDesc')}
+          href="https://booktopia.uz/privacy-policy" external
+        />
+        <MenuItem
+          icon={<Icon component={FileText} color="#718096" />}
+          iconBg="#EDF2F7"
+          label={t('terms')} sub={t('termsDesc')}
+          href="https://booktopia.uz/terms-of-use" external
+        />
+      </div>
+
       {/* Version */}
       <p style={{ textAlign: 'center', color: 'var(--text-3)', fontSize: 12, fontWeight: 600, padding: '20px 0 8px' }}>
         Booktopia Miniapp v1.0
@@ -143,8 +166,18 @@ export default function Profile() {
 
 function MenuItem({ icon, iconBg, label, sub, href, external }) {
   const Tag = href ? (external ? 'a' : Link) : 'div';
+  const openExternal = (e) => {
+    const tgApi = tg();
+    if (tgApi?.openLink) {
+      e.preventDefault();
+      tgApi.openLink(href);
+    }
+    // Otherwise fall through to the anchor's default behaviour.
+  };
   const props = href
-    ? (external ? { href, target: '_blank', rel: 'noopener noreferrer' } : { to: href })
+    ? (external
+        ? { href, target: '_blank', rel: 'noopener noreferrer', onClick: openExternal }
+        : { to: href })
     : {};
 
   return (

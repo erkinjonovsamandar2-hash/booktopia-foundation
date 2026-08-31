@@ -26,3 +26,9 @@ dist-ssr
 # Sensitive — never commit account recovery codes / secrets
 recovery-codes*.txt
 *recovery-codes*
+
+# Environment — NEVER commit secrets
+.env
+.env.local
+.env.production
+.env.*.local

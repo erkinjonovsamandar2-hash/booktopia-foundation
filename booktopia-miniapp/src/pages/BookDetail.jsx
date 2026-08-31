@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { formatPrice, haptic } from '../lib/utils';
@@ -37,7 +37,9 @@ export default function BookDetail() {
   const [showSheet, setShowSheet] = useState(false);
   const [readMore, setReadMore] = useState(false);
 
-  const load = useCallback(() => {
+  const [reloadKey, setReloadKey] = useState(0);
+
+  useEffect(() => {
     // The URL param may be a full slug like "title-words-{uuid}" or a bare UUID.
     // Supabase's id column is UUID type — passing a non-UUID string causes a 400.
     // We extract the UUID by grabbing the last 36 characters if the param is longer.
@@ -45,8 +47,6 @@ export default function BookDetail() {
     const match = id.match(UUID_RE);
     const bookId = match ? match[0] : id;
 
-    setLoading(true);
-    setError(null);
     supabase.from('books').select('*').eq('id', bookId).maybeSingle()
       .then(({ data, error: err }) => {
         // A failed request must not look identical to a book that does not exist.
@@ -55,9 +55,10 @@ export default function BookDetail() {
       })
       .catch(err => setError(err))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, reloadKey]);
 
-  useEffect(() => { load(); }, [load]);
+  // Retry is an event handler, so setting state here is safe.
+  const load = () => { setLoading(true); setError(null); setReloadKey(k => k + 1); };
 
   const t = (k) => T[k]?.[lang] ?? T[k]?.uz ?? k;
   const inCart = book && items.some(i => i.id === book.id);

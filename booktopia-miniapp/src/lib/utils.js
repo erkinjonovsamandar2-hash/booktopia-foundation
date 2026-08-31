@@ -11,10 +11,20 @@ export const locField = (obj, field, lang) => {
   return obj[field] || '';
 };
 
-// Calculate effective price with wholesale discount (10+ items)
+// Calculate effective price with wholesale discount (10+ items).
+// Capped at 20% of the unit price so a cheap book cannot be discounted to zero —
+// a flat 5 000 so'm off a 3 000 so'm book used to floor it at 0.
+// Keep in sync with the identical rule in api/checkout.js.
+export const WHOLESALE_MIN_QTY = 10;
+export const WHOLESALE_DISCOUNT = 5000;
+
+export const getWholesaleDiscount = (price) =>
+  !price ? 0 : Math.min(WHOLESALE_DISCOUNT, Math.floor(price * 0.2));
+
 export const getEffectivePrice = (price, qty) => {
   if (!price) return 0;
-  return qty >= 10 ? Math.max(0, price - 5000) : price;
+  if (qty < WHOLESALE_MIN_QTY) return price;
+  return price - getWholesaleDiscount(price);
 };
 
 // Truncate text

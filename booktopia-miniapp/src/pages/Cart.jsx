@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
 import { useCart } from '../context/CartContext';
@@ -20,14 +20,36 @@ const T = {
   browse:     { uz: 'Katalogga o\'tish', ru: 'В каталог', en: 'Go to catalog' },
   addMore:    { uz: '+ Yana kitob qo\'shish', ru: '+ Добавить еще книгу', en: '+ Add another book' },
   outOfStock: { uz: 'Zaxirada tugagan', ru: 'Нет в наличии', en: 'Out of stock' },
+  clearConfirm: { uz: 'Savatni tozalash?', ru: 'Очистить корзину?', en: 'Clear the cart?' },
+  cleared:    { uz: 'Savat tozalandi',  ru: 'Корзина очищена', en: 'Cart cleared' },
+  cancel:     { uz: 'Bekor qilish',     ru: 'Отмена',          en: 'Cancel' },
+  swipeHint:  { uz: 'suring',           ru: 'смахните',        en: 'swipe' },
+  wholesale:  { uz: 'Ulgurji narx',     ru: 'Оптовая цена',    en: 'Wholesale price' },
+  maxStock:   { uz: 'Zaxiradagi maksimal miqdor', ru: 'Максимум на складе', en: 'Maximum available' },
+  updated:    { uz: 'Savat yangilandi', ru: 'Корзина обновлена', en: 'Cart updated' },
+  decrease:   { uz: 'Kamaytirish',      ru: 'Уменьшить',       en: 'Decrease' },
+  increase:   { uz: 'Ko\'paytirish',    ru: 'Увеличить',       en: 'Increase' },
 };
 
 export default function Cart() {
   const navigate = useNavigate();
-  const { items, removeItem, incrementQty, decrementQty, clearCart, totalPrice, totalCount, importNotice, dismissImportNotice } = useCart();
+  const { items, removeItem, incrementQty, decrementQty, clearCart, revalidate, atStockCeiling, totalPrice, totalCount, importNotice, dismissImportNotice } = useCart();
   const { showToast } = useToast();
   const { lang } = useLang();
   const [showSheet, setShowSheet] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
+  const revalidatedRef = useRef(false);
+
+  // The cart is a localStorage snapshot taken at add-time. Re-check price and
+  // stock against the database once per visit so it cannot silently go stale.
+  useEffect(() => {
+    if (revalidatedRef.current) return;
+    revalidatedRef.current = true;
+    revalidate?.()
+      .then((changes) => { if (changes) showToast(T.updated[lang] ?? T.updated.uz, null, 'info'); })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (importNotice?.added > 0) {
@@ -69,12 +91,32 @@ export default function Cart() {
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 16px 12px' }}>
           <h1 style={{ fontSize: 22 }}>{t('title')} ({totalCount})</h1>
-          <button
-            onClick={() => { haptic('light'); clearCart(); }}
-            style={{ border: 'none', background: 'none', color: 'var(--discount)', fontFamily: 'Nunito, sans-serif', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
-          >
-            {t('clear')}
-          </button>
+          {/* Clearing the cart used to be a single tap with no confirmation
+              and no undo — it wiped a 1 900 000 so'm cart during QA. */}
+          {confirmClear ? (
+            <span style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <button
+                onClick={() => { haptic('warning'); clearCart(); setConfirmClear(false); showToast(t('cleared'), null, 'info'); }}
+                style={{ border: 'none', background: 'var(--discount)', color: '#fff', padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+              >
+                {t('clear')}
+              </button>
+              <button
+                onClick={() => setConfirmClear(false)}
+                style={{ border: 'none', background: 'var(--surface-2)', color: 'var(--text-1)', padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+              >
+                {t('cancel')}
+              </button>
+            </span>
+          ) : (
+            <button
+              onClick={() => { haptic('light'); setConfirmClear(true); }}
+              aria-label={t('clearConfirm')}
+              style={{ border: 'none', background: 'none', color: 'var(--discount)', fontFamily: 'Nunito, sans-serif', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+            >
+              {t('clear')}
+            </button>
+          )}
         </div>
 
         {hasOutOfStockItems && (
@@ -95,6 +137,7 @@ export default function Cart() {
               onRemove={() => { haptic('light'); removeItem(item.id); }}
               onQtyUp={() => { haptic('light'); incrementQty(item.id); }}
               onQtyDown={() => { haptic('light'); decrementQty(item.id); }}
+              atCeiling={atStockCeiling(item.id)}
             />
           ))}
         </div>
@@ -146,7 +189,8 @@ export default function Cart() {
 }
 
 // ── Swipeable Cart Item (iOS-style swipe-to-delete) ────────────────────────────
-function SwipeableCartItem({ item, lang, showSwipeHint, onRemove, onQtyUp, onQtyDown }) {
+function SwipeableCartItem({ item, lang, showSwipeHint, onRemove, onQtyUp, onQtyDown, atCeiling }) {
+  const tt = (k) => T[k]?.[lang] ?? T[k]?.uz;
   const title  = item[`title_${lang}`] || item.title  || '—';
   const author = item[`author_${lang}`] || item.author || '—';
   const x = useMotionValue(0);
@@ -221,7 +265,7 @@ function SwipeableCartItem({ item, lang, showSwipeHint, onRemove, onQtyUp, onQty
             )}
             {item.qty >= 10 && (
               <span style={{ display: 'inline-block', fontSize: 10, background: 'var(--discount)', color: '#fff', padding: '2px 6px', borderRadius: 4, fontWeight: 700, marginTop: 4 }}>
-                Ulgurji narx
+                {tt('wholesale')}
               </span>
             )}
             {(item.stock === 0 || (item.stock != null && item.stock <= 0)) && (
@@ -233,12 +277,20 @@ function SwipeableCartItem({ item, lang, showSwipeHint, onRemove, onQtyUp, onQty
 
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
             <div className="qty-stepper">
-              <button className="qty-btn" onClick={onQtyDown}>−</button>
+              <button className="qty-btn" onClick={onQtyDown} aria-label={tt('decrease')}>−</button>
               <span className="qty-num">{item.qty}</span>
-              <button className="qty-btn" onClick={onQtyUp}>+</button>
+              {/* Quantity can no longer exceed available stock. */}
+              <button
+                className="qty-btn"
+                onClick={onQtyUp}
+                disabled={atCeiling}
+                aria-label={atCeiling ? tt('maxStock') : tt('increase')}
+                title={atCeiling ? tt('maxStock') : undefined}
+                style={atCeiling ? { opacity: 0.35, cursor: 'not-allowed' } : undefined}
+              >+</button>
             </div>
             {showSwipeHint && (
-              <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>← swipe</span>
+              <span style={{ fontSize: 11, color: 'var(--text-2)', fontWeight: 600 }}>← {tt('swipeHint')}</span>
             )}
           </div>
         </div>
