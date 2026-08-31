@@ -378,7 +378,8 @@ export default function OrdersManager() {
 
   // ── Archive order (soft delete — sets status to 'archived') ─────────────
   const archiveOrder = useCallback(async (order: Order) => {
-    if (!confirm(`"${order.full_name}" ning buyurtmasini arxivlaysizmi? Bu buyurtma statistikaga kirmaydi.`)) return;
+    // window.confirm — the local `confirm` state shadows the global here.
+    if (!window.confirm(`"${order.full_name}" ning buyurtmasini arxivlaysizmi? Bu buyurtma statistikaga kirmaydi.`)) return;
     setWorking(true);
     try {
       const { error } = await (supabase as any)
@@ -394,9 +395,13 @@ export default function OrdersManager() {
   }, []);
 
   // ── Filter logic ──────────────────────────────────────────────────────────
+  // Pre-launch orders carry archived_at; they are kept in full but excluded
+  // from the working lists, exactly like a manually archived order.
+  const isArchived = (o: Order) => o.status === "archived" || !!(o as any).archived_at;
+
   const filtered = orders.filter((o) => {
-    if (o.status === "archived" && tab !== "archived") return false; // hide archived unless on archived tab
-    const matchTab = tab === "all" || o.status === tab;
+    if (isArchived(o) && tab !== "archived") return false; // hide archived unless on archived tab
+    const matchTab = tab === "all" || o.status === tab || (tab === "archived" && isArchived(o));
     const q = search.toLowerCase();
     const matchSearch = !q ||
       (o.full_name || "").toLowerCase().includes(q) ||
@@ -406,7 +411,10 @@ export default function OrdersManager() {
     return matchTab && matchSearch;
   });
 
-  const countByTab = (key: string) => key === "all" ? orders.length : orders.filter((o) => o.status === key).length;
+  const countByTab = (key: string) =>
+    key === "all"      ? orders.filter((o) => !isArchived(o)).length
+  : key === "archived" ? orders.filter((o) => isArchived(o)).length
+  :                      orders.filter((o) => o.status === key && !isArchived(o)).length;
 
   // ── CSV Export ─────────────────────────────────────────────────────────────
   const exportCSV = () => {

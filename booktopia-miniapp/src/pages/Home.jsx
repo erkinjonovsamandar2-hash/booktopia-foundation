@@ -14,7 +14,7 @@ const T = {
   greeting:    { uz: 'Assalomu alaykum',  ru: 'Добрый день',       en: 'Hello' },
   hero1:       { uz: 'Eng yaxshi kitoblar', ru: 'Лучшие книги',    en: 'The best books' },
   hero2:       { uz: '— uyingizga 24 soatda', ru: '— домой за 24 часа', en: '— at your door in 24h' },
-  heroSub:     { uz: 'Toshkent bo\'ylab yetkazib beramiz', ru: 'Доставляем по всему Ташкенту', en: 'Delivered across Tashkent' },
+  heroSub:     { uz: 'O\'zbekiston bo\'ylab yetkazib beramiz', ru: 'Доставляем по всему Узбекистану', en: 'Delivered across Uzbekistan' },
   howTitle:    { uz: 'Qanday ishlaydi?',  ru: 'Как это работает?', en: 'How it works?' },
   step1t:      { uz: 'Kitob tanlang',     ru: 'Выберите книгу',    en: 'Choose a book' },
   step1d:      { uz: 'Katalogdan',        ru: 'Из каталога',       en: 'From catalog' },

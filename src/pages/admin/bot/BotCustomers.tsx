@@ -24,6 +24,7 @@ const BotCustomers = () => {
       const { data, error } = await (supabase as any)
         .from("miniapp_orders")
         .select("*")
+        .is("archived_at", null)
         .order("created_at", { ascending: false });
 
       if (error) {

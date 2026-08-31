@@ -17,7 +17,10 @@ const BotStats = () => {
       setLoading(true);
       const { data, error } = await (supabase as any)
         .from("miniapp_orders")
-        .select("items, total_uzs, status, payment_status");
+        .select("items, total_uzs, status, payment_status")
+        // Pre-launch orders are archived, not deleted. Statistics count live
+        // orders only, so the dashboard starts from zero at launch.
+        .is("archived_at", null);
 
       if (error) {
         console.error("Error fetching stats:", error);
