@@ -384,9 +384,13 @@ export default function OrdersManager() {
   const updateStatus = useCallback(async (orderId: string, nextStatus: string) => {
     setWorking(true);
     try {
+      // The endpoint verifies this token and the caller's admin role.
+      const { data: sessionData } = await (supabase as any).auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+
       const res = await fetch("/api/update-order-status", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
         body: JSON.stringify({ order_id: orderId, status: nextStatus }),
       });
       const data = await res.json();
