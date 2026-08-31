@@ -8,6 +8,7 @@ import { ToastProvider } from './context/ToastContext';
 import { WishlistProvider } from './context/WishlistContext';
 import BottomNav from './components/BottomNav';
 import ErrorBoundary from './components/ErrorBoundary';
+import ShelfLoader from './components/ShelfLoader';
 
 // Home is the entry screen — keep it in the main chunk.
 import Home from './pages/Home';
@@ -60,13 +61,9 @@ function NotFound() {
 }
 
 function RouteFallback() {
-  return (
-    <div className="page" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <div className="skeleton" style={{ height: 28, width: '60%' }} />
-      <div className="skeleton" style={{ height: 200, width: '100%', borderRadius: 12 }} />
-      <div className="skeleton" style={{ height: 16, width: '40%' }} />
-    </div>
-  );
+  // Route chunks resolve in milliseconds on a warm connection, so this stays
+  // invisible unless the network is genuinely slow.
+  return <div className="page"><ShelfLoader /></div>;
 }
 
 function AppRoutes() {

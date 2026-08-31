@@ -10,9 +10,76 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <!-- Favicon placeholder -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>" />
+
+    <!--
+      First-open splash.
+
+      This is inline on purpose: it is painted from the HTML itself, before the
+      JavaScript bundle is fetched or parsed, so it appears immediately instead
+      of after a white gap. It costs no extra request and about 1KB.
+
+      React replaces it the moment it mounts — createRoot clears #root — so it
+      is never removed by a timer and can never outlast the app.
+
+      Nothing here animates for the first 400ms. On a warm connection the app
+      mounts before that, so the usual experience is the app appearing directly,
+      not a splash flashing past.
+    -->
+    <style>
+      #boot {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 22px;
+        background: linear-gradient(160deg, #0A192F 0%, #132D55 55%, #265999 100%);
+        font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      }
+      #boot .shelf { display: flex; align-items: flex-end; gap: 5px; height: 92px; }
+      #boot .shelf i {
+        display: block;
+        border-radius: 2px 3px 3px 2px;
+        transform-origin: bottom center;
+        box-shadow: inset -3px 0 0 rgba(255, 255, 255, 0.3);
+        opacity: 0;
+        animation: boot-in 1.6s cubic-bezier(0.34, 1.3, 0.64, 1) infinite;
+        animation-delay: var(--d);
+      }
+      #boot .rule {
+        width: 104px; height: 3px; border-radius: 3px;
+        background: rgba(255, 255, 255, 0.18); margin-top: -14px;
+      }
+      #boot .word {
+        font-size: 15px; font-weight: 800; letter-spacing: 0.14em;
+        text-transform: uppercase; color: rgba(255, 255, 255, 0.55);
+      }
+      @keyframes boot-in {
+        0%   { transform: translateY(14px) rotate(-8deg); opacity: 0; }
+        22%  { transform: none; opacity: 1; }
+        72%  { transform: none; opacity: 1; }
+        100% { transform: none; opacity: 0.25; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #boot .shelf i { animation: none; opacity: 1; }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="boot">
+        <div class="shelf">
+          <i style="--d:0s;    width:15px; height:76px; background:#8FB8E0"></i>
+          <i style="--d:0.13s; width:12px; height:92px; background:#D5AD36"></i>
+          <i style="--d:0.26s; width:17px; height:68px; background:#7FD1A6"></i>
+          <i style="--d:0.39s; width:13px; height:88px; background:#B79BE8"></i>
+          <i style="--d:0.52s; width:16px; height:74px; background:#00CDFE"></i>
+        </div>
+        <span class="rule"></span>
+        <span class="word">Booktopia</span>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
