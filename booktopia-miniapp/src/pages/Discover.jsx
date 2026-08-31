@@ -23,7 +23,6 @@ const T = {
 const PATHS = [
   {
     id: 'temur',
-    emoji: '🏰',
     color: '#D5AD36',
     colorLight: '#FBF6E3',
     title:  { uz: 'Temur imperiyasi',       ru: 'Империя Тамерлана',     en: 'Tamerlane\'s Empire' },
@@ -36,7 +35,6 @@ const PATHS = [
   },
   {
     id: 'uzbek',
-    emoji: '🇺🇿',
     color: '#265999',
     colorLight: '#E8F4FD',
     title:  { uz: 'O\'zbek qalbi',          ru: 'Узбекская душа',         en: 'Uzbek Soul' },
@@ -49,7 +47,6 @@ const PATHS = [
   },
   {
     id: 'world',
-    emoji: '🌍',
     color: '#805AD5',
     colorLight: '#F5F0FF',
     title:  { uz: 'Dunyo sargardonligi',    ru: 'Путешествие по мирам',  en: 'World Odyssey' },
@@ -65,7 +62,6 @@ const PATHS = [
   },
   {
     id: 'mind',
-    emoji: '🧠',
     color: '#38A169',
     colorLight: '#EBF8F0',
     title:  { uz: 'Inson kodi',             ru: 'Код человека',           en: 'Human Code' },
@@ -88,6 +84,9 @@ function getWeekNumber() {
   const start = new Date(now.getFullYear(), 0, 1);
   return Math.ceil(((now - start) / 86400000 + start.getDay() + 1) / 7);
 }
+
+// NULL stock means "not tracked", not "sold out".
+const isSoldOut = (b) => b?.stock === 0 || (b?.stock != null && b.stock <= 0);
 
 export default function Discover() {
   const navigate = useNavigate();
@@ -171,9 +170,10 @@ export default function Discover() {
                   <div key={i} className="skeleton" style={{ height: 100, borderRadius: 16 }} />
                 ))
               : PATHS
-                  // A path whose books are all hidden or deleted used to render as
-                  // an empty card with a 0/0 bar. Skip it entirely.
-                  .filter(path => (pathBooks[path.id] ?? []).length > 0)
+                  // Show a path only when it still has books somebody can buy.
+                  // Previously a path whose books were all hidden, deleted or
+                  // out of stock still rendered as a card that led nowhere.
+                  .filter(path => (pathBooks[path.id] ?? []).some(b => !isSoldOut(b)))
                   .map((path, i) => (
                   <PathCard
                     key={path.id}
@@ -245,8 +245,12 @@ function WeekCard({ book, lang, t, onNavigate }) {
           <div style={{
             width: 76, height: 108, borderRadius: 9,
             background: 'rgba(255,255,255,0.08)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30,
-          }}>📚</div>
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }} aria-hidden="true">
+            <span style={{ fontSize: 22, fontWeight: 800, color: 'rgba(255,255,255,0.5)' }}>
+              {(title || '?').trim().charAt(0).toUpperCase()}
+            </span>
+          </div>
         )}
         {/* Spine highlight */}
         <div style={{
@@ -349,10 +353,13 @@ function PathCard({ path, books, lang, onNavigate, index }) {
           <div style={{
             width: 46, height: 46, borderRadius: 14, flexShrink: 0,
             background: path.colorLight,
+            border: `1px solid ${path.color}22`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 20,
-          }}>
-            {path.emoji}
+          }} aria-hidden="true">
+            <span style={{
+              fontSize: 17, fontWeight: 800, color: path.color,
+              letterSpacing: '-0.02em', lineHeight: 1,
+            }}>{title.trim().charAt(0).toUpperCase()}</span>
           </div>
 
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -394,12 +401,20 @@ function PathCard({ path, books, lang, onNavigate, index }) {
                   initial={{ opacity: 0, x: -12 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: idx * 0.06, type: 'spring', stiffness: 400, damping: 30 }}
-                  onClick={() => { haptic('light'); onNavigate(`/book/${book.id}`); }}
+                  onClick={() => {
+                    // A sold-out book in a path is shown for context but is not
+                    // a route to a dead end — it cannot be opened or bought.
+                    if (isOutOfStock) return;
+                    haptic('light');
+                    onNavigate(`/book/${book.id}`);
+                  }}
+                  aria-disabled={isOutOfStock || undefined}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 12,
                     padding: '11px 15px',
                     borderBottom: idx < books.length - 1 ? '1px solid var(--surface-2)' : 'none',
-                    cursor: 'pointer',
+                    cursor: isOutOfStock ? 'not-allowed' : 'pointer',
+                    opacity: isOutOfStock ? 0.55 : 1,
                   }}
                 >
                   {/* Step circle */}
@@ -427,8 +442,12 @@ function PathCard({ path, books, lang, onNavigate, index }) {
                     <div style={{
                       width: 48, height: 68, borderRadius: 7, flexShrink: 0,
                       background: path.colorLight,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
-                    }}>📚</div>
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }} aria-hidden="true">
+                      <span style={{ fontSize: 15, fontWeight: 800, color: path.color }}>
+                        {(btitle || '?').trim().charAt(0).toUpperCase()}
+                      </span>
+                    </div>
                   )}
 
                   <div style={{ flex: 1, minWidth: 0 }}>

@@ -89,23 +89,11 @@ body {
   position: relative;
 }
 
-/* Telegram follows the host theme; this fallback also covers browser/device
-   dark preference previews and keeps semantic OOS colors high contrast. */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #101923;
-    --surface: #182431;
-    --surface-2: #223242;
-    --text-1: #F5F7FA;
-    --text-2: #C5D0DB;
-    --text-3: #9AA9B8;
-    --price: #F5F7FA;
-    --nav-bg: #182431;
-    --nav-active: #6EB3D9;
-    --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.3);
-    --shadow-nav: 0 -1px 0 rgba(255, 255, 255, 0.08);
-  }
-}
+/* The brand palette is a light one. The app previously flipped to a dark
+   palette whenever the device preferred dark, which made it render dark for
+   most Telegram users and did not match the brand. Light is now the single
+   intended look; re-introduce dark only as a designed theme, not an
+   auto-inverted one. */
 
 /* ── Scrollbar ──────────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 0; height: 0; }
