@@ -13,16 +13,16 @@ const resolveBgUrl = (url: string | null | undefined): string | null => {
 // Tags are not stored in the DB — add a book's id here to assign display tags.
 // DB books without an entry will render without tags (still shows fine).
 const BOOK_TAGS: Record<string, string[]> = {
-  "upcoming-1": ["Distopiya", "Falsafa", "18+"],
-  "upcoming-3": ["Gotika", "Drama", "XIX asr"],
-  "upcoming-4": ["Modernizm", "Psixologik", "Klassika"],
-  "upcoming-2": ["Tarixiy", "Sarguzasht", "Renessans"],
+  "ecb37519-0257-4005-88ce-fa48e863654c": ["Distopiya", "Falsafa", "18+"],
+  "300cb4c0-cbc0-42ba-9882-ef6ddad5e4d2": ["Gotika", "Drama", "XIX asr"],
+  "fea19796-1ac0-4ac7-837b-322aef7808ee": ["Modernizm", "Psixologik", "Klassika"],
+  "57beb805-581b-45df-bfc7-d9c8e4c7548d": ["Tarixiy", "Sarguzasht", "Renessans"],
 };
 
 // ── Mock books — displayed when DB has fewer than 4 entries ───────────────────
 const UPCOMING_BOOKS_MOCK: NewBook[] = [
   {
-    id: "upcoming-1",
+    id: "ecb37519-0257-4005-88ce-fa48e863654c",
     slug: "murvatli-apelsin",
     title: "Murvatli Apelsin", title_ru: "Заводной апельсин", title_en: "A Clockwork Orange",
     author: "Entoni Byorjess", author_ru: "Энтони Бёрджесс", author_en: "Anthony Burgess",
@@ -38,7 +38,7 @@ const UPCOMING_BOOKS_MOCK: NewBook[] = [
     created_at: "", updated_at: "",
   },
   {
-    id: "upcoming-3",
+    id: "300cb4c0-cbc0-42ba-9882-ef6ddad5e4d2",
     slug: "ijarachi",
     title: "Ijarachi", title_ru: "Квартирантка", title_en: "The Tenant of Wildfell Hall",
     author: "Enn Bronte", author_ru: "Энн Бронте", author_en: "Anne Brontë",
@@ -54,7 +54,7 @@ const UPCOMING_BOOKS_MOCK: NewBook[] = [
     created_at: "", updated_at: "",
   },
   {
-    id: "upcoming-4",
+    id: "fea19796-1ac0-4ac7-837b-322aef7808ee",
     slug: "mayoq-sari",
     title: "Mayoq sari", title_ru: "На маяк", title_en: "To the Lighthouse",
     author: "Virdjiniya Vulf", author_ru: "Вирджиния Вулф", author_en: "Virginia Woolf",
@@ -70,7 +70,7 @@ const UPCOMING_BOOKS_MOCK: NewBook[] = [
     created_at: "", updated_at: "",
   },
   {
-    id: "upcoming-2",
+    id: "57beb805-581b-45df-bfc7-d9c8e4c7548d",
     slug: "askanio",
     title: "Askanio", title_ru: "Асканио", title_en: "Ascanio",
     author: "Aleksandr Dyuma", author_ru: "Александр Дюма", author_en: "Alexandre Dumas",

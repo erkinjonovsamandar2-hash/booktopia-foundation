@@ -19,7 +19,7 @@ const CATEGORIES = ["all", "jahon", "ilmiy", "new", "amir-temur", "erkin-millat"
 // ── Featured Books for Carousel ───────────────────────────────────────────────
 const FEATURED_BOOKS = [
   {
-    id: "dorian",
+    id: "e2c81926-7157-42a7-aa9b-b4114d912799",
     title: "Dorian Greyning portreti",
     author: "Oskar Uayld",
     description:
@@ -28,7 +28,7 @@ const FEATURED_BOOKS = [
       "https://backend.book.uz/user-api/img/img-file-f2a929a2a32d5bb4bb4e05dcd8f8670c.jpg",
   },
   {
-    id: "zulayho",
+    id: "a3a96a05-c21f-4d13-80b0-6fb9eb3270d1",
     title: "Zulayho ko'zini ochyapti",
     author: "Go'zal Yaxina",
     description:
@@ -37,7 +37,7 @@ const FEATURED_BOOKS = [
       "https://backend.book.uz/user-api/img/img-8b1bc484779e7dd00942b1a3a9a3735b.jpg",
   },
   {
-    id: "qirolicha",
+    id: "880bdff5-3f0f-4e33-af14-412305d10257",
     title: "Qirolichaning yurishi",
     author: "Uolter Tevis",
     description:

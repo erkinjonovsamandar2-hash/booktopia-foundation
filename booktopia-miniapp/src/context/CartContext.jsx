@@ -65,6 +65,16 @@ export const CartProvider = ({ children }) => {
       return { idPrefix: (idPrefix || '').trim(), qty: parseInt(qtyStr, 10) || 1 };
     }).filter(e => e.idPrefix && e.idPrefix.length >= 6);
 
+const MOCK_ID_MAP = {
+  'upcomin1': 'ecb37519', // Murvatli apelsin
+  'upcomin2': '57beb805', // Askanio
+  'upcomin3': '300cb4c0', // Ijarachi
+  'upcomin4': 'fea19796', // Mayoq sari
+  'dorian':   'e2c81926', // Dorian / Usta va Margarita
+  'zulayho':  'a3a96a05', // Zulayho / O'zbekistonda yana bir kun
+  'qirolich': '880bdff5', // Qirolicha / Martin Iden
+};
+
     if (entries.length === 0) return;
 
     const importCart = async () => {
@@ -73,10 +83,10 @@ export const CartProvider = ({ children }) => {
       const [booksRes, newBooksRes] = await Promise.all([
         supabase
           .from('books')
-          .select('id, title, author, cover_url, price, stock, category'),
+          .select('id, title, author, cover_url, price, stock, category, slug'),
         supabase
           .from('new_books')
-          .select('id, title, author, cover_url, price, stock, category')
+          .select('id, title, author, cover_url, price, stock, category, slug')
       ]);
 
       const allBooks = [];
@@ -96,7 +106,9 @@ export const CartProvider = ({ children }) => {
       const incoming = [];
       let skipped = 0;
       for (const entry of entries) {
-        const prefix = entry.idPrefix.toLowerCase();
+        const rawPrefix = entry.idPrefix.toLowerCase();
+        const prefix = MOCK_ID_MAP[rawPrefix] || rawPrefix;
+
         // 1. Primary match: by ID prefix (case-insensitive)
         let match = allBooks.find(b => String(b.id).replace(/-/g, '').toLowerCase().startsWith(prefix));
 
@@ -107,6 +119,11 @@ export const CartProvider = ({ children }) => {
             const normTitle = rawMatch.title.trim().toLowerCase();
             match = allBooks.find(b => b.title && b.title.trim().toLowerCase() === normTitle);
           }
+        }
+
+        // 3. Tertiary match: try slug prefix or contains matching
+        if (!match) {
+          match = allBooks.find(b => b.slug && b.slug.replace(/-/g, '').toLowerCase().includes(prefix));
         }
 
         if (!match) { skipped++; continue; }
