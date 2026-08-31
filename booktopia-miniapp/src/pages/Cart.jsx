@@ -7,14 +7,14 @@ import { useToast } from '../context/ToastContext';
 import { formatPrice, haptic, getEffectivePrice } from '../lib/utils';
 import CheckoutSheet from '../components/CheckoutSheet';
 import PageTransition from '../components/PageTransition';
-import { ShoppingCart, CheckCircle } from '@phosphor-icons/react';
+import { ShoppingCart, CheckCircle, Books } from '@phosphor-icons/react';
 
 const T = {
   title:      { uz: 'Savat',           ru: 'Корзина',    en: 'Cart' },
   empty:      { uz: 'Savat bo\'sh',    ru: 'Корзина пуста', en: 'Cart is empty' },
   emptyDesc:  { uz: 'Katalogdan biror kitob tanlang', ru: 'Выберите книги из каталога', en: 'Pick some books from the catalog' },
   total:      { uz: 'Jami:',           ru: 'Итого:',     en: 'Total:' },
-  checkout:   { uz: '🛒 Buyurtma berish', ru: '🛒 Оформить', en: '🛒 Place order' },
+  checkout:   { uz: 'Buyurtma berish', ru: 'Оформить заказ', en: 'Place order' },
   clear:      { uz: 'Tozalash',        ru: 'Очистить',   en: 'Clear' },
   remove:     { uz: 'O\'chirish',      ru: 'Удалить',    en: 'Remove' },
   browse:     { uz: 'Katalogga o\'tish', ru: 'В каталог', en: 'Go to catalog' },
@@ -278,7 +278,7 @@ function SwipeableCartItem({ item, lang, showSwipeHint, onRemove, onQtyUp, onQty
             <img src={item.cover_url} alt={title}
               style={{ width: 52, height: 72, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} />
           ) : (
-            <div style={{ width: 52, height: 72, background: 'var(--blue-800)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>📚</div>
+            <div style={{ width: 52, height: 72, background: 'var(--blue-800)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Books size={22} weight="duotone" color="rgba(255,255,255,0.5)" /></div>
           )}
 
           <div style={{ flex: 1, minWidth: 0 }}>

@@ -25,7 +25,7 @@ const STATUS_META = {
 };
 
 const T = {
-  title:       { uz: '📦 Buyurtmalarim',      ru: '📦 Мои заказы',       en: '📦 My Orders' },
+  title:       { uz: 'Buyurtmalarim',        ru: 'Мои заказы',          en: 'My Orders' },
   empty:       { uz: 'Buyurtmalar yo\'q',     ru: 'Нет заказов',          en: 'No orders yet' },
   emptyDesc:   { uz: 'Katalogdan kitob tanlang va buyurtma bering', ru: 'Выберите книгу из каталога', en: 'Choose a book from the catalog' },
   catalogBtn:  { uz: 'Katalogga o\'tish',     ru: 'В каталог',            en: 'Go to catalog' },

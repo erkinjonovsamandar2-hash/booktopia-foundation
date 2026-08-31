@@ -7,7 +7,10 @@ import { useLang } from '../context/LangContext';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
 import PageTransition from '../components/PageTransition';
-import { Books, ShoppingCart, RocketLaunch, CaretDown, ArrowRight } from '@phosphor-icons/react';
+import {
+  Books, ShoppingCart, RocketLaunch, CaretDown, ArrowRight,
+  Sparkle, PenNib, TrendUp, Eye, Package,
+} from '@phosphor-icons/react';
 
 // ── Translations ───────────────────────────────────────────────────────────────
 const T = {
@@ -22,18 +25,18 @@ const T = {
   step2d:      { uz: '30 sekund',         ru: '30 секунд',         en: '30 seconds' },
   step3t:      { uz: 'Pochtadan olasiz', ru: 'Заберёте на почте',  en: 'Collect at the post office' },
   step3d:      { uz: 'Xabar beramiz',     ru: 'Мы сообщим',         en: 'We notify you' },
-  featured:    { uz: '📚 Tanlangan kitoblar', ru: '📚 Избранные книги', en: '📚 Featured Books' },
-  newBooks:    { uz: '✨ Yangi nashrlar',  ru: '✨ Новинки',         en: '✨ New Releases' },
+  featured:    { uz: 'Tanlangan kitoblar', ru: 'Избранные книги', en: 'Featured Books' },
+  newBooks:    { uz: 'Yangi nashrlar',  ru: 'Новинки',         en: 'New Releases' },
   seeAll:      { uz: 'Barchasini ko\'rish →', ru: 'Смотреть все →', en: 'See all →' },
   catalogCta:  { uz: 'Butun katalogni ko\'rish', ru: 'Открыть каталог', en: 'Open catalog' },
   heroCta:     { uz: 'Katalogni ko\'rish',  ru: 'Открыть каталог',   en: 'Browse catalog' },
   buy:         { uz: 'Sotib olish',       ru: 'Купить',             en: 'Buy' },
-  blogTitle:   { uz: '✍️ Maqolalar',      ru: '✍️ Статьи',          en: '✍️ Articles' },
+  blogTitle:   { uz: 'Maqolalar',      ru: 'Статьи',          en: 'Articles' },
   blogCta:     { uz: 'Barchasini o\'qish →', ru: 'Читать все →',   en: 'Read all →' },
   openArticle: { uz: 'Maqolani ochish',    ru: 'Открыть статью',    en: 'Open article' },
-  bestsellers: { uz: '🔥 Eng ko\'p sotilgan', ru: '🔥 Бестселлеры',  en: '🔥 Bestsellers' },
-  recentTitle: { uz: '👁 So\'nggi ko\'rilgan', ru: '👁 Недавно просмотренные', en: '👁 Recently Viewed' },
-  ordersTitle: { uz: '📦 Mening buyurtmalarim', ru: '📦 Мои заказы', en: '📦 My Orders' },
+  bestsellers: { uz: 'Eng ko\'p sotilgan', ru: 'Бестселлеры',  en: 'Bestsellers' },
+  recentTitle: { uz: 'So\'nggi ko\'rilgan', ru: 'Недавно просмотренные', en: 'Recently Viewed' },
+  ordersTitle: { uz: 'Mening buyurtmalarim', ru: 'Мои заказы', en: 'My Orders' },
   ordersAll:   { uz: 'Barchasi →',        ru: 'Все →',              en: 'All →' },
   orderNum:    { uz: 'Buyurtma',          ru: 'Заказ',              en: 'Order' },
   addedToCart: { uz: 'Savatga qo\'shildi!', ru: 'Добавлено в корзину!', en: 'Added to cart!' },
@@ -46,6 +49,29 @@ const STEPS = [
   { Icon: ShoppingCart, tKey: 'step2t', dKey: 'step2d', color: '#D5AD36', light: '#FBF6E3' },
   { Icon: RocketLaunch, tKey: 'step3t', dKey: 'step3d', color: '#38A169', light: '#EBF8F0' },
 ];
+
+
+// ── Section heading ───────────────────────────────────────────────────────────
+// Emoji render differently on every device and cannot be tuned to the palette.
+// A duotone icon in a tinted chip keeps the colour the emoji gave us while
+// staying consistent in weight, size and hue across every section.
+function SectionTitle({ Icon, color, light, children, action }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 10,
+      padding: '0 16px 14px',
+    }}>
+      <span style={{
+        width: 28, height: 28, borderRadius: 9, flexShrink: 0,
+        background: light, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }} aria-hidden="true">
+        <Icon size={17} weight="duotone" color={color} />
+      </span>
+      <h2 style={{ fontSize: 16, fontWeight: 800, flex: 1, minWidth: 0 }}>{children}</h2>
+      {action}
+    </div>
+  );
+}
 
 export default function Home() {
   const navigate = useNavigate();
@@ -216,15 +242,14 @@ export default function Home() {
         {/* ── 1b. MY ORDERS WIDGET (only when user has orders) ─────────────────── */}
         {!loading && myOrders.length > 0 && (
           <div style={{ padding: '16px 16px 0' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-              <h2 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-1)' }}>{t('ordersTitle')}</h2>
+            <SectionTitle Icon={Package} color="#D5AD36" light="#FBF6E3" action={
               <button
                 onClick={() => { haptic('light'); navigate('/orders'); }}
                 style={{ fontSize: 12, fontWeight: 800, color: 'var(--blue-500)', background: 'none', border: 'none', cursor: 'pointer' }}
               >
                 {t('ordersAll')}
               </button>
-            </div>
+            }>{t('ordersTitle')}</SectionTitle>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {myOrders.slice(0, 2).map((order, i) => (
                 <OrderMiniCard key={order.id} order={order} lang={lang} t={t} index={i} onPress={() => { haptic('light'); navigate('/orders'); }} />
@@ -286,9 +311,7 @@ export default function Home() {
         {/* ── 3a. RECENTLY VIEWED (returning users only) ───────────────────────── */}
         {recentlyViewed.length > 0 && (
           <div style={{ paddingTop: 20, paddingBottom: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px 14px' }}>
-              <h2 style={{ fontSize: 16, fontWeight: 800 }}>{t('recentTitle')}</h2>
-            </div>
+            <SectionTitle Icon={Eye} color="#805AD5" light="#F5F0FF">{t('recentTitle')}</SectionTitle>
             <div className="h-scroll" style={{ paddingBottom: 12 }}>
               {recentlyViewed.map((book, i) => (
                 <PortraitCard
@@ -305,13 +328,12 @@ export default function Home() {
         {/* ── 3b. BESTSELLERS ──────────────────────────────────────────────────── */}
         {(loading || bestsellers.length > 0) && (
           <div style={{ paddingTop: recentlyViewed.length > 0 ? 0 : 20, paddingBottom: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px 14px' }}>
-              <h2 style={{ fontSize: 16, fontWeight: 800 }}>{t('bestsellers')}</h2>
+            <SectionTitle Icon={TrendUp} color="#E85D2F" light="#FFF1EA" action={
               <button
                 onClick={() => navigate('/catalog')}
                 style={{ fontSize: 12, fontWeight: 800, color: 'var(--blue-500)', background: 'none', border: 'none', cursor: 'pointer' }}
               >{t('seeAll')}</button>
-            </div>
+            }>{t('bestsellers')}</SectionTitle>
             <div className="h-scroll" style={{ paddingBottom: 12 }}>
               {loading
                 ? Array.from({ length: 4 }).map((_, i) => <PortraitSkeleton key={i} />)
@@ -331,14 +353,15 @@ export default function Home() {
         {(loading || newReleases.length > 0) && (
           <div style={{ paddingBottom: 8 }}>
             <div className="divider" />
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 16px 14px' }}>
-              <h2 style={{ fontSize: 16, fontWeight: 800 }}>{t('newBooks')}</h2>
-              <button
-                onClick={() => navigate('/catalog?cat=new')}
-                style={{ fontSize: 12, fontWeight: 800, color: 'var(--blue-500)', background: 'none', border: 'none', cursor: 'pointer' }}
-              >
-                {t('seeAll')}
-              </button>
+            <div style={{ paddingTop: 20 }}>
+              <SectionTitle Icon={Sparkle} color="#3182CE" light="#EBF8FF" action={
+                <button
+                  onClick={() => navigate('/catalog?cat=new')}
+                  style={{ fontSize: 12, fontWeight: 800, color: 'var(--blue-500)', background: 'none', border: 'none', cursor: 'pointer' }}
+                >
+                  {t('seeAll')}
+                </button>
+              }>{t('newBooks')}</SectionTitle>
             </div>
             <div className="h-scroll" style={{ paddingBottom: 12 }}>
               {loading
@@ -359,22 +382,23 @@ export default function Home() {
         {(loading || articles.length > 0) && (
           <div>
             <div className="divider" />
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 16px 14px' }}>
-              <h2 style={{ fontSize: 16, fontWeight: 800 }}>{t('blogTitle')}</h2>
-              <button
-                onClick={() => {
-                  haptic('light');
-                  const url = 'https://www.booktopia.uz/blog';
-                  if (window.Telegram?.WebApp?.openLink) {
-                    window.Telegram.WebApp.openLink(url);
-                  } else {
-                    window.open(url, '_blank');
-                  }
-                }}
-                style={{ fontSize: 12, fontWeight: 800, color: 'var(--blue-500)', background: 'none', border: 'none', cursor: 'pointer' }}
-              >
-                {t('blogCta')}
-              </button>
+            <div style={{ paddingTop: 20 }}>
+              <SectionTitle Icon={PenNib} color="#38A169" light="#EBF8F0" action={
+                <button
+                  onClick={() => {
+                    haptic('light');
+                    const url = 'https://www.booktopia.uz/blog';
+                    if (window.Telegram?.WebApp?.openLink) {
+                      window.Telegram.WebApp.openLink(url);
+                    } else {
+                      window.open(url, '_blank');
+                    }
+                  }}
+                  style={{ fontSize: 12, fontWeight: 800, color: 'var(--blue-500)', background: 'none', border: 'none', cursor: 'pointer' }}
+                >
+                  {t('blogCta')}
+                </button>
+              }>{t('blogTitle')}</SectionTitle>
             </div>
             <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
               {loading
@@ -444,8 +468,8 @@ function PortraitCard({ book, lang, index, onNavigate, onBuy }) {
             width: '100%', height: '100%',
             background: `linear-gradient(135deg, #0A192F, #265999)`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'rgba(255,255,255,0.4)', fontSize: 36,
-          }}>📚</div>
+            color: 'rgba(255,255,255,0.4)',
+          }}><Books size={34} weight="duotone" /></div>
         )}
         {/* Spine highlight */}
         <div style={{
@@ -683,8 +707,8 @@ function BlogCard({ article, lang, t, index }) {
             width: 72, height: 72, borderRadius: 10,
             background: 'var(--blue-100)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 24, flexShrink: 0,
-          }}>✍️</div>
+            flexShrink: 0,
+          }}><PenNib size={24} weight="duotone" color="#38A169" /></div>
         )}
 
         {/* Text */}

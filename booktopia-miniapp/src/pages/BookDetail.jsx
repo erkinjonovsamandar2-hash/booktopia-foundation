@@ -7,11 +7,12 @@ import { useLang } from '../context/LangContext';
 import { useCart } from '../context/CartContext';
 import CheckoutSheet from '../components/CheckoutSheet';
 import PageTransition from '../components/PageTransition';
+import { Books } from '@phosphor-icons/react';
 import LoadError from '../components/LoadError';
 
 const T = {
   back:     { uz: '← Orqaga',   ru: '← Назад',    en: '← Back' },
-  buy:      { uz: '🛒 Sotib olish', ru: '🛒 Купить', en: '🛒 Buy now' },
+  buy:      { uz: 'Sotib olish', ru: 'Купить', en: 'Buy now' },
   added:    { uz: '✓ Savatga qo\'shildi', ru: '✓ В корзине', en: '✓ In cart' },
   author:   { uz: 'Muallif',    ru: 'Автор',       en: 'Author' },
   desc:     { uz: 'Tavsif',     ru: 'Описание',    en: 'Description' },
@@ -145,7 +146,7 @@ export default function BookDetail() {
             </div>
           ) : (
             <div className="book-card__cover-wrapper" style={{ height: 240, width: 'auto', aspectRatio: '2/3', margin: '0 auto', position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 48, boxShadow: '0 22px 44px rgba(0,0,0,0.45)' }}>
-              📚
+              <Books size={46} weight="duotone" color="rgba(255,255,255,0.45)" />
               <div className="book-card__spine" />
             </div>
           )}
@@ -185,7 +186,7 @@ export default function BookDetail() {
           {!isOutOfStock && book.price && book.price >= 10000 && (
             <div style={{ marginBottom: 20 }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, background: 'var(--discount)', color: '#fff', padding: '4px 8px', borderRadius: 6, fontWeight: 700 }}>
-                <span style={{ fontSize: 14 }}>🔥</span> {t('wholesaleOffer')}
+                {t('wholesaleOffer')}
               </span>
             </div>
           )}
