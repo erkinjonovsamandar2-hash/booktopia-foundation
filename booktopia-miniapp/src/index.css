@@ -964,3 +964,20 @@ h1, h2, h3, h4 {
   background: #FFF5F5;
   box-shadow: 0 0 0 1.5px rgba(229, 62, 62, 0.35);
 }
+
+/* The wishlist control sits on the cover art, so it needs its own contrast:
+   a translucent white disc that stays legible on dark and light covers alike,
+   and a target larger than the visible disc. */
+.book-card__cover-wrapper .wish-btn {
+  top: 6px;
+  right: 6px;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 1px 4px rgba(10, 25, 47, 0.22);
+  z-index: 3;
+}
+.book-card__cover-wrapper .wish-btn--on {
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(229, 62, 62, 0.35);
+}

@@ -86,6 +86,9 @@ export default function BookCard({ book, lang = 'uz', onNavigate, index = 0 }) {
             <div className="book-card__cover-placeholder" aria-hidden="true">📚</div>
           )}
           <div className="book-card__spine" />
+
+          {/* On the cover, not beside it — the control belongs to the book. */}
+          <WishBtn bookId={book.id} title={title} t={t} showToast={showToast} />
         </div>
 
         {/* Badge */}
@@ -119,8 +122,6 @@ export default function BookCard({ book, lang = 'uz', onNavigate, index = 0 }) {
             )}
           </div>
         </div>
-
-        <WishBtn bookId={book.id} title={title} t={t} showToast={showToast} />
       </motion.div>
     </motion.div>
   );
