@@ -364,7 +364,7 @@ export default function Home() {
               <button
                 onClick={() => {
                   haptic('light');
-                  const url = 'https://booktopia.uz/blog';
+                  const url = 'https://www.booktopia.uz/blog';
                   if (window.Telegram?.WebApp?.openLink) {
                     window.Telegram.WebApp.openLink(url);
                   } else {
@@ -629,7 +629,7 @@ function BlogCard({ article, lang, t, index }) {
   const [expanded, setExpanded] = useState(false);
   const title   = article[`title_${lang}`] || article.title || '—';
   const excerpt = article[`excerpt_${lang}`] || article.excerpt || '';
-  const url     = `https://booktopia.uz/blog/${article.slug || article.id}`;
+  const url     = `https://www.booktopia.uz/blog/${article.slug || article.id}`;
 
   const openArticle = (e) => {
     e.stopPropagation();

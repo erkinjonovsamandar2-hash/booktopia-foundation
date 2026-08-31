@@ -33,7 +33,7 @@ const CONTENT = {
     ],
     facts: [
       { value: "2024", main: "Tashkil etilgan", sub: "Founded" },
-      { value: "20+",  main: "Nashr etilgan",   sub: "Titles" },
+      { value: "20 ga yaqin", main: "Nashr etilgan", sub: "Titles" },
       { value: "3",    main: "Til",             sub: "Languages" },
       { value: "100%", main: "Litsenziyali",    sub: "Licensed" },
     ],
@@ -112,7 +112,7 @@ const CONTENT = {
     ],
     facts: [
       { value: "2024", main: "Основано",      sub: "Founded" },
-      { value: "20+",  main: "Изданий",       sub: "Titles" },
+      { value: "около 20",     main: "Изданий",       sub: "Titles" },
       { value: "3",    main: "Языка",         sub: "Languages" },
       { value: "100%", main: "Лицензировано", sub: "Licensed" },
     ],
@@ -191,7 +191,7 @@ const CONTENT = {
     ],
     facts: [
       { value: "2024", main: "Founded",   sub: "Asos solingan" },
-      { value: "20+",  main: "Titles",    sub: "Nashrlar" },
+      { value: "nearly 20",    main: "Titles",    sub: "Nashrlar" },
       { value: "3",    main: "Languages", sub: "Tillar" },
       { value: "100%", main: "Licensed",  sub: "Litsenziyali" },
     ],
