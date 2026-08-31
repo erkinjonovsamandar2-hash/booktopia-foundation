@@ -6,7 +6,7 @@ import { useWishlist } from '../context/WishlistContext';
 import BookCard from '../components/BookCard';
 import PageTransition from '../components/PageTransition';
 import LoadError from '../components/LoadError';
-import { haptic, tg } from '../lib/utils';
+import { haptic, tg, formatPrice } from '../lib/utils';
 import { Heart, Export } from '@phosphor-icons/react';
 
 const T = {
@@ -14,7 +14,9 @@ const T = {
   empty:      { uz: 'Hali hech narsa yo\'q', ru: 'Пока ничего нет', en: 'Nothing here yet' },
   emptyDesc:  { uz: 'Yoqtirgan kitoblaringizni saqlang', ru: 'Сохраняйте понравившиеся книги', en: 'Save your favorite books' },
   share:      { uz: 'Ulashish',        ru: 'Поделиться',      en: 'Share' },
-  shareMsg:   { uz: 'Men Booktopia\'da ushbu kitobni o\'qimoqchiman:', ru: 'Я хочу прочитать эту книгу в Booktopia:', en: 'I want to read this book on Booktopia:' },
+  shareMsg:   { uz: 'Booktopia\'da ko\'rdim — senga ham yoqishi mumkin 👇',
+                ru: 'Нашёл(ла) в Booktopia — тебе тоже может понравиться 👇',
+                en: 'Found this on Booktopia — you might like it 👇' },
   back:       { uz: 'Orqaga',          ru: 'Назад',           en: 'Back' },
 };
 
@@ -65,9 +67,21 @@ export default function Wishlist() {
 
   const handleShare = (book) => {
     haptic('light');
-    const title = book[`title_${lang}`] || book.title || '';
-    const text = `${T.shareMsg[lang] ?? T.shareMsg.uz} "${title}"`;
-    // Share a link to the book itself, not just to the bot.
+    const title  = book[`title_${lang}`]  || book.title  || '';
+    const author = book[`author_${lang}`] || book.author || '';
+
+    // The old share was a bare bot deep-link with a one-line sentence, so the
+    // recipient saw a naked URL and the bot's logo card. Lead with the book:
+    // title, author and price, then the link.
+    const lines = [
+      `📚 ${title}`,
+      author ? `✍️ ${author}` : null,
+      book.price ? `💰 ${formatPrice(book.price)}` : null,
+      '',
+      T.shareMsg[lang] ?? T.shareMsg.uz,
+    ].filter((l) => l !== null);
+    const text = lines.join('\n');
+
     const deepLink = `https://t.me/${BOT_USERNAME}?startapp=book_${book.id.replace(/-/g, '').slice(0, 8)}`;
     const url = `https://t.me/share/url?url=${encodeURIComponent(deepLink)}&text=${encodeURIComponent(text)}`;
     if (tg()?.openTelegramLink) {

@@ -347,9 +347,25 @@ function PathCard({ path, books, lang, onNavigate, index }) {
         whileTap={{ scale: 0.985 }}
         transition={{ type: 'spring', stiffness: 400, damping: 30 }}
         onClick={() => { haptic('light'); setOpen(o => !o); }}
-        style={{ padding: '15px 15px 14px', cursor: 'pointer' }}
+        style={{
+          padding: '15px 15px 14px', cursor: 'pointer',
+          position: 'relative', overflow: 'hidden',
+          // A very low-opacity wash in the collection's own colour, so the four
+          // sets are distinguishable at a glance without becoming loud. No
+          // imagery — nothing here should imply content the set does not have.
+          background: `linear-gradient(135deg, ${path.color}0D 0%, transparent 62%)`,
+        }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <span
+          aria-hidden="true"
+          style={{
+            position: 'absolute', top: -34, right: -34,
+            width: 108, height: 108, borderRadius: '50%',
+            background: `radial-gradient(circle, ${path.color}14 0%, transparent 70%)`,
+            pointerEvents: 'none',
+          }}
+        />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, position: 'relative', zIndex: 1 }}>
           <div style={{
             position: 'relative', width: 54, height: 46, flexShrink: 0,
           }} aria-hidden="true">

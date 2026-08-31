@@ -891,23 +891,9 @@ h1, h2, h3, h4 {
    QA hardening — 2026-08-30 (QA_FIXES.md W2-11, W2-15, W1H-3, W1H-4, W3H-4)
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* W2-11 — .book-card is now a <button> so it is keyboard reachable and exposed
-   to assistive tech. Strip the UA button styling so it still looks like a card. */
-button.book-card {
-  width: 100%;
-  padding: 0;
-  margin: 0;
-  border: none;
-  font: inherit;
-  color: inherit;
-  text-align: left;
-  appearance: none;
-  -webkit-appearance: none;
-}
-
-/* The wishlist heart is a sibling of the card button now (a button cannot nest
-   inside a button), so the grid cell provides its positioning context. */
-.books-grid > * { position: relative; }
+/* W2-11 — the card carries role="button" and is keyboard focusable; the heart
+   and quick-add stay inside it as real buttons. */
+.book-card { text-align: left; }
 
 /* W1H-4 — contrast. --text-3 (#9BAAB8) scored 2.38:1 on white; AA needs 4.5:1.
    The author line is the only place it was used for body copy. */
@@ -965,4 +951,11 @@ button.book-card {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Saved state on the wishlist heart — the outline-vs-filled difference alone
+   was easy to miss on a busy cover. */
+.wish-btn--on {
+  background: #FFF5F5;
+  box-shadow: 0 0 0 1.5px rgba(229, 62, 62, 0.35);
 }

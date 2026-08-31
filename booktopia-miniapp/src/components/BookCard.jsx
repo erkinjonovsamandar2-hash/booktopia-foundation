@@ -12,8 +12,13 @@ const T = {
   noPrice:     { uz: 'Narx yo\'q',          ru: 'Цена не указана',     en: 'No price' },
   outOfStock:  { uz: 'Tugagan',             ru: 'Закончилось',         en: 'Out of stock' },
   addToCart:   { uz: 'Savatga qo\'shish',   ru: 'Добавить в корзину',  en: 'Add to cart' },
-  save:        { uz: 'Saqlash',             ru: 'Сохранить',           en: 'Save' },
+  save:        { uz: 'Saqlanganlarga qo\'shish', ru: 'Добавить в избранное',  en: 'Add to wishlist' },
   unsave:      { uz: 'Saqlanganlardan olib tashlash', ru: 'Убрать из избранного', en: 'Remove from wishlist' },
+  saved:       { uz: 'Saqlanganlarga qo\'shildi', ru: 'Добавлено в избранное', en: 'Added to wishlist' },
+  savedDesc:   { uz: 'Profil > Saqlanganlar bo\'limida ko\'rishingiz mumkin.',
+                 ru: 'Найдёте в разделе Профиль > Избранное.',
+                 en: 'Find it under Profile > Wishlist.' },
+  unsaved:     { uz: 'Saqlanganlardan olib tashlandi', ru: 'Убрано из избранного', en: 'Removed from wishlist' },
   openBook:    { uz: 'Kitobni ochish',      ru: 'Открыть книгу',       en: 'Open book' },
   soon:        { uz: 'Tez kunda',           ru: 'Скоро',               en: 'Coming soon' },
   isNew:       { uz: 'Yangi',               ru: 'Новинка',             en: 'New' },
@@ -46,14 +51,22 @@ export default function BookCard({ book, lang = 'uz', onNavigate, index = 0 }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 28, delay: index * 0.06 }}
     >
-      {/* The card itself is a button so it is reachable by keyboard and exposed
-          to assistive tech — it used to be a bare <div onClick>. */}
-      <motion.button
-        type="button"
+      {/* role/tabIndex/keydown rather than a real <button>, so the wishlist and
+          quick-add buttons can live inside the card without nesting buttons.
+          Still focusable and announced, which a bare <div onClick> was not. */}
+      <motion.div
+        role="button"
+        tabIndex={0}
         className="book-card"
         whileTap={{ scale: 0.96, y: 2 }}
         transition={{ type: 'spring', stiffness: 500, damping: 30 }}
         onClick={() => onNavigate?.(`/book/${book.id}`)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onNavigate?.(`/book/${book.id}`);
+          }
+        }}
         aria-label={`${title} — ${author}${price ? `, ${formatPrice(price)}` : ''}`}
       >
         {/* Cover */}
@@ -95,29 +108,26 @@ export default function BookCard({ book, lang = 'uz', onNavigate, index = 0 }) {
               : <span style={{ fontSize: 13, color: 'var(--text-3)' }}>{t('noPrice')}</span>
             }
             {!isSoon && !isOutOfStock && price && (
-              <span
-                role="button"
-                tabIndex={0}
+              <button
+                type="button"
                 className="book-card__btn-quick"
                 onClick={handleBuy}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleBuy(e); } }}
                 aria-label={`${t('addToCart')}: ${title}`}
               >
                 <ShoppingCart size={18} weight="bold" />
-              </span>
+              </button>
             )}
           </div>
         </div>
-      </motion.button>
 
-      {/* Wishlist heart lives outside the card button — nested buttons are invalid */}
-      <WishBtn bookId={book.id} title={title} t={t} />
+        <WishBtn bookId={book.id} title={title} t={t} showToast={showToast} />
+      </motion.div>
     </motion.div>
   );
 }
 
 // ── Wishlist heart button ───────────────────────────────────────────────────────
-function WishBtn({ bookId, title, t }) {
+function WishBtn({ bookId, title, t, showToast }) {
   const { isSaved, toggle } = useWishlist();
   const liked = isSaved(bookId);
 
@@ -125,12 +135,16 @@ function WishBtn({ bookId, title, t }) {
     e.stopPropagation();
     haptic('light');
     toggle(bookId);
+    // A heart on a cover is ambiguous on its own — say what it did and where
+    // the book went, the first time as much as every time.
+    if (!liked) showToast?.(t('saved'), t('savedDesc'), 'success');
+    else showToast?.(t('unsaved'), null, 'info');
   };
 
   return (
     <motion.button
       type="button"
-      className="wish-btn"
+      className={`wish-btn${liked ? ' wish-btn--on' : ''}`}
       onClick={onToggle}
       aria-label={`${liked ? t('unsave') : t('save')}: ${title}`}
       aria-pressed={liked}
