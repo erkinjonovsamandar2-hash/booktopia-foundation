@@ -9,11 +9,11 @@ import LoadError from '../components/LoadError';
 
 const T = {
   title:     { uz: 'Kashfiyot',           ru: 'Открытия',        en: 'Discover' },
-  subtitle:  { uz: 'Mavzu boʻyicha tanlangan toʻplamlar',
+  subtitle:  { uz: 'Mavzu bo\'yicha tanlangan to\'plamlar',
                ru: 'Подборки по темам',
                en: 'Curated sets by theme' },
   weekBadge: { uz: 'TAHRIRIYAT TANLOVI',  ru: 'ВЫБОР РЕДАКЦИИ',  en: "EDITOR'S PICK" },
-  paths:     { uz: 'Toʻplamlar',          ru: 'Подборки',        en: 'Collections' },
+  paths:     { uz: 'To\'plamlar',          ru: 'Подборки',        en: 'Collections' },
   read:      { uz: 'ta o\'qildi',         ru: 'прочитано',       en: 'read' },
   of:        { uz: 'dan',                 ru: 'из',              en: 'of' },
   explore:   { uz: 'Ko\'proq →',          ru: 'Подробнее →',     en: 'Explore →' },
@@ -41,8 +41,8 @@ const PATHS = [
     id: 'uzbek',
     color: '#265999',
     colorLight: '#E8F4FD',
-    title:  { uz: 'Oʻzbek nasri',           ru: 'Узбекская проза',        en: 'Uzbek Prose' },
-    goal:   { uz: 'Qodiriydan bugungi kunga — oʻz tilimizda yozilgan nasr',
+    title:  { uz: 'O\'zbek nasri',           ru: 'Узбекская проза',        en: 'Uzbek Prose' },
+    goal:   { uz: 'Qodiriydan bugungi kunga — o\'z tilimizda yozilgan nasr',
               ru: 'От Кадыри до наших дней — проза на родном языке',
               en: 'From Qodiriy to today — prose in our own language' },
     bookIds: [
@@ -56,7 +56,7 @@ const PATHS = [
     color: '#805AD5',
     colorLight: '#F5F0FF',
     title:  { uz: 'Jahon klassikasi',       ru: 'Мировая классика',      en: 'World Classics' },
-    goal:   { uz: 'Bulgakov, London, Dyuma — oʻzbekchada oʻqiladigan klassika',
+    goal:   { uz: 'Bulgakov, London, Dyuma — o\'zbekchada o\'qiladigan klassika',
               ru: 'Булгаков, Лондон, Дюма — классика на узбекском',
               en: 'Bulgakov, London, Dumas — classics in Uzbek' },
     bookIds: [
@@ -72,8 +72,8 @@ const PATHS = [
     id: 'mind',
     color: '#38A169',
     colorLight: '#EBF8F0',
-    title:  { uz: 'Odamni oʻqish',          ru: 'Читать человека',        en: 'Reading People' },
-    goal:   { uz: 'Imo-ishora, xotira, oʻrganish — amaliy kitoblar',
+    title:  { uz: 'Odamni o\'qish',          ru: 'Читать человека',        en: 'Reading People' },
+    goal:   { uz: 'Imo-ishora, xotira, o\'rganish — amaliy kitoblar',
               ru: 'Жесты, память, обучение — прикладные книги',
               en: 'Body language, memory, learning — practical books' },
     bookIds: [
@@ -145,7 +145,7 @@ export default function Discover() {
 
         {/* Header */}
         <div style={{ padding: '20px 16px 4px' }}>
-          <h1 style={{ fontSize: 26, fontWeight: 900 }}>{t('title')}</h1>
+          <h1 style={{ fontSize: 22, fontWeight: 900 }}>{t('title')}</h1>
           <p style={{ fontSize: 13, color: 'var(--text-2)', marginTop: 2 }}>{t('subtitle')}</p>
         </div>
 
@@ -280,7 +280,7 @@ function WeekCard({ book, lang, t, onNavigate }) {
             }} />
           </div>
           <span style={{
-            fontSize: 9, fontWeight: 900, letterSpacing: '0.14em',
+            fontSize: 10, fontWeight: 800, letterSpacing: '0.14em',
             color: '#D5AD36', textTransform: 'uppercase',
           }}>
             {t('weekBadge')}
@@ -294,10 +294,7 @@ function WeekCard({ book, lang, t, onNavigate }) {
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 14 }}>
           {book.price && (
-            <span style={{
-              fontFamily: 'DM Mono, monospace',
-              fontSize: 15, fontWeight: 700, color: '#00CDFE',
-            }}>
+            <span className="price" style={{ fontSize: 15, color: '#00CDFE' }}>
               {formatPrice(book.price)}
             </span>
           )}
@@ -354,20 +351,39 @@ function PathCard({ path, books, lang, onNavigate, index }) {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{
-            width: 46, height: 46, borderRadius: 14, flexShrink: 0,
-            background: path.colorLight,
-            border: `1px solid ${path.color}22`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            position: 'relative', width: 54, height: 46, flexShrink: 0,
           }} aria-hidden="true">
-            <span style={{
-              fontSize: 17, fontWeight: 800, color: path.color,
-              letterSpacing: '-0.02em', lineHeight: 1,
-            }}>{title.trim().charAt(0).toUpperCase()}</span>
+            {books.slice(0, 3).map((b, i) => (
+              <div
+                key={b.id}
+                style={{
+                  position: 'absolute', top: 0, left: i * 9,
+                  width: 32, height: 46,
+                  borderRadius: '2px 4px 4px 2px',
+                  overflow: 'hidden',
+                  background: path.colorLight,
+                  boxShadow: `0 1px 4px rgba(10,25,47,0.18)`,
+                  zIndex: 3 - i,
+                  transform: `rotate(${(i - 1) * 3}deg)`,
+                  transformOrigin: 'bottom center',
+                }}
+              >
+                {b.cover_url
+                  ? <img src={b.cover_url} alt="" width="32" height="46"
+                         style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  : <div style={{ width: '100%', height: '100%', background: path.colorLight }} />}
+                {/* hairline spine so overlapping covers stay distinct */}
+                <span style={{
+                  position: 'absolute', inset: '0 auto 0 0', width: 2,
+                  background: 'rgba(255,255,255,0.45)',
+                }} />
+              </div>
+            ))}
           </div>
 
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-1)', lineHeight: 1.2 }}>{title}</p>
-            <p style={{ fontSize: 11.5, color: 'var(--text-2)', marginTop: 3, lineHeight: 1.4 }}>{goal}</p>
+            <p style={{ fontSize: 12, color: 'var(--text-2)', marginTop: 3, lineHeight: 1.4 }}>{goal}</p>
             <span style={{
               display: 'inline-block', marginTop: 7,
               fontSize: 10, fontWeight: 800, letterSpacing: '0.06em',
@@ -455,7 +471,7 @@ function PathCard({ path, books, lang, onNavigate, index }) {
                       background: path.colorLight,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }} aria-hidden="true">
-                      <span style={{ fontSize: 15, fontWeight: 800, color: path.color }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: `${path.color}99` }}>
                         {(btitle || '?').trim().charAt(0).toUpperCase()}
                       </span>
                     </div>
