@@ -128,7 +128,7 @@ export default function Profile() {
         <MenuItem
           icon={<Icon component={MessageCircle} color="#805AD5" />}
           iconBg="#F5F0FF"
-          label={t('contact')} sub="Telegram orqali" href="https://t.me/booktopia_uz" external
+          label={t('contact')} sub="Telegram orqali" href="https://t.me/white_crow_8" external
         />
         <MenuItem
           icon={<Icon component={Info} color="#3182CE" />}
