@@ -13,6 +13,10 @@
       "dest": "/api/broadcast.js"
     },
     {
+      "src": "/api/close-stale-deliveries",
+      "dest": "/api/close-stale-deliveries.js"
+    },
+    {
       "src": "/blog/([^/?#]+)",
       "has": [
         {
@@ -23,7 +27,18 @@
       ],
       "dest": "/api/blog-preview?id=$1"
     },
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/index.html" }
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/close-stale-deliveries",
+      "schedule": "0 9 * * *"
+    }
   ]
 }

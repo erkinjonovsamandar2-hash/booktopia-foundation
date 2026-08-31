@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Megaphone, Send, AlertCircle, Loader2 } from "lucide-react";
 
 const BotBroadcast = () => {
@@ -23,12 +24,16 @@ const BotBroadcast = () => {
     setResult(null);
 
     try {
+      // The endpoint verifies this token and the caller's admin role.
+      const { data: sessionData } = await (supabase as any).auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+
       const res = await fetch("/api/broadcast", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
         },
-        credentials: 'include', // Send session cookies for auth
         body: JSON.stringify({ message, target })
       });
 

@@ -13,10 +13,22 @@ const API                  = `https://api.telegram.org/bot${TOKEN}`;
 
 // ── Customer notification templates ───────────────────────────────────────────
 const CUSTOMER_MSG = {
-  approved:   (n) => `✅ <b>Buyurtmangiz tasdiqlandi!</b>\n\nSalom, ${n}! Buyurtmangiz qabul qilindi.\n🕐 Tez orada kuryerimiz siz bilan bog'lanadi.`,
-  delivering: (n) => `🚚 <b>Buyurtmangiz yo'lda!</b>\n\nSalom, ${n}! Buyurtmangiz yetkazib berilmoqda.\n📞 Kuryer siz bilan bog'lanishi mumkin.`,
-  delivered:  (n) => `📦 <b>Buyurtma yetkazildi!</b>\n\nSalom, ${n}! Buyurtmangiz muvaffaqiyatli yetkazildi.\nRahmat! Kitob zavqli bo'lsin 📚`,
+  approved:   (n) => `✅ <b>Buyurtmangiz tasdiqlandi</b>\n\nSalom, ${n}! Buyurtmangizni qabul qildik va tayyorlayapmiz.\n📞 Yetkazish vaqtini kelishish uchun tez orada bog'lanamiz.`,
+  delivering: (n) => `🚚 <b>Buyurtmangiz yo'lda</b>\n\nSalom, ${n}! Kitoblaringiz yetkazishga chiqdi.\n📞 Kuryerimiz manzilga yaqinlashganda qo'ng'iroq qiladi.`,
+  // We no longer tell the customer their order arrived — we ask them.
+  delivered:  (n) => `📦 <b>Buyurtmangiz yetkazildi deb belgilandi</b>\n\nSalom, ${n}! Kitoblaringiz qo'lingizga tegdimi?`,
   cancelled:  (n) => `❌ <b>Buyurtma bekor qilindi</b>\n\nSalom, ${n}. Afsuski buyurtmangiz bekor qilindi.\nSavollar uchun @white_crow_8 ga murojaat qiling.`,
+};
+
+// Buttons attached to the customer's "delivered?" message. The person who
+// actually knows whether the books arrived is the one who confirms it.
+const CUSTOMER_KEYBOARD = {
+  delivered: (orderId) => ({
+    inline_keyboard: [[
+      { text: '✅ Ha, qo\'limga tegdi', callback_data: `got_${orderId}` },
+      { text: '❌ Hali yo\'q',          callback_data: `notgot_${orderId}` },
+    ]],
+  }),
 };
 
 // ── Upstash Redis — gracefully skip if not configured ─────────────────────────
@@ -98,7 +110,10 @@ async function updateOrderStatus(orderId, newStatus) {
   // Notify customer if they have a Telegram ID
   if (order.telegram_user_id && CUSTOMER_MSG[newStatus]) {
     try {
-      await sendMessage(order.telegram_user_id, CUSTOMER_MSG[newStatus](order.full_name || 'Mijoz'));
+      const extra = CUSTOMER_KEYBOARD[newStatus]
+        ? { reply_markup: CUSTOMER_KEYBOARD[newStatus](orderId) }
+        : {};
+      await sendMessage(order.telegram_user_id, CUSTOMER_MSG[newStatus](order.full_name || 'Mijoz'), extra);
     } catch (e) {
       console.warn('[Bot] Customer notification failed:', e.message);
     }
@@ -232,6 +247,49 @@ async function handleCallbackQuery(update) {
   }
 
   // ── STEP 2: Confirmation click — execute the action ───────────────────────
+  // ── Customer confirms delivery ─────────────────────────────────────────────
+  // Closes the loop with the only person who can actually verify it.
+  if (data.startsWith('got_') || data.startsWith('notgot_')) {
+    const gotIt = data.startsWith('got_');
+    const orderId = data.replace(gotIt ? 'got_' : 'notgot_', '');
+
+    try {
+      const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+      await supabase.from('miniapp_order_events').insert({
+        order_id: orderId,
+        status: gotIt ? 'delivery_confirmed' : 'delivery_disputed',
+        note: gotIt
+          ? 'Mijoz yetkazilganini tasdiqladi'
+          : 'Mijoz hali olmaganini bildirdi',
+        created_at: new Date().toISOString(),
+      });
+
+      if (gotIt) {
+        await editMessageText(chatId, msgId,
+          `📦 <b>Rahmat!</b>\n\nYetkazilganini tasdiqladingiz. Yoqimli mutolaa tilaymiz 📚\n\nFikringizni @white_crow_8 ga yozsangiz, biz uchun qimmatli.`,
+          { reply_markup: { inline_keyboard: [] } });
+      } else {
+        // Put it back on the road and tell the team, rather than leaving the
+        // customer with a "delivered" order they never received.
+        await supabase.from('miniapp_orders')
+          .update({ status: 'delivering', updated_at: new Date().toISOString() })
+          .eq('id', orderId);
+
+        await editMessageText(chatId, msgId,
+          `🙏 <b>Xabar berganingiz uchun rahmat</b>\n\nTekshiramiz va tezda bog'lanamiz.\nShoshilinch bo'lsa: @white_crow_8`,
+          { reply_markup: { inline_keyboard: [] } });
+
+        if (ADMIN_GROUP_ID) {
+          await sendMessage(ADMIN_GROUP_ID,
+            `⚠️ <b>Yetkazish tasdiqlanmadi</b>\n\nBuyurtma <code>#${String(orderId).slice(0, 8)}</code> — mijoz kitoblarni olmaganini bildirdi.\nHolat "Yo'lda" ga qaytarildi.`);
+        }
+      }
+    } catch (err) {
+      console.error('[Bot] Delivery confirmation error:', err);
+    }
+    return;
+  }
+
   if (data.startsWith('confirm_')) {
     const parts = data.split('_'); // confirm, action, orderId
     const action = parts[1];
