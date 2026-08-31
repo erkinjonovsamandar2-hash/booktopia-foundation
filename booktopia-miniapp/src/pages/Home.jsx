@@ -159,7 +159,7 @@ export default function Home() {
         {/* ── 1. HERO ──────────────────────────────────────────────────────────── */}
         <div style={{
           background: 'linear-gradient(160deg, #0A192F 0%, #132D55 55%, #265999 100%)',
-          padding: '28px 20px 32px',
+          padding: '28px 20px 44px',
           position: 'relative',
           overflow: 'hidden',
         }}>
@@ -186,7 +186,22 @@ export default function Home() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             zIndex: 10
           }}>
-            <img src="/favicon.svg" alt="Booktopia" style={{ width: 20, height: 20, filter: 'brightness(0) invert(1)' }} />
+            <img src="/brand-mark.png" alt="Booktopia" style={{ width: 22, height: 22, filter: 'brightness(0) invert(1)', opacity: 0.9 }} />
+          </div>
+
+          {/* Shelf silhouette along the bottom edge — carries the splash motif
+              into the app. Deliberately faint: it should register as texture. */}
+          <div aria-hidden="true" style={{
+            position: 'absolute', left: 0, right: 0, bottom: 0,
+            height: 46, display: 'flex', alignItems: 'flex-end', gap: 4,
+            padding: '0 14px', opacity: 0.13, pointerEvents: 'none',
+          }}>
+            {[26, 38, 20, 44, 30, 36, 22, 40, 28, 34, 24, 42, 32, 26, 38, 30].map((h, i) => (
+              <span key={i} style={{
+                flex: 1, height: h, borderRadius: '1px 2px 0 0',
+                background: i % 3 === 0 ? '#00CDFE' : i % 3 === 1 ? '#D5AD36' : '#FFFFFF',
+              }} />
+            ))}
           </div>
 
           <div style={{ position: 'relative', zIndex: 1 }}>

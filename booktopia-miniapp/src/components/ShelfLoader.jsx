@@ -75,6 +75,11 @@ export default function ShelfLoader({ delay = 300, label }) {
         }}
       />
 
+      <img
+        src="/brand-mark.png" alt="" aria-hidden="true"
+        style={{ width: 26, height: 26, opacity: 0.35 }}
+      />
+
       {label && (
         <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-2)' }}>{label}</p>
       )}
