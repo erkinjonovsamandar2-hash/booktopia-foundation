@@ -5,11 +5,12 @@ import { supabase } from '../lib/supabase';
 import { formatPrice, haptic, tg } from '../lib/utils';
 import { useLang } from '../context/LangContext';
 import { useCart } from '../context/CartContext';
+import { useWishlist } from '../context/WishlistContext';
 import { useToast } from '../context/ToastContext';
 import PageTransition from '../components/PageTransition';
 import {
   Books, ShoppingCart, RocketLaunch, CaretDown, ArrowRight,
-  Sparkle, PenNib, TrendUp, Eye, Package,
+  Sparkle, PenNib, TrendUp, Eye, Package, Heart,
 } from '@phosphor-icons/react';
 
 // ── Translations ───────────────────────────────────────────────────────────────
@@ -450,6 +451,8 @@ export default function Home() {
 
 // ── Portrait Book Card (for horizontal strips) ─────────────────────────────────
 function PortraitCard({ book, lang, index, onNavigate, onBuy }) {
+  const { isSaved, toggle: toggleWish } = useWishlist();
+  const savedWish = isSaved(book.id);
   const title  = book[`title_${lang}`] || book.title  || '—';
   const author = book[`author_${lang}`] || book.author || '—';
   const isOutOfStock = book.stock === 0 || (book.stock != null && book.stock <= 0);
@@ -488,6 +491,28 @@ function PortraitCard({ book, lang, index, onNavigate, onBuy }) {
             color: 'rgba(255,255,255,0.4)',
           }}><Books size={34} weight="duotone" /></div>
         )}
+        {/* Save control, matching the catalogue so the gesture is the same
+            wherever a cover appears. */}
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); haptic('light'); toggleWish(book.id); }}
+          aria-label={savedWish ? 'Saqlanganlardan olib tashlash' : 'Saqlanganlarga qo\'shish'}
+          aria-pressed={savedWish}
+          style={{
+            position: 'absolute', top: 6, right: 6, zIndex: 3,
+            width: 28, height: 28, borderRadius: '50%',
+            border: 'none', cursor: 'pointer',
+            background: savedWish ? '#fff' : 'rgba(255,255,255,0.88)',
+            backdropFilter: 'blur(6px)',
+            boxShadow: savedWish
+              ? '0 1px 4px rgba(229,62,62,0.35)'
+              : '0 1px 4px rgba(10,25,47,0.22)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          <Heart size={15} weight={savedWish ? 'fill' : 'bold'} color={savedWish ? '#E53E3E' : '#7A8A99'} />
+        </button>
+
         {/* Spine highlight */}
         <div style={{
           position: 'absolute', inset: '0 auto 0 0', width: 10,

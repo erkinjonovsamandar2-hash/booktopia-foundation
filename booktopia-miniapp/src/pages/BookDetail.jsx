@@ -5,9 +5,10 @@ import { supabase } from '../lib/supabase';
 import { formatPrice, haptic, getCategoryLabel } from '../lib/utils';
 import { useLang } from '../context/LangContext';
 import { useCart } from '../context/CartContext';
+import { useWishlist } from '../context/WishlistContext';
 import CheckoutSheet from '../components/CheckoutSheet';
 import PageTransition from '../components/PageTransition';
-import { Books, FileText } from '@phosphor-icons/react';
+import { Books, FileText, Heart } from '@phosphor-icons/react';
 import LoadError from '../components/LoadError';
 
 const T = {
@@ -22,6 +23,8 @@ const T = {
   backToCatalog: { uz: 'Katalogga qaytish', ru: 'Вернуться в каталог', en: 'Back to catalog' },
   askPrice: { uz: 'Narxni so\'rash', ru: 'Узнать цену', en: 'Ask for price' },
   excerpt:  { uz: 'Namuna o\'qish', ru: 'Читать фрагмент', en: 'Read excerpt' },
+  save:     { uz: 'Saqlanganlarga qo\'shish', ru: 'В избранное',      en: 'Add to wishlist' },
+  saved:    { uz: 'Saqlangan',                ru: 'В избранном',      en: 'Saved' },
   wholesaleOffer: { uz: '10+ xarid qiling, har biridan 5 000 so\'m tejab qoling!', ru: 'Купите 10+ и сэкономьте 5 000 сум на каждой!', en: 'Buy 10+ and save 5,000 UZS on each!' },
   outOfStock: { uz: 'Zaxirada tugagan', ru: 'Нет в наличии', en: 'Out of stock' },
 };
@@ -31,6 +34,7 @@ export default function BookDetail() {
   const navigate = useNavigate();
   const { lang } = useLang();
   const { addItem, items } = useCart();
+  const { isSaved, toggle } = useWishlist();
 
   const [book, setBook] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -213,6 +217,26 @@ export default function BookDetail() {
               )}
             </div>
           )}
+
+          {/* Save for later — the decision usually happens on this screen, so
+              the action belongs here and not only in the catalogue grid. */}
+          <button
+            type="button"
+            onClick={() => { haptic('light'); toggle(book.id); }}
+            aria-pressed={isSaved(book.id)}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              width: '100%', padding: '13px', marginBottom: 12,
+              borderRadius: 'var(--radius-md)', cursor: 'pointer',
+              fontSize: 15, fontWeight: 800,
+              background: isSaved(book.id) ? '#FFF5F5' : 'var(--surface-2)',
+              color: isSaved(book.id) ? '#C53030' : 'var(--text-1)',
+              border: `1.5px solid ${isSaved(book.id) ? '#FEB2B2' : 'transparent'}`,
+            }}
+          >
+            <Heart size={18} weight={isSaved(book.id) ? 'fill' : 'bold'} />
+            {isSaved(book.id) ? t('saved') : t('save')}
+          </button>
 
           {/* PDF excerpt */}
           {book.excerpt_url && (
