@@ -219,7 +219,10 @@ async function performTransaction({ id }) {
   // Mark order as paid
   await db.from('miniapp_orders').update({
     payment_status: 'paid',
-    status: 'confirmed',   // auto-confirm paid orders
+    // 'approved' is the value the miniapp and the admin panel both know.
+    // 'confirmed' was written here before and matched nothing, so a paid
+    // order fell back to "Kutilmoqda" everywhere and showed no admin actions.
+    status: 'approved',
     updated_at: performDate,
   }).eq('id', order.id);
 

@@ -49,7 +49,13 @@ const T = {
   name:         { uz: 'Ismingiz',             ru: 'Ваше имя',           en: 'Your name' },
   phone:        { uz: 'Telefon raqam *',      ru: 'Телефон *',          en: 'Phone *' },
   phonePh:      { uz: '+998 __ ___ __ __',   ru: '+998 __ ___ __ __', en: '+998 __ ___ __ __' },
-  address:      { uz: 'Manzil (ixtiyoriy)',   ru: 'Адрес (необязательно)', en: 'Address (optional)' },
+  address:      { uz: 'Yetkazish manzili *',  ru: 'Адрес доставки *',   en: 'Delivery address *' },
+  addressHint:  { uz: 'Manzilni yozing yoki joylashuvingizni yuboring — kuryer shu manzilga keladi.',
+                  ru: 'Введите адрес или отправьте геолокацию — курьер приедет по нему.',
+                  en: 'Type an address or share your location — the courier uses it.' },
+  gpsBtn:       { uz: 'Joylashuvni yuborish', ru: 'Отправить геолокацию', en: 'Share location' },
+  gpsBusy:      { uz: 'Aniqlanmoqda...',      ru: 'Определяем...',        en: 'Locating...' },
+  gpsDone:      { uz: 'Joylashuv qoʻshildi', ru: 'Геолокация добавлена', en: 'Location added' },
   addressPh:    { uz: 'Shahar, ko\'cha...',   ru: 'Город, улица...',    en: 'City, street...' },
   payment:      { uz: 'To\'lov usuli',        ru: 'Способ оплаты',      en: 'Payment method' },
   confirm:      { uz: '✓ Buyurtma berish',    ru: '✓ Оформить',         en: '✓ Place Order' },
@@ -64,7 +70,7 @@ const sheetSpring   = { type: 'spring', stiffness: 420, damping: 38 };
 const overlayFade   = { duration: 0.22 };
 
 export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
-  const { items } = useCart();
+  const { items, markAwaitingPayment } = useCart();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('+998 ');
   const [address, setAddress] = useState('');
@@ -183,6 +189,9 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
       if (!res.ok) throw new Error(data.error || 'Checkout failed');
 
       haptic('success');
+      // Payment completes in another browser context; remember the order so the
+      // miniapp can clear the cart when it regains focus.
+      if (data.order_id) markAwaitingPayment(data.order_id);
       setDone(true);
 
       // ── Open the payment gateway, keep cart until paid ─────────────────
@@ -405,7 +414,7 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
 
                 {/* Address + Geolocation */}
                 <div className="input-group">
-                  <label className="input-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label className="input-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
                     <span>{t('address')}</span>
                     <motion.button
                       type="button"
@@ -455,10 +464,11 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
                         display: 'flex', alignItems: 'center', gap: 4,
                       }}
                     >
-                      {geoLoading ? '⏳' : geoCoords ? '✅ GPS' : '📍 GPS olish'}
+                      {geoLoading ? t('gpsBusy') : geoCoords ? `✓ ${t('gpsDone')}` : `📍 ${t('gpsBtn')}`}
                     </motion.button>
                   </label>
                   <input className="input" value={address} onChange={e => { setAddress(e.target.value); if (!e.target.value.startsWith('📍 GPS')) setGeoCoords(null); }} placeholder={t('addressPh')} />
+                  <p style={{ fontSize: 11, color: 'var(--text-2)', marginTop: 4, lineHeight: 1.4 }}>{t('addressHint')}</p>
                   {geoError && (
                     <p role="alert" style={{ fontSize: 11, color: 'var(--discount)', marginTop: 4, fontWeight: 600 }}>{geoError}</p>
                   )}

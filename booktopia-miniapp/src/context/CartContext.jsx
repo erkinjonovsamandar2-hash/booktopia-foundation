@@ -7,6 +7,7 @@ const CartContext = createContext(null);
 const STORAGE_KEY = 'booktopia_cart';
 const SCHEMA_VERSION = 2;
 const VERSION_KEY = 'booktopia_cart_v';
+const PENDING_ORDER_KEY = 'booktopia_pending_order';
 
 // Stock helper — NULL means "not tracked", not "out of stock".
 export const isOutOfStock = (b) => b?.stock === 0 || (b?.stock != null && b.stock <= 0);
@@ -155,6 +156,45 @@ const MOCK_ID_MAP = {
     importCart();
   }, []);
 
+
+  // ── Settle an order that was paid outside this webview ─────────────────────
+  // Payment happens in Telegram's browser or an external one, so the success
+  // screen there clears ITS OWN localStorage — the miniapp never hears about it
+  // and the cart stays full. We remember which order is awaiting payment and
+  // re-check it whenever the miniapp becomes visible again.
+  const markAwaitingPayment = useCallback((orderId) => {
+    try { localStorage.setItem(PENDING_ORDER_KEY, orderId); } catch { /* ignore */ }
+  }, []);
+
+  const [paidNotice, setPaidNotice] = useState(null);
+
+  useEffect(() => {
+    const settle = async () => {
+      let orderId;
+      try { orderId = localStorage.getItem(PENDING_ORDER_KEY); } catch { return; }
+      if (!orderId) return;
+
+      const { data, error } = await supabase.rpc('get_order_payment_status', { p_order_id: orderId });
+      const row = Array.isArray(data) ? data[0] : data;
+      if (error || !row) return;
+
+      if (row.payment_status === 'paid') {
+        setItems([]);
+        try { localStorage.removeItem(PENDING_ORDER_KEY); } catch { /* ignore */ }
+        setPaidNotice(orderId);
+      }
+    };
+
+    settle();
+    const onVisible = () => { if (!document.hidden) settle(); };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', settle);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', settle);
+    };
+  }, []);
+
   const addItem = useCallback((book) => {
     if (isOutOfStock(book)) return;
     setItems(prev => {
@@ -250,9 +290,11 @@ const MOCK_ID_MAP = {
   const value = useMemo(() => ({
     items, addItem, removeItem, incrementQty, decrementQty, clearCart, restoreCart,
     revalidate, atStockCeiling, totalPrice, totalCount,
+    markAwaitingPayment, paidNotice, dismissPaidNotice: () => setPaidNotice(null),
     importNotice, dismissImportNotice: () => setImportNotice(null),
   }), [items, addItem, removeItem, incrementQty, decrementQty, clearCart, restoreCart,
-       revalidate, atStockCeiling, totalPrice, totalCount, importNotice]);
+       revalidate, atStockCeiling, totalPrice, totalCount, importNotice,
+       markAwaitingPayment, paidNotice]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 };

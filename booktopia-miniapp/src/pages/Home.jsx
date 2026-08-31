@@ -12,8 +12,8 @@ import { Books, ShoppingCart, RocketLaunch, CaretDown, ArrowRight } from '@phosp
 // ── Translations ───────────────────────────────────────────────────────────────
 const T = {
   greeting:    { uz: 'Assalomu alaykum',  ru: 'Добрый день',       en: 'Hello' },
-  hero1:       { uz: 'Eng yaxshi kitoblar', ru: 'Лучшие книги',    en: 'The best books' },
-  hero2:       { uz: '— uyingizga 24 soatda', ru: '— домой за 24 часа', en: '— at your door in 24h' },
+  hero1:       { uz: 'Yaxshi kitoblar',     ru: 'Хорошие книги',   en: 'Good books' },
+  hero2:       { uz: 'uyingizgacha yetadi',  ru: 'доставим до двери', en: 'delivered to your door' },
   heroSub:     { uz: 'O\'zbekiston bo\'ylab yetkazib beramiz', ru: 'Доставляем по всему Узбекистану', en: 'Delivered across Uzbekistan' },
   howTitle:    { uz: 'Qanday ishlaydi?',  ru: 'Как это работает?', en: 'How it works?' },
   step1t:      { uz: 'Kitob tanlang',     ru: 'Выберите книгу',    en: 'Choose a book' },
@@ -21,7 +21,7 @@ const T = {
   step2t:      { uz: 'Buyurtma bering',   ru: 'Оформите заказ',    en: 'Place order' },
   step2d:      { uz: '30 sekund',         ru: '30 секунд',         en: '30 seconds' },
   step3t:      { uz: 'Qo\'lingizda',      ru: 'В ваших руках',     en: 'In your hands' },
-  step3d:      { uz: '24 soat ichida',    ru: 'В течение 24 часов', en: 'Within 24 hours' },
+  step3d:      { uz: 'Kelishilgan vaqtda', ru: 'В согласованное время', en: 'At an agreed time' },
   featured:    { uz: '📚 Tanlangan kitoblar', ru: '📚 Избранные книги', en: '📚 Featured Books' },
   newBooks:    { uz: '✨ Yangi nashrlar',  ru: '✨ Новинки',         en: '✨ New Releases' },
   seeAll:      { uz: 'Barchasini ko\'rish →', ru: 'Смотреть все →', en: 'See all →' },

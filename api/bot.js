@@ -16,7 +16,7 @@ const CUSTOMER_MSG = {
   approved:   (n) => `✅ <b>Buyurtmangiz tasdiqlandi!</b>\n\nSalom, ${n}! Buyurtmangiz qabul qilindi.\n🕐 Tez orada kuryerimiz siz bilan bog'lanadi.`,
   delivering: (n) => `🚚 <b>Buyurtmangiz yo'lda!</b>\n\nSalom, ${n}! Buyurtmangiz yetkazib berilmoqda.\n📞 Kuryer siz bilan bog'lanishi mumkin.`,
   delivered:  (n) => `📦 <b>Buyurtma yetkazildi!</b>\n\nSalom, ${n}! Buyurtmangiz muvaffaqiyatli yetkazildi.\nRahmat! Kitob zavqli bo'lsin 📚`,
-  cancelled:  (n) => `❌ <b>Buyurtma bekor qilindi</b>\n\nSalom, ${n}. Afsuski buyurtmangiz bekor qilindi.\nSavollar uchun @booktopia_support ga murojaat qiling.`,
+  cancelled:  (n) => `❌ <b>Buyurtma bekor qilindi</b>\n\nSalom, ${n}. Afsuski buyurtmangiz bekor qilindi.\nSavollar uchun @white_crow_8 ga murojaat qiling.`,
 };
 
 // ── Upstash Redis — gracefully skip if not configured ─────────────────────────
@@ -126,11 +126,11 @@ async function handleStart(ctx) {
   const name = user.first_name || 'kitobxon';
   const text =
     `Assalomu alaykum, <b>${name}</b>! 📚\n\n` +
-    `<b>Booktopia</b> — Uzbekiston bo'ylab kitob yetkazib berish xizmati.\n\n` +
-    `✅ 500+ muvaffaqiyatli buyurtma\n` +
-    `⚡️ 24 soat ichida yetkazib beramiz\n` +
-    `💳 Payme, Click va naqd to'lov\n\n` +
-    `Quyidagi tugmani bosib kitoblarni ko'ring 👇`;
+    `<b>Booktopia</b> — o'zbek va jahon adabiyotini uyingizgacha yetkazamiz.\n\n` +
+    `📚 Saralangan kitoblar — nashriyotdan to'g'ridan-to'g'ri\n` +
+    `🚚 O'zbekiston bo'ylab yetkazib berish\n` +
+    `💳 Payme orqali xavfsiz to'lov\n\n` +
+    `Katalogni ochib, o'zingizga kitob tanlang 👇`;
 
   await sendMessage(user.id, text, {
     reply_markup: {
@@ -147,9 +147,9 @@ async function handleStart(ctx) {
 async function handleHelp(chatId) {
   const text =
     `<b>Booktopia yordam markazi</b> 📞\n\n` +
-    `❓ Savol yoki muammo bo'lsa:\n` +
-    `👉 @booktopia_support bilan bog'laning\n\n` +
-    `🕐 Ish vaqti: Har kuni 9:00 — 21:00`;
+    `Savolingiz yoki buyurtma bo'yicha muammoyingiz bormi?\n` +
+    `👉 @white_crow_8 ga yozing — javob beramiz.\n\n` +
+    `🕐 Ish vaqti: har kuni 9:00 — 21:00`;
 
   await sendMessage(chatId, text, {
     reply_markup: { inline_keyboard: [[{ text: "🏠 Bosh sahifa", callback_data: "home" }]] }

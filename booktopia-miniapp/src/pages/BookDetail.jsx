@@ -195,7 +195,7 @@ export default function BookDetail() {
         </div>
       </div>
 
-      <div style={{ height: 100 }} /> {/* Padding to scroll past fixed button */}
+      <div style={{ height: 168 }} /> {/* Scroll clearance for the fixed buy bar + nav */}
 
       {/* Fixed buy button */}
       {book.price && (
@@ -203,7 +203,8 @@ export default function BookDetail() {
           position: 'fixed', bottom: 0,
           left: '50%', transform: 'translateX(-50%)',
           width: '100%', maxWidth: 480,
-          padding: '16px 16px calc(16px + env(safe-area-inset-bottom, 16px))',
+          // Clear the floating bottom nav (approx 76px tall) instead of sitting under it.
+          padding: '16px 16px calc(92px + env(safe-area-inset-bottom, 0px))',
           background: 'linear-gradient(to top, var(--bg) 85%, transparent)',
           zIndex: 99,
         }}>

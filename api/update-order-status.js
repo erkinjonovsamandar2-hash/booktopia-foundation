@@ -10,13 +10,13 @@ const TG_API              = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
 const STATUS_MESSAGES = {
   approved: (name) =>
-    `✅ <b>Buyurtmangiz tasdiqlandi!</b>\n\nSalom, ${name}! Buyurtmangiz qabul qilindi va tayyorlanmoqda.\n\n🕐 Tez orada kuryerimiz siz bilan bog'lanadi.`,
+    `✅ <b>Buyurtmangiz tasdiqlandi</b>\n\nSalom, ${name}! Buyurtmangizni qabul qildik va tayyorlayapmiz.\n\n📞 Yetkazish vaqtini kelishish uchun tez orada bog'lanamiz.`,
   delivering: (name) =>
-    `🚚 <b>Buyurtmangiz yo'lda!</b>\n\nSalom, ${name}! Buyurtmangiz yetkazib berilmoqda.\n\n📞 Kuryer siz bilan bog'lanishi mumkin.`,
+    `🚚 <b>Buyurtmangiz yo'lda</b>\n\nSalom, ${name}! Kitoblaringiz yetkazishga chiqdi.\n\n📞 Kuryerimiz manzilga yaqinlashganda qo'ng'iroq qiladi.`,
   delivered: (name) =>
-    `📦 <b>Buyurtma yetkazildi!</b>\n\nSalom, ${name}! Buyurtmangiz muvaffaqiyatli yetkazildi.\n\nRahmat! Kitob zavqli bo'lsin! 📚`,
+    `📦 <b>Buyurtma yetkazildi</b>\n\nSalom, ${name}! Kitoblaringiz yetkazildi.\n\nYoqimli mutolaa tilaymiz 📚\nFikringizni @white_crow_8 ga yozsangiz, biz uchun qimmatli.`,
   cancelled: (name) =>
-    `❌ <b>Buyurtma bekor qilindi</b>\n\nSalom, ${name}. Afsuski buyurtmangiz bekor qilindi.\n\nSavollar bo'lsa @booktopia_support ga murojaat qiling.`,
+    `❌ <b>Buyurtma bekor qilindi</b>\n\nSalom, ${name}. Afsuski buyurtmangiz bekor qilindi.\n\nSavollar bo'lsa @white_crow_8 ga murojaat qiling.`,
 };
 
 const ADMIN_API_SECRET = process.env.ADMIN_API_SECRET;
