@@ -10,11 +10,11 @@ const TG_API              = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
 const STATUS_MESSAGES = {
   approved: (name) =>
-    `✅ <b>Buyurtmangiz tasdiqlandi</b>\n\nSalom, ${name}! Buyurtmangizni qabul qildik va tayyorlayapmiz.\n\n📞 Yetkazish vaqtini kelishish uchun tez orada bog'lanamiz.`,
+    `✅ <b>Buyurtmangiz tasdiqlandi</b>\n\nSalom, ${name}! Buyurtmangizni qabul qildik va joʻnatishga tayyorlayapmiz.\n\n📦 Pochtaga topshirganimizda xabar beramiz.`,
   delivering: (name) =>
-    `🚚 <b>Buyurtmangiz yo'lda</b>\n\nSalom, ${name}! Kitoblaringiz yetkazishga chiqdi.\n\n📞 Kuryerimiz manzilga yaqinlashganda qo'ng'iroq qiladi.`,
+    `🚚 <b>Buyurtmangiz yoʻlda</b>\n\nSalom, ${name}! Kitoblaringizni pochtaga topshirdik.\n\n📮 Pochta boʻlimingizga yetib borgach xabar beramiz.`,
   delivered: (name) =>
-    `📦 <b>Buyurtma yetkazildi</b>\n\nSalom, ${name}! Kitoblaringiz yetkazildi.\n\nYoqimli mutolaa tilaymiz 📚\nFikringizni @white_crow_8 ga yozsangiz, biz uchun qimmatli.`,
+    `📮 <b>Buyurtmangiz pochtaga yetib bordi</b>\n\nSalom, ${name}! Kitoblaringizni pochta boʻlimidan olib ketishingiz mumkin.\n\nYoqimli mutolaa tilaymiz 📚`,
   cancelled: (name) =>
     `❌ <b>Buyurtma bekor qilindi</b>\n\nSalom, ${name}. Afsuski buyurtmangiz bekor qilindi.\n\nSavollar bo'lsa @white_crow_8 ga murojaat qiling.`,
 };

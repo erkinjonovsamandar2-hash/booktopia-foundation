@@ -9,9 +9,11 @@ import LoadError from '../components/LoadError';
 
 const T = {
   title:     { uz: 'Kashfiyot',           ru: 'Открытия',        en: 'Discover' },
-  subtitle:  { uz: 'Maqsadingiz nima?',   ru: 'Какова ваша цель?', en: 'What\'s your goal?' },
-  weekBadge: { uz: 'HAFTA TANLOVI',       ru: 'КНИГА НЕДЕЛИ',    en: 'BOOK OF THE WEEK' },
-  paths:     { uz: 'O\'qish yo\'llari',   ru: 'Пути чтения',     en: 'Reading Paths' },
+  subtitle:  { uz: 'Mavzu boʻyicha tanlangan toʻplamlar',
+               ru: 'Подборки по темам',
+               en: 'Curated sets by theme' },
+  weekBadge: { uz: 'TAHRIRIYAT TANLOVI',  ru: 'ВЫБОР РЕДАКЦИИ',  en: "EDITOR'S PICK" },
+  paths:     { uz: 'Toʻplamlar',          ru: 'Подборки',        en: 'Collections' },
   read:      { uz: 'ta o\'qildi',         ru: 'прочитано',       en: 'read' },
   of:        { uz: 'dan',                 ru: 'из',              en: 'of' },
   explore:   { uz: 'Ko\'proq →',          ru: 'Подробнее →',     en: 'Explore →' },
@@ -25,8 +27,10 @@ const PATHS = [
     id: 'temur',
     color: '#D5AD36',
     colorLight: '#FBF6E3',
-    title:  { uz: 'Temur imperiyasi',       ru: 'Империя Тамерлана',     en: 'Tamerlane\'s Empire' },
-    goal:   { uz: 'Uchta roman — bir buyuk tarix', ru: '3 романа — одна великая история', en: '3 novels — one epic story' },
+    title:  { uz: 'Sohibqiron davri',       ru: 'Эпоха Сохибкирана',     en: 'The Timurid Age' },
+    goal:   { uz: 'Amir Temur va Boyazid: bir asr, ikki taqdir',
+              ru: 'Амир Темур и Баязид: один век, две судьбы',
+              en: 'Amir Temur and Bayezid: one century, two fates' },
     bookIds: [
       'b0231bf0-8315-48d0-bd84-7bb7986a83ea', // Amir Temur
       '6c1d5416-fc75-41b1-9572-893bcdb5b815', // Safar gulxanlari
@@ -37,8 +41,10 @@ const PATHS = [
     id: 'uzbek',
     color: '#265999',
     colorLight: '#E8F4FD',
-    title:  { uz: 'O\'zbek qalbi',          ru: 'Узбекская душа',         en: 'Uzbek Soul' },
-    goal:   { uz: 'Hayot, tarix va tafakkur', ru: 'Жизнь, история, мышление', en: 'Life, history and thought' },
+    title:  { uz: 'Oʻzbek nasri',           ru: 'Узбекская проза',        en: 'Uzbek Prose' },
+    goal:   { uz: 'Qodiriydan bugungi kunga — oʻz tilimizda yozilgan nasr',
+              ru: 'От Кадыри до наших дней — проза на родном языке',
+              en: 'From Qodiriy to today — prose in our own language' },
     bookIds: [
       '4aff3b2d-2751-4c9c-9fff-119564e76d1e', // Bygone days (O'tkan kunlar)
       'a3a96a05-c21f-4d13-80b0-6fb9eb3270d1', // O'zbekistonda yana bir kun
@@ -49,8 +55,10 @@ const PATHS = [
     id: 'world',
     color: '#805AD5',
     colorLight: '#F5F0FF',
-    title:  { uz: 'Dunyo sargardonligi',    ru: 'Путешествие по мирам',  en: 'World Odyssey' },
-    goal:   { uz: '6 mamlakat, 6 davr, 1 sayohat', ru: '6 стран, 6 эпох, 1 путешествие', en: '6 countries, 6 eras, 1 journey' },
+    title:  { uz: 'Jahon klassikasi',       ru: 'Мировая классика',      en: 'World Classics' },
+    goal:   { uz: 'Bulgakov, London, Dyuma — oʻzbekchada oʻqiladigan klassika',
+              ru: 'Булгаков, Лондон, Дюма — классика на узбекском',
+              en: 'Bulgakov, London, Dumas — classics in Uzbek' },
     bookIds: [
       'e2c81926-7157-42a7-aa9b-b4114d912799', // Usta va Margarita
       '880bdff5-3f0f-4e33-af14-412305d10257', // Martin Iden
@@ -64,8 +72,10 @@ const PATHS = [
     id: 'mind',
     color: '#38A169',
     colorLight: '#EBF8F0',
-    title:  { uz: 'Inson kodi',             ru: 'Код человека',           en: 'Human Code' },
-    goal:   { uz: 'O\'zingni o\'rgan — o\'zgalarni tushun', ru: 'Познай себя — пойми других', en: 'Know yourself — understand others' },
+    title:  { uz: 'Odamni oʻqish',          ru: 'Читать человека',        en: 'Reading People' },
+    goal:   { uz: 'Imo-ishora, xotira, oʻrganish — amaliy kitoblar',
+              ru: 'Жесты, память, обучение — прикладные книги',
+              en: 'Body language, memory, learning — practical books' },
     bookIds: [
       'cc528e91-8aee-4021-826c-01bd5c12b072', // Tana tili haqida mukammal kitob
       '9f04d148-bb2a-42c4-abb0-790835ce70b9', // Ultrabilim
@@ -77,13 +87,6 @@ const PATHS = [
 // ('booktopia_orders') that nothing in the codebase ever wrote, so every path
 // displayed 0/N for every user and "completed" was unreachable. Until progress
 // is driven by real order history the bar is not rendered at all.
-
-// Get current ISO week number for the "HAFTA TANLOVI" badge
-function getWeekNumber() {
-  const now = new Date();
-  const start = new Date(now.getFullYear(), 0, 1);
-  return Math.ceil(((now - start) / 86400000 + start.getDay() + 1) / 7);
-}
 
 // NULL stock means "not tracked", not "sold out".
 const isSoldOut = (b) => b?.stock === 0 || (b?.stock != null && b.stock <= 0);
@@ -196,7 +199,6 @@ export default function Discover() {
 function WeekCard({ book, lang, t, onNavigate }) {
   const title  = book[`title_${lang}`] || book.title  || '—';
   const author = book[`author_${lang}`] || book.author || '—';
-  const week   = getWeekNumber();
 
   return (
     <motion.div
@@ -281,7 +283,7 @@ function WeekCard({ book, lang, t, onNavigate }) {
             fontSize: 9, fontWeight: 900, letterSpacing: '0.14em',
             color: '#D5AD36', textTransform: 'uppercase',
           }}>
-            {t('weekBadge')} · {week}-HAFTA
+            {t('weekBadge')}
           </span>
         </div>
 
@@ -338,7 +340,8 @@ function PathCard({ path, books, lang, onNavigate, index }) {
         borderRadius: 18,
         overflow: 'hidden',
         boxShadow: 'var(--shadow-card)',
-        border: `2px solid ${open ? path.color : 'transparent'}`,
+        border: `1px solid ${open ? path.color : 'rgba(10,25,47,0.06)'}`,
+        borderLeft: `4px solid ${path.color}`,
         transition: 'border-color 0.2s',
       }}
     >
@@ -364,7 +367,15 @@ function PathCard({ path, books, lang, onNavigate, index }) {
 
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-1)', lineHeight: 1.2 }}>{title}</p>
-            <p style={{ fontSize: 11, color: 'var(--text-2)', marginTop: 2, lineHeight: 1.3 }}>{goal}</p>
+            <p style={{ fontSize: 11.5, color: 'var(--text-2)', marginTop: 3, lineHeight: 1.4 }}>{goal}</p>
+            <span style={{
+              display: 'inline-block', marginTop: 7,
+              fontSize: 10, fontWeight: 800, letterSpacing: '0.06em',
+              color: path.color, background: path.colorLight,
+              padding: '3px 8px', borderRadius: 20, textTransform: 'uppercase',
+            }}>
+              {books.length} {lang === 'ru' ? 'кн.' : lang === 'en' ? 'books' : 'kitob'}
+            </span>
           </div>
 
           <motion.div

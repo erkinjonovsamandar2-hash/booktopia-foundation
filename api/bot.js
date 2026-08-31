@@ -13,10 +13,10 @@ const API                  = `https://api.telegram.org/bot${TOKEN}`;
 
 // ── Customer notification templates ───────────────────────────────────────────
 const CUSTOMER_MSG = {
-  approved:   (n) => `✅ <b>Buyurtmangiz tasdiqlandi</b>\n\nSalom, ${n}! Buyurtmangizni qabul qildik va tayyorlayapmiz.\n📞 Yetkazish vaqtini kelishish uchun tez orada bog'lanamiz.`,
-  delivering: (n) => `🚚 <b>Buyurtmangiz yo'lda</b>\n\nSalom, ${n}! Kitoblaringiz yetkazishga chiqdi.\n📞 Kuryerimiz manzilga yaqinlashganda qo'ng'iroq qiladi.`,
+  approved:   (n) => `✅ <b>Buyurtmangiz tasdiqlandi</b>\n\nSalom, ${n}! Buyurtmangizni qabul qildik va joʻnatishga tayyorlayapmiz.\n📦 Pochtaga topshirganimizda xabar beramiz.`,
+  delivering: (n) => `🚚 <b>Buyurtmangiz yoʻlda</b>\n\nSalom, ${n}! Kitoblaringizni pochtaga topshirdik.\n📮 Pochta boʻlimingizga yetib borgach, oʻzingiz olib ketasiz.`,
   // We no longer tell the customer their order arrived — we ask them.
-  delivered:  (n) => `📦 <b>Buyurtmangiz yetkazildi deb belgilandi</b>\n\nSalom, ${n}! Kitoblaringiz qo'lingizga tegdimi?`,
+  delivered:  (n) => `📮 <b>Buyurtmangiz pochtaga yetib bordi</b>\n\nSalom, ${n}! Kitoblaringizni pochta boʻlimidan olib ketishingiz mumkin.\n\nOlganingizdan soʻng quyidagini bosing:`,
   cancelled:  (n) => `❌ <b>Buyurtma bekor qilindi</b>\n\nSalom, ${n}. Afsuski buyurtmangiz bekor qilindi.\nSavollar uchun @white_crow_8 ga murojaat qiling.`,
 };
 
@@ -25,8 +25,8 @@ const CUSTOMER_MSG = {
 const CUSTOMER_KEYBOARD = {
   delivered: (orderId) => ({
     inline_keyboard: [[
-      { text: '✅ Ha, qo\'limga tegdi', callback_data: `got_${orderId}` },
-      { text: '❌ Hali yo\'q',          callback_data: `notgot_${orderId}` },
+      { text: '✅ Kitobni oldim', callback_data: `got_${orderId}` },
+      { text: '❌ Hali olmadim',  callback_data: `notgot_${orderId}` },
     ]],
   }),
 };
@@ -193,7 +193,7 @@ async function handleCallbackQuery(update) {
         ],
         [
           { text: '🙋‍♂️ O\'zim olaman', callback_data: `assign_${orderId}` },
-          { text: '📤 Kuryer nusxasi', callback_data: `slip_${orderId}` },
+          { text: '📤 Pochta varaqasi', callback_data: `slip_${orderId}` },
         ]
       ];
     } else if (status === 'approved') {
@@ -201,7 +201,7 @@ async function handleCallbackQuery(update) {
         [{ text: "🚚 Yo'lda", callback_data: `delivering_${orderId}` },
          { text: "📦 Yetkazildi", callback_data: `delivered_${orderId}` }],
         [{ text: "❌ Bekor qilish", callback_data: `cancel_${orderId}` },
-         { text: '📤 Kuryer nusxasi', callback_data: `slip_${orderId}` }]
+         { text: '📤 Pochta varaqasi', callback_data: `slip_${orderId}` }]
       ];
     } else if (status === 'delivering') {
       return [[
@@ -259,14 +259,14 @@ async function handleCallbackQuery(update) {
         order_id: orderId,
         status: gotIt ? 'delivery_confirmed' : 'delivery_disputed',
         note: gotIt
-          ? 'Mijoz yetkazilganini tasdiqladi'
-          : 'Mijoz hali olmaganini bildirdi',
+          ? 'Mijoz kitobni olganini tasdiqladi'
+          : 'Mijoz kitobni hali olmaganini bildirdi',
         created_at: new Date().toISOString(),
       });
 
       if (gotIt) {
         await editMessageText(chatId, msgId,
-          `📦 <b>Rahmat!</b>\n\nYetkazilganini tasdiqladingiz. Yoqimli mutolaa tilaymiz 📚\n\nFikringizni @white_crow_8 ga yozsangiz, biz uchun qimmatli.`,
+          `📚 <b>Rahmat!</b>\n\nKitobingizni olganingizni tasdiqladingiz. Yoqimli mutolaa tilaymiz.\n\nFikringizni @white_crow_8 ga yozsangiz, biz uchun qimmatli.`,
           { reply_markup: { inline_keyboard: [] } });
       } else {
         // Put it back on the road and tell the team, rather than leaving the
@@ -276,12 +276,12 @@ async function handleCallbackQuery(update) {
           .eq('id', orderId);
 
         await editMessageText(chatId, msgId,
-          `🙏 <b>Xabar berganingiz uchun rahmat</b>\n\nTekshiramiz va tezda bog'lanamiz.\nShoshilinch bo'lsa: @white_crow_8`,
+          `🙏 <b>Xabar berganingiz uchun rahmat</b>\n\nPochta bilan tekshirib, tezda bogʻlanamiz.\nShoshilinch boʻlsa: @white_crow_8`,
           { reply_markup: { inline_keyboard: [] } });
 
         if (ADMIN_GROUP_ID) {
           await sendMessage(ADMIN_GROUP_ID,
-            `⚠️ <b>Yetkazish tasdiqlanmadi</b>\n\nBuyurtma <code>#${String(orderId).slice(0, 8)}</code> — mijoz kitoblarni olmaganini bildirdi.\nHolat "Yo'lda" ga qaytarildi.`);
+            `⚠️ <b>Yetkazish tasdiqlanmadi</b>\n\nBuyurtma <code>#${String(orderId).slice(0, 8)}</code> — mijoz kitobni pochtadan olmaganini bildirdi.\nHolat "Yo'lda" ga qaytarildi.`);
         }
       }
     } catch (err) {
@@ -364,7 +364,7 @@ async function handleCallbackQuery(update) {
     if (!order) { return; }
     const shortId = orderId.slice(0, 8).toUpperCase();
     const itemLines = (order.items || []).map(i => `• ${i.title} × ${i.qty}`).join('\n');
-    const slipText = `📋 <b>Kuryer nusxasi — #${shortId}</b>\n\n` +
+    const slipText = `📋 <b>Pochta varaqasi — #${shortId}</b>\n\n` +
       `👤 ${order.full_name}\n📞 ${order.phone}\n📍 ${order.delivery_address || 'Ko\'rsatilmagan'}\n\n` +
       `${itemLines}\n\n💰 Jami: <b>${Number(order.total_uzs).toLocaleString()} so'm</b>`;
     await sendMessage(chatId, slipText);
