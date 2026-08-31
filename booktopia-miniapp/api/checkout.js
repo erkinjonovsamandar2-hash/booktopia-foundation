@@ -12,6 +12,10 @@ import crypto from 'node:crypto';
 
 const SUPABASE_URL         = process.env.VITE_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
+const BOT_TOKEN           = process.env.TELEGRAM_BOT_TOKEN || process.env.BOT_TOKEN;
+const ADMIN_GROUP_ID      = process.env.ADMIN_GROUP_ID;
+const TG_API              = `https://api.telegram.org/bot${BOT_TOKEN}`;
+const ADMIN_DASHBOARD_URL = process.env.ADMIN_DASHBOARD_URL || 'https://booktopia.uz/admin/bot';
 
 // ── Payment gateway credentials (set in Vercel env / .env) ───────────────────
 const PAYME_TEST_MODE    = process.env.PAYME_TEST_MODE === 'true';
@@ -127,6 +131,8 @@ export default async function handler(req, res) {
     name,
     phone,
     address,
+    lat,
+    lng,
     payment_method,
     telegram_user_id,
     telegram_username,
@@ -168,38 +174,47 @@ export default async function handler(req, res) {
   // ── Supabase admin client ─────────────────────────────────────────────────
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-  // ── Fetch REAL prices & stock from database ────────────────────────────────
+  // ── Fetch REAL prices & stock from both books & new_books tables ───────────
   const bookIds = items.map(i => i.book_id);
-  const { data: books, error: booksError } = await supabase
-    .from('books')
-    .select('id, title, price, stock, shop_visible')
-    .in('id', bookIds);
+  const [booksRes, newBooksRes] = await Promise.all([
+    supabase.from('books').select('id, title, price, stock, shop_visible, slug').in('id', bookIds),
+    supabase.from('new_books').select('id, title, price, stock, shop_visible, slug').in('id', bookIds),
+  ]);
 
-  if (booksError) {
-    console.error('[Checkout] Failed to fetch books:', booksError);
-    return res.status(500).json({ error: 'Failed to verify prices' });
+  const allFetched = [...(booksRes.data || []), ...(newBooksRes.data || [])];
+  const priceMap = Object.fromEntries(allFetched.map(b => [b.id, b]));
+
+  // Fallback lookup for missing book IDs
+  const missingItems = items.filter(i => !priceMap[i.book_id]);
+  if (missingItems.length > 0) {
+    const { data: fallbackBooks } = await supabase.from('books').select('id, title, price, stock, shop_visible, slug');
+    if (fallbackBooks) {
+      for (const item of missingItems) {
+        const match = fallbackBooks.find(b =>
+          b.id === item.book_id ||
+          (b.slug && item.book_id && b.slug.includes(item.book_id)) ||
+          (b.title && item.title && b.title.trim().toLowerCase() === item.title.trim().toLowerCase())
+        );
+        if (match) {
+          priceMap[item.book_id] = match;
+        }
+      }
+    }
   }
 
-  const priceMap = Object.fromEntries((books || []).map(b => [b.id, b]));
-
-  // ── Validate all book_ids exist in the database ───────────────────────────
-  const missingIds = items.filter(i => !priceMap[i.book_id]).map(i => i.book_id);
-  if (missingIds.length > 0) {
-    return res.status(400).json({ error: `Books not found: ${missingIds.join(', ')}` });
+  // ── Reject ONLY out-of-stock items (stock === 0) ───────────────────────────
+  // Note: Do NOT filter on shop_visible === false so hidden showcase items can be purchased.
+  const outOfStock = items.map(i => priceMap[i.book_id]).filter(b => b && b.stock === 0);
+  if (outOfStock.length > 0) {
+    const titles = outOfStock.map(b => `"${b.title}"`).join(', ');
+    return res.status(400).json({ error: `Ushbu kitob(lar) zaxirada tugagan: ${titles}` });
   }
 
-  // ── Reject hidden or out-of-stock items ───────────────────────────────────
-  const unavailable = items.map(i => priceMap[i.book_id]).filter(b => b && (b.shop_visible === false || b.stock === 0 || (b.stock != null && b.stock <= 0)));
-  if (unavailable.length > 0) {
-    const titles = unavailable.map(b => `"${b.title}"`).join(', ');
-    return res.status(400).json({ error: `Ushbu kitob(lar) zaxirada tugagan yoki sotuvda yo'q: ${titles}` });
-  }
-
-  // Build verified order items — prices come from DB, not the client
+  // Build verified order items — prices come from DB when available
   const orderItems = items.map(item => {
     const book = priceMap[item.book_id];
     const qty = Math.max(1, parseInt(item.qty) || 1);
-    const basePrice = book?.price || 0;
+    const basePrice = book?.price || item.price || 0;
     return {
       book_id: item.book_id,
       title:   book?.title || item.title || 'Noma\'lum',
@@ -261,12 +276,69 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Failed to create order' });
   }
 
-  // ── Build payment redirect URLs (server-side — merchant IDs never leave server) ──
+  // ── Build payment redirect URLs ──
   const payme_url = method === 'payme' ? buildPaymeUrl(order.id, total_uzs) : null;
   const click_url = method === 'click' ? buildClickUrl(order.id, total_uzs) : null;
 
-  // NOTE: Admin Telegram notification is sent by the Payme webhook (api/payme.js)
-  // only AFTER payment is confirmed. No notification fires here on order creation.
+  // ── Send immediate Telegram Admin / Sales Group Notification ───────────────────
+  if (BOT_TOKEN && ADMIN_GROUP_ID) {
+    try {
+      const shortId = order.id?.toString().slice(0, 8) ?? '—';
+      const itemLines = orderItems.map(i =>
+        `  • ${i.title} × ${i.qty} — ${(i.price * i.qty).toLocaleString('ru-RU')} so'm`
+      ).join('\n');
+
+      const tgHandle = verifiedUsername ? ` (@${verifiedUsername})` : '';
+      const tgLink = verifiedUserId
+        ? `\n👤 TG: <a href="tg://user?id=${verifiedUserId}">${name || 'Mijoz'}${tgHandle}</a>`
+        : '';
+
+      const locationText = address
+        ? `📍 Manzil: ${address}`
+        : (typeof lat === 'number' && typeof lng === 'number')
+          ? `📍 GPS: <a href="https://maps.google.com/?q=${lat},${lng}">Google Maps Link</a>`
+          : '';
+
+      const paymentLabel = method === 'click' ? 'Click' : 'Payme';
+
+      const adminText =
+        `🛍 <b>YANGI BUYURTMA #${shortId}</b>\n\n` +
+        `👤 Ism: <b>${name || 'Noma\'lum'}</b>${tgLink}\n` +
+        `📞 Tel: <code>${phone}</code>\n` +
+        (locationText ? `${locationText}\n` : '') +
+        `💳 To'lov usuli: <b>${paymentLabel}</b>\n\n` +
+        `📚 <b>Buyurtma tarkibi:</b>\n${itemLines}\n\n` +
+        `💰 <b>Jami: ${total_uzs.toLocaleString('ru-RU')} so'm</b>\n\n` +
+        `📊 <a href="${ADMIN_DASHBOARD_URL}">Admin panelda ko'rish</a>`;
+
+      const keyboard = {
+        inline_keyboard: [
+          [
+            { text: '✅ Tasdiqlash', callback_data: `approve_${order.id}` },
+            { text: '❌ Bekor qilish', callback_data: `cancel_${order.id}` }
+          ],
+          [
+            { text: '🙋‍♂️ O\'zim olaman', callback_data: `assign_${order.id}` },
+            { text: '📤 Kuryer nusxasi', callback_data: `slip_${order.id}` },
+          ]
+        ]
+      };
+
+      await fetch(`${TG_API}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: ADMIN_GROUP_ID,
+          text: adminText,
+          parse_mode: 'HTML',
+          disable_web_page_preview: true,
+          reply_markup: keyboard,
+        }),
+      });
+    } catch (notifErr) {
+      console.error('[Checkout] Admin Telegram notification failed:', notifErr);
+    }
+  }
 
   return res.status(200).json({
     ok:        true,
