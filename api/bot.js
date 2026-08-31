@@ -266,7 +266,7 @@ async function handleCallbackQuery(update) {
 
       if (gotIt) {
         await editMessageText(chatId, msgId,
-          `📚 <b>Rahmat!</b>\n\nKitobingizni olganingizni tasdiqladingiz. Yoqimli mutolaa tilaymiz.\n\nFikringizni @white_crow_8 ga yozsangiz, biz uchun qimmatli.`,
+          `📚 <b>Rahmat!</b>\n\nKitobingizni olganingizni tasdiqladingiz. Yoqimli mutolaa tilaymiz.\n\nBiror taklif, shikoyat yo munosabatingiz boʻlsa — @white_crow_8 ga yozing. Har bir fikr biz uchun qimmatli.`,
           { reply_markup: { inline_keyboard: [] } });
       } else {
         // Put it back on the road and tell the team, rather than leaving the
