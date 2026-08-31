@@ -73,8 +73,7 @@ export const CartProvider = ({ children }) => {
       const [booksRes, newBooksRes] = await Promise.all([
         supabase
           .from('books')
-          .select('id, title, author, cover_url, price, stock, category')
-          .neq('shop_visible', false),
+          .select('id, title, author, cover_url, price, stock, category'),
         supabase
           .from('new_books')
           .select('id, title, author, cover_url, price, stock, category')
@@ -110,7 +109,7 @@ export const CartProvider = ({ children }) => {
           }
         }
 
-        if (!match || isOutOfStock(match)) { skipped++; continue; }
+        if (!match) { skipped++; continue; }
         incoming.push({ ...match, qty: entry.qty });
       }
 
