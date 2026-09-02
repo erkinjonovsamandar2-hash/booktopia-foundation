@@ -102,12 +102,9 @@ export default async function handler(req, res) {
         await tg('sendMessage', {
           chat_id: ADMIN_GROUP_ID,
           parse_mode: 'HTML',
-          text: `🔴 <b>Hal qilinmagan yetkazish</b>
-
-` +
+          text: `🔴 <b>Hal qilinmagan yetkazish</b>\n\n` +
                 `Buyurtma <code>#${String(order.id).slice(0, 8)}</code> — mijoz olmaganini bildirgan, ` +
-                `${AUTO_CLOSE_AFTER_DAYS} kundan beri hal qilinmagan.
-` +
+                `${AUTO_CLOSE_AFTER_DAYS} kundan beri hal qilinmagan.\n` +
                 `Avtomatik yopilmadi. Iltimos, qo'lda hal qiling.`,
           reply_markup: {
             inline_keyboard: [[
