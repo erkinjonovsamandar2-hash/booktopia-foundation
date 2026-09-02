@@ -16,6 +16,12 @@ interface AuthContextType {
   session: Session | null;
   isAdmin: boolean;
   isAdminLoading: boolean;
+  // True when the role check could not complete (timeout, network, DB error).
+  // Distinct from isAdmin === false, which means the check ran and said no.
+  // Telling a real admin "you have no permission" because a request timed out
+  // is a lie the UI used to tell, so the two cases are now separate.
+  adminCheckFailed: boolean;
+  recheckAdmin: () => Promise<void>;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
@@ -52,6 +58,8 @@ const readAdminCache = (userId: string): boolean | null => {
   }
 };
 
+// Only ever called with a definite answer. A failed check must not be stored:
+// caching "false" after a timeout locked the admin out for the full hour.
 const writeAdminCache = (userId: string, value: boolean) => {
   try {
     localStorage.setItem(ADMIN_CACHE_KEY, JSON.stringify({
@@ -66,7 +74,7 @@ const clearAdminCache = () => {
 
 // Shared in-flight role checks, so concurrent callers await one query rather
 // than one of them being told "no" while the real answer is still loading.
-const inFlightAdminChecks = new Map<string, Promise<boolean>>();
+const inFlightAdminChecks = new Map<string, Promise<boolean | null>>();
 
 // Fetches the admin role for a given userId from user_roles.
 // Has its own try/catch — auth flow must never crash over a role check.
@@ -74,7 +82,7 @@ const inFlightAdminChecks = new Map<string, Promise<boolean>>();
 const fetchIsAdmin = async (
   userId: string,
   lastCheckedRef: React.MutableRefObject<string | null>
-): Promise<boolean> => {
+): Promise<boolean | null> => {
   // Return cached result instantly — avoids the slow user_roles query on every load
   const cached = readAdminCache(userId);
   if (cached !== null) return cached;
@@ -90,7 +98,7 @@ const fetchIsAdmin = async (
 
   lastCheckedRef.current = userId;
 
-  const run = (async (): Promise<boolean> => {
+  const run = (async (): Promise<boolean | null> => {
   try {
     // Use .limit(1) instead of .maybeSingle() — avoids the 406 "Not Acceptable"
     // error that .maybeSingle() returns when zero rows exist, which was causing
@@ -106,19 +114,22 @@ const fetchIsAdmin = async (
     let timer: ReturnType<typeof setTimeout>;
     const timeoutPromise = new Promise<{ data: null; error: { code: string; message: string } }>((resolve) => {
       timer = setTimeout(() => {
-        console.warn("[AuthContext] fetchIsAdmin timed out after 20s — treating as non-admin.");
+        console.warn("[AuthContext] fetchIsAdmin timed out after 8s — role unknown.");
         resolve({ data: null, error: { code: "TIMEOUT", message: "timeout" } });
-      }, 20000);
+      }, 8000);
     });
 
     const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
     clearTimeout(timer!);
 
     if (error) {
-      if (error.code !== TABLE_NOT_FOUND && error.code !== "TIMEOUT") {
+      // A missing table is a definite answer: there are no roles, so nobody is
+      // an admin. Every other error means the question went unanswered.
+      if (error.code === TABLE_NOT_FOUND) return false;
+      if (error.code !== "TIMEOUT") {
         console.warn("[AuthContext] fetchIsAdmin:", error.message);
       }
-      return false;
+      return null;
     }
 
     const isAdmin = Array.isArray(data) && data.length > 0;
@@ -126,7 +137,7 @@ const fetchIsAdmin = async (
     return isAdmin;
   } catch (err) {
     console.warn("[AuthContext] fetchIsAdmin unexpected:", err);
-    return false;
+    return null;
   }
   })();
 
@@ -160,6 +171,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isAdminLoading, setIsAdminLoading] = useState(false);
+  const [adminCheckFailed, setAdminCheckFailed] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Auth stays DORMANT on public pages when an admin token is present, so the
@@ -239,7 +251,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUser(session.user);
 
           const admin = await fetchIsAdmin(session.user.id, lastCheckedUserIdRef);
-          if (isMounted) setIsAdmin(admin);
+          if (isMounted) {
+            setIsAdmin(admin === true);
+            setAdminCheckFailed(admin === null);
+          }
         } else {
           // No session — user is anonymous guest
           setSession(null);
@@ -270,7 +285,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Does NOT call setLoading — that concern belongs only to initializeSession.
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (!isMounted) return;
 
       // Skip INITIAL_SESSION — initializeSession already handled it above.
@@ -278,31 +293,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // role fetch and potentially race with initializeSession's setState calls.
       if (event === "INITIAL_SESSION") return;
 
-      try {
-        setSession(session);
-        setUser(session?.user ?? null);
+      setSession(session);
+      setUser(session?.user ?? null);
 
-        if (session?.user) {
-          // New sign-in or token refresh — reset ref so role is re-fetched
-          setIsAdminLoading(true);
-          if (lastCheckedUserIdRef.current !== session.user.id) {
-            lastCheckedUserIdRef.current = null;
-          }
-          const admin = await fetchIsAdmin(session.user.id, lastCheckedUserIdRef);
-          if (isMounted) {
-            setIsAdmin(admin);
-            setIsAdminLoading(false);
-          }
-        } else {
-          // SIGNED_OUT — clear everything including cached admin status
+      if (session?.user) {
+        // New sign-in or token refresh — reset ref so role is re-fetched
+        setIsAdminLoading(true);
+        setAdminCheckFailed(false);
+        if (lastCheckedUserIdRef.current !== session.user.id) {
           lastCheckedUserIdRef.current = null;
-          clearAdminCache();
-          setIsAdmin(false);
-          setIsAdminLoading(false);
         }
-      } catch (err) {
-        console.warn("[AuthContext] onAuthStateChange handler error:", err);
-        if (isMounted) setIsAdmin(false);
+
+        // Deferred deliberately: this callback must return before any Supabase
+        // query runs, otherwise the query deadlocks on the auth lock the
+        // callback still holds. See the note above the listener.
+        const userId = session.user.id;
+        setTimeout(() => {
+          if (!isMounted) return;
+          fetchIsAdmin(userId, lastCheckedUserIdRef)
+            .then((admin) => {
+              if (!isMounted) return;
+              setIsAdmin(admin === true);
+              setAdminCheckFailed(admin === null);
+            })
+            .catch((err) => {
+              console.warn("[AuthContext] role check failed:", err);
+              if (isMounted) { setIsAdmin(false); setAdminCheckFailed(true); }
+            })
+            .finally(() => { if (isMounted) setIsAdminLoading(false); });
+        }, 0);
+      } else {
+        // SIGNED_OUT — clear everything including cached admin status
+        lastCheckedUserIdRef.current = null;
+        clearAdminCache();
+        setIsAdmin(false);
+        setAdminCheckFailed(false);
+        setIsAdminLoading(false);
       }
     });
 
@@ -312,6 +338,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       subscription.unsubscribe();
     };
   }, [authRequested]); // Runs once auth is requested (immediately, or on admin entry)
+
+  // ── recheckAdmin ──────────────────────────────────────────────────────────
+  // Retries a role check that came back unknown. Nothing was cached, so this
+  // really does re-query rather than replaying the failure.
+  const recheckAdmin = useCallback(async (): Promise<void> => {
+    const userId = user?.id;
+    if (!userId) return;
+    setIsAdminLoading(true);
+    setAdminCheckFailed(false);
+    const admin = await fetchIsAdmin(userId, lastCheckedUserIdRef);
+    setIsAdmin(admin === true);
+    setAdminCheckFailed(admin === null);
+    setIsAdminLoading(false);
+  }, [user]);
 
   // ── signIn ────────────────────────────────────────────────────────────────
   // onAuthStateChange fires SIGNED_IN after this resolves —
@@ -334,12 +374,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
     setSession(null);
     setIsAdmin(false);
+    setAdminCheckFailed(false);
     await supabase.auth.signOut();
   };
 
   return (
     <AuthContext.Provider
-      value={{ user, session, isAdmin, isAdminLoading, loading, signIn, signOut, ensureAuth }}
+      value={{
+        user, session, isAdmin, isAdminLoading, adminCheckFailed,
+        recheckAdmin, loading, signIn, signOut, ensureAuth,
+      }}
     >
       {children}
     </AuthContext.Provider>

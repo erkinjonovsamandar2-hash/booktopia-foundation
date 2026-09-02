@@ -97,7 +97,7 @@ const SuspenseFallback = () => (
 
 // ── Auth Guard ────────────────────────────────────────────────────────────────
 const RequireAdmin = ({ children }: { children: React.ReactNode }) => {
-  const { user, isAdmin, isAdminLoading, loading, signOut, ensureAuth } = useAuth();
+  const { user, isAdmin, isAdminLoading, adminCheckFailed, recheckAdmin, loading, signOut, ensureAuth } = useAuth();
   // Wake the auth bootstrap now that we're on an admin route. Auth stays dormant
   // while browsing public pages, so this is where it actually initializes.
   useEffect(() => { ensureAuth(); }, [ensureAuth]);
@@ -109,12 +109,29 @@ const RequireAdmin = ({ children }: { children: React.ReactNode }) => {
       </div>
     );
   if (!user) return <Navigate to="/admin/login" replace />;
+  // The role check never completed. Saying "no permission" here would blame the
+  // admin for a server that did not answer, so say what actually happened.
+  if (adminCheckFailed)
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center text-center gap-4 px-6">
+        <p className="text-destructive font-medium">Server javob bermadi.</p>
+        <p className="text-sm text-muted-foreground max-w-sm">
+          Huquqlaringizni tekshirib bo'lmadi. Internet aloqasini tekshiring va qayta urinib ko'ring.
+        </p>
+        <button
+          onClick={() => { void recheckAdmin(); }}
+          className="mt-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors"
+        >
+          Qayta urinish
+        </button>
+      </div>
+    );
   if (!isAdmin)
     return (
       <div className="min-h-screen flex flex-col items-center justify-center text-center gap-4">
         <p className="text-destructive font-medium">Ruxsat yo'q. Admin huquqi talab qilinadi.</p>
         <p className="text-sm text-muted-foreground max-w-sm">
-          Agar bu xato bo'lsa, tizimga qayta kirib ko'ring (server javob bermay qolgan bo'lishi mumkin).
+          Bu hisob uchun admin huquqi berilmagan.
         </p>
         <button
           onClick={() => signOut()}
