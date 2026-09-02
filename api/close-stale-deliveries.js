@@ -1,5 +1,7 @@
 // api/close-stale-deliveries.js
-// Daily cron. Closes orders whose delivery confirmation never came back.
+// Daily sweep over orders that have stalled, in either direction:
+//   • paid but not yet handed to the post office  -> nudge the team
+//   • handed over but never confirmed by the customer -> ask, then close
 //
 // The customer is asked to confirm delivery ("Qo'limga tegdi"). Most people
 // answer; some never do. Without this an order sits open forever, so the
@@ -17,10 +19,13 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 const BOT_TOKEN            = process.env.TELEGRAM_BOT_TOKEN || process.env.BOT_TOKEN;
 const CRON_SECRET          = process.env.CRON_SECRET;
 const ADMIN_GROUP_ID       = process.env.ADMIN_GROUP_ID;
+const ADMIN_DASHBOARD_URL  = process.env.ADMIN_DASHBOARD_URL || 'https://booktopia.uz/admin/bot';
 const TG_API               = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
 const REMINDER_AFTER_DAYS = 3;
 const AUTO_CLOSE_AFTER_DAYS = 7;
+// A paid order still unposted after this long is worth chasing internally.
+const UNSHIPPED_AFTER_DAYS = 2;
 
 const daysAgo = (n) => new Date(Date.now() - n * 86400000).toISOString();
 
@@ -46,7 +51,46 @@ export default async function handler(req, res) {
   }
 
   const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-  const summary = { reminded: 0, closed: 0, escalated: 0 };
+  const summary = { reminded: 0, closed: 0, escalated: 0, unshipped: 0 };
+
+  // ── Stage 0: paid orders that have not been posted yet ─────────────────────
+  // The customer has paid and nothing is wrong from their side, so they are not
+  // contacted. This is purely an internal nudge: with enough orders in flight,
+  // a few will otherwise sit in "pending" or "approved" and be forgotten.
+  //
+  // One digest, not one message per order — a queue of individual pings is the
+  // fastest way to make a channel unreadable, and unreadable means ignored.
+  const { data: unshipped } = await db
+    .from('miniapp_orders')
+    .select('id, full_name, status, total_uzs, created_at')
+    .in('status', ['pending', 'approved'])
+    .eq('payment_status', 'paid')
+    .is('archived_at', null)
+    .lt('created_at', daysAgo(UNSHIPPED_AFTER_DAYS))
+    .order('created_at', { ascending: true });
+
+  if ((unshipped ?? []).length && ADMIN_GROUP_ID) {
+    summary.unshipped = unshipped.length;
+    const dayCount = (iso) => Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+    const shown = unshipped.slice(0, 10);
+    const lines = shown.map((o) =>
+      `• <code>#${String(o.id).slice(0, 8)}</code> — ${o.full_name || 'Mijoz'}` +
+      ` · ${dayCount(o.created_at)} kun · ${(o.total_uzs || 0).toLocaleString('ru-RU')} so'm`
+    ).join('\n');
+    const more = unshipped.length > shown.length
+      ? `\n… va yana ${unshipped.length - shown.length} ta`
+      : '';
+
+    await tg('sendMessage', {
+      chat_id: ADMIN_GROUP_ID,
+      parse_mode: 'HTML',
+      disable_web_page_preview: true,
+      text: `⏳ <b>${unshipped.length} ta buyurtma pochtaga topshirilmagan</b>\n\n` +
+            `To'lov qilingan, lekin ${UNSHIPPED_AFTER_DAYS} kundan beri joʻnatilmagan:\n\n` +
+            `${lines}${more}\n\n` +
+            `📊 <a href="${ADMIN_DASHBOARD_URL}">Admin panelda ko'rish</a>`,
+    });
+  }
 
   // ── Stage 1: remind ────────────────────────────────────────────────────────
   const { data: toRemind } = await db
