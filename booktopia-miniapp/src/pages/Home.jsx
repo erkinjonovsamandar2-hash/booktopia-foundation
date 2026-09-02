@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { getBooks } from '../lib/booksCache';
-import { formatPrice, haptic, tg } from '../lib/utils';
+import { formatPrice, haptic, tg, getCategoryLabel } from '../lib/utils';
 import { useLang } from '../context/LangContext';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
@@ -11,6 +11,7 @@ import PageTransition from '../components/PageTransition';
 import {
   Books, ShoppingCart, RocketLaunch, CaretDown, ArrowRight,
   Sparkle, PenNib, TrendUp, Eye, Package,
+  SquaresFour, MagnifyingGlass, BookOpen, GraduationCap, Crown, UsersThree,
 } from '@phosphor-icons/react';
 
 // ── Translations ───────────────────────────────────────────────────────────────
@@ -43,7 +44,19 @@ const T = {
   addedToCart: { uz: 'Savatga qo\'shildi!', ru: 'Добавлено в корзину!', en: 'Added to cart!' },
   addedDesc:   { uz: 'Buyurtmani "Savat" bo\'limida rasmiylashtirishingiz mumkin.', ru: 'Вы можете оформить заказ в разделе "Корзина".', en: 'You can finish your order in the Cart tab.' },
   outOfStock:  { uz: 'Tugagan', ru: 'Нет в наличии', en: 'Out of stock' },
+  categories:  { uz: 'Kategoriyalar',  ru: 'Категории',   en: 'Categories' },
+  searchCta:   { uz: 'Kitob qidirish...', ru: 'Поиск книг...', en: 'Search books...' },
 };
+
+// Mirrors CATEGORIES in lib/utils, minus "all" — the labels come from there so
+// the two lists cannot describe the same category differently.
+const HOME_CATEGORIES = [
+  { key: 'jahon',        Icon: BookOpen,       color: '#265999', light: '#E8F4FD' },
+  { key: 'ilmiy',        Icon: GraduationCap,  color: '#38A169', light: '#EBF8F0' },
+  { key: 'new',          Icon: Sparkle,        color: '#3182CE', light: '#EBF8FF' },
+  { key: 'amir-temur',   Icon: Crown,          color: '#D5AD36', light: '#FBF6E3' },
+  { key: 'erkin-millat', Icon: UsersThree,     color: '#805AD5', light: '#F5F0FF' },
+];
 
 const STEPS = [
   { Icon: Books,        tKey: 'step1t', dKey: 'step1d', color: '#265999', light: '#E8F4FD' },
@@ -179,20 +192,6 @@ export default function Home() {
             pointerEvents: 'none',
           }} />
 
-          {/* Logo */}
-          {/* The wordmark in white — derived from the one blue asset with
-              brightness(0) invert(1), so there is a single logo file to keep. */}
-          <img
-            src="/brand-wordmark.png"
-            alt="Booktopia"
-            style={{
-              position: 'absolute', top: 22, right: 20,
-              width: 104, height: 'auto',
-              filter: 'brightness(0) invert(1)',
-              opacity: 0.92, zIndex: 10,
-            }}
-          />
-
           {/* Shelf silhouette along the bottom edge — carries the splash motif
               into the app. Deliberately faint: it should register as texture. */}
           <div aria-hidden="true" style={{
@@ -214,27 +213,26 @@ export default function Home() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', fontWeight: 600, marginBottom: 8 }}
+                style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', fontWeight: 600, marginBottom: 10 }}
               >
                 {t('greeting')}{firstName ? `, ${firstName}` : ''}!
               </motion.p>
             ) : null}
 
-            <motion.h1
-              initial={{ opacity: 0, y: 12 }}
+            <motion.img
+              src="/brand-wordmark.png"
+              alt="Booktopia"
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15, type: 'spring', stiffness: 300, damping: 28 }}
-              style={{ fontSize: 28, fontWeight: 900, color: '#fff', lineHeight: 1.2, margin: 0 }}
-            >
-              {t('hero1')}<br />
-              <span style={{ color: '#00CDFE' }}>{t('hero2')}</span>
-            </motion.h1>
+              transition={{ delay: 0.14, type: 'spring', stiffness: 300, damping: 28 }}
+              style={{ width: 168, height: 'auto', filter: 'brightness(0) invert(1)', display: 'block' }}
+            />
 
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
-              style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginTop: 10, fontWeight: 600 }}
+              transition={{ delay: 0.24 }}
+              style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', marginTop: 8, fontWeight: 600 }}
             >
               {t('heroSub')}
             </motion.p>
@@ -242,21 +240,83 @@ export default function Home() {
             <motion.button
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              whileTap={{ scale: 0.96 }}
-              onClick={() => { haptic('light'); navigate('/catalog'); }}
+              transition={{ delay: 0.3 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => { haptic('light'); navigate('/orders'); }}
               style={{
-                marginTop: 20, padding: '10px 22px',
-                background: '#00CDFE', color: '#0A192F',
-                border: 'none', borderRadius: 50,
-                fontSize: 15, fontWeight: 800, cursor: 'pointer',
+                marginTop: 16, width: '100%',
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '11px 14px',
+                background: 'rgba(255,255,255,0.12)',
+                border: '1px solid rgba(255,255,255,0.16)',
+                borderRadius: 12, cursor: 'pointer',
+                color: '#fff', fontSize: 14, fontWeight: 800,
               }}
             >
-              {t('heroCta')}
+              <Package size={18} weight="duotone" color="#00CDFE" />
+              <span style={{ flex: 1, textAlign: 'left' }}>{t('ordersTitle')}</span>
+              <ArrowRight size={15} weight="bold" color="rgba(255,255,255,0.6)" />
+            </motion.button>
+
+            {/* Entry point, not a second search implementation — tapping it
+                opens Catalog, where the real search lives. */}
+            <motion.button
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.36 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => { haptic('light'); navigate('/catalog'); }}
+              aria-label={t('searchCta')}
+              style={{
+                marginTop: 10, width: '100%',
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '12px 14px',
+                background: '#fff', border: 'none',
+                borderRadius: 12, cursor: 'pointer',
+              }}
+            >
+              <MagnifyingGlass size={17} weight="bold" color="var(--text-3)" />
+              <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-3)' }}>
+                {t('searchCta')}
+              </span>
             </motion.button>
           </div>
         </div>
 
+
+        {/* ── 1a. CATEGORIES ───────────────────────────────────────────────────── */}
+        <div style={{ padding: '18px 0 4px' }}>
+          <SectionTitle Icon={SquaresFour} color="#265999" light="#E8F4FD">
+            {t('categories')}
+          </SectionTitle>
+          <div className="h-scroll" style={{ paddingBottom: 8 }}>
+            {HOME_CATEGORIES.map(({ key, Icon, color, light }) => (
+              <motion.button
+                key={key}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => { haptic('light'); navigate(`/catalog?cat=${key}`); }}
+                style={{
+                  flexShrink: 0, width: 108,
+                  display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8,
+                  padding: '12px 12px 14px',
+                  background: 'var(--surface)', border: 'none',
+                  borderRadius: 14, boxShadow: 'var(--shadow-card)',
+                  cursor: 'pointer', textAlign: 'left',
+                }}
+              >
+                <span style={{
+                  width: 34, height: 34, borderRadius: 11, background: light,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Icon size={19} weight="duotone" color={color} />
+                </span>
+                <span style={{ fontSize: 12, fontWeight: 800, lineHeight: 1.25, color: 'var(--text-1)' }}>
+                  {getCategoryLabel(key, lang)}
+                </span>
+              </motion.button>
+            ))}
+          </div>
+        </div>
 
         {/* ── 1b. MY ORDERS WIDGET (only when user has orders) ─────────────────── */}
         {!loading && myOrders.length > 0 && (
@@ -276,56 +336,6 @@ export default function Home() {
             </div>
           </div>
         )}
-
-        {/* ── 2. HOW IT WORKS ──────────────────────────────────────────────────── */}
-        <div style={{ padding: '24px 16px 20px' }}>
-          <h2 style={{ fontSize: 16, fontWeight: 800, marginBottom: 16, color: 'var(--text-1)' }}>
-            {t('howTitle')}
-          </h2>
-          <div style={{ display: 'flex', gap: 10 }}>
-            {STEPS.map((step, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 + i * 0.08, type: 'spring', stiffness: 300, damping: 28 }}
-                style={{
-                  flex: 1,
-                  background: 'var(--surface)',
-                  borderRadius: 16,
-                  padding: '14px 10px',
-                  textAlign: 'center',
-                  boxShadow: 'var(--shadow-card)',
-                  position: 'relative',
-                }}
-              >
-                {/* Arrow connector — not on last */}
-                {i < STEPS.length - 1 && (
-                  <div style={{
-                    position: 'absolute', right: -8, top: '50%',
-                    transform: 'translateY(-50%)',
-                    fontSize: 12, color: 'var(--text-3)', zIndex: 2,
-                    fontWeight: 800,
-                  }}>›</div>
-                )}
-                <div style={{
-                  width: 40, height: 40, borderRadius: 12,
-                  background: step.light,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 18, margin: '0 auto 8px',
-                }}><step.Icon size={22} weight="duotone" color={step.color} /></div>
-                <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-1)', lineHeight: 1.25 }}>
-                  {t(step.tKey)}
-                </p>
-                <p style={{ fontSize: 10, fontWeight: 700, color: step.color, marginTop: 3 }}>
-                  {t(step.dKey)}
-                </p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-
-        <div className="divider" />
 
         {/* ── 3a. RECENTLY VIEWED (returning users only) ───────────────────────── */}
         {recentlyViewed.length > 0 && (
@@ -396,6 +406,56 @@ export default function Home() {
             </div>
           </div>
         )}
+
+        {/* ── 2. HOW IT WORKS ──────────────────────────────────────────────────── */}
+        <div style={{ padding: '24px 16px 20px' }}>
+          <h2 style={{ fontSize: 16, fontWeight: 800, marginBottom: 16, color: 'var(--text-1)' }}>
+            {t('howTitle')}
+          </h2>
+          <div style={{ display: 'flex', gap: 10 }}>
+            {STEPS.map((step, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 + i * 0.08, type: 'spring', stiffness: 300, damping: 28 }}
+                style={{
+                  flex: 1,
+                  background: 'var(--surface)',
+                  borderRadius: 16,
+                  padding: '14px 10px',
+                  textAlign: 'center',
+                  boxShadow: 'var(--shadow-card)',
+                  position: 'relative',
+                }}
+              >
+                {/* Arrow connector — not on last */}
+                {i < STEPS.length - 1 && (
+                  <div style={{
+                    position: 'absolute', right: -8, top: '50%',
+                    transform: 'translateY(-50%)',
+                    fontSize: 12, color: 'var(--text-3)', zIndex: 2,
+                    fontWeight: 800,
+                  }}>›</div>
+                )}
+                <div style={{
+                  width: 40, height: 40, borderRadius: 12,
+                  background: step.light,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 18, margin: '0 auto 8px',
+                }}><step.Icon size={22} weight="duotone" color={step.color} /></div>
+                <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-1)', lineHeight: 1.25 }}>
+                  {t(step.tKey)}
+                </p>
+                <p style={{ fontSize: 10, fontWeight: 700, color: step.color, marginTop: 3 }}>
+                  {t(step.dKey)}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+
+        <div className="divider" />
 
         {/* ── 5. BLOG TEASERS ───────────────────────────────────────────────────── */}
         {(loading || articles.length > 0) && (
