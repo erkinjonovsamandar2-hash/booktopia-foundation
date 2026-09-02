@@ -45,6 +45,7 @@ const T = {
   addedDesc:   { uz: 'Buyurtmani "Savat" bo\'limida rasmiylashtirishingiz mumkin.', ru: 'Вы можете оформить заказ в разделе "Корзина".', en: 'You can finish your order in the Cart tab.' },
   outOfStock:  { uz: 'Tugagan', ru: 'Нет в наличии', en: 'Out of stock' },
   categories:  { uz: 'Kategoriyalar',  ru: 'Категории',   en: 'Categories' },
+  welcome:     { uz: 'Xush kelibsiz!', ru: 'Добро пожаловать!', en: 'Welcome!' },
   searchCta:   { uz: 'Kitob qidirish...', ru: 'Поиск книг...', en: 'Search books...' },
 };
 
@@ -208,30 +209,19 @@ export default function Home() {
           </div>
 
           <div style={{ position: 'relative', zIndex: 1 }}>
-            {firstName ? (
-              <motion.p
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', fontWeight: 600, marginBottom: 10 }}
-              >
-                {t('greeting')}{firstName ? `, ${firstName}` : ''}!
-              </motion.p>
-            ) : null}
-
-            <motion.img
-              src="/brand-wordmark.png"
-              alt="Booktopia"
+            <motion.h1
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.14, type: 'spring', stiffness: 300, damping: 28 }}
-              style={{ width: 168, height: 'auto', filter: 'brightness(0) invert(1)', display: 'block' }}
-            />
+              transition={{ delay: 0.12, type: 'spring', stiffness: 300, damping: 28 }}
+              style={{ fontSize: 23, fontWeight: 900, color: '#fff', lineHeight: 1.2, margin: 0 }}
+            >
+              {firstName ? `${t('greeting')}, ${firstName}!` : t('welcome')}
+            </motion.h1>
 
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.24 }}
+              transition={{ delay: 0.22 }}
               style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', marginTop: 8, fontWeight: 600 }}
             >
               {t('heroSub')}
@@ -296,21 +286,26 @@ export default function Home() {
                 whileTap={{ scale: 0.95 }}
                 onClick={() => { haptic('light'); navigate(`/catalog?cat=${key}`); }}
                 style={{
-                  flexShrink: 0, width: 108,
-                  display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8,
-                  padding: '12px 12px 14px',
+                  flexShrink: 0, width: 112, height: 108,
+                  display: 'flex', flexDirection: 'column',
+                  alignItems: 'flex-start', justifyContent: 'space-between',
+                  padding: '13px 12px',
                   background: 'var(--surface)', border: 'none',
                   borderRadius: 14, boxShadow: 'var(--shadow-card)',
                   cursor: 'pointer', textAlign: 'left',
                 }}
               >
                 <span style={{
-                  width: 34, height: 34, borderRadius: 11, background: light,
+                  width: 36, height: 36, borderRadius: 11, background: light,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
-                  <Icon size={19} weight="duotone" color={color} />
+                  <Icon size={20} weight="duotone" color={color} />
                 </span>
-                <span style={{ fontSize: 12, fontWeight: 800, lineHeight: 1.25, color: 'var(--text-1)' }}>
+                <span style={{
+                  fontSize: 12, fontWeight: 800, lineHeight: 1.3, color: 'var(--text-1)',
+                  display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                }}>
                   {getCategoryLabel(key, lang)}
                 </span>
               </motion.button>
