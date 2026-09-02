@@ -19,7 +19,9 @@ const T = {
   greeting:    { uz: 'Assalomu alaykum',  ru: 'Добрый день',       en: 'Hello' },
   hero1:       { uz: 'Yaxshi kitoblar',     ru: 'Хорошие книги',   en: 'Good books' },
   hero2:       { uz: 'shahringizgacha yetadi', ru: 'доставим в ваш город', en: 'delivered to your city' },
-  heroSub:     { uz: 'O\'zbekiston bo\'ylab pochta orqali jo\'natamiz', ru: 'Отправляем почтой по всему Узбекистану', en: 'Shipped by post across Uzbekistan' },
+  heroSub:     { uz: 'Kitoblar O\'zbekistonning istalgan burchagiga yetib boradi',
+                 ru: 'Книги доедут в любой уголок Узбекистана',
+                 en: 'Books that reach every corner of Uzbekistan' },
   howTitle:    { uz: 'Qanday ishlaydi?',  ru: 'Как это работает?', en: 'How it works?' },
   step1t:      { uz: 'Kitob tanlang',     ru: 'Выберите книгу',    en: 'Choose a book' },
   step1d:      { uz: 'Katalogdan',        ru: 'Из каталога',       en: 'From catalog' },
@@ -193,6 +195,19 @@ export default function Home() {
             pointerEvents: 'none',
           }} />
 
+          {/* The wordmark in white — derived from the one blue asset with
+              brightness(0) invert(1), so there is a single logo file to keep. */}
+          <img
+            src="/brand-wordmark.png"
+            alt="Booktopia"
+            style={{
+              position: 'absolute', top: 22, right: 20,
+              width: 104, height: 'auto',
+              filter: 'brightness(0) invert(1)',
+              opacity: 0.92, zIndex: 10,
+            }}
+          />
+
           {/* Shelf silhouette along the bottom edge — carries the splash motif
               into the app. Deliberately faint: it should register as texture. */}
           <div aria-hidden="true" style={{
@@ -213,7 +228,10 @@ export default function Home() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.12, type: 'spring', stiffness: 300, damping: 28 }}
-              style={{ fontSize: 23, fontWeight: 900, color: '#fff', lineHeight: 1.2, margin: 0 }}
+              style={{
+                fontSize: 23, fontWeight: 900, color: '#fff', lineHeight: 1.2,
+                margin: 0, paddingRight: 118,
+              }}
             >
               {firstName ? `${t('greeting')}, ${firstName}!` : t('welcome')}
             </motion.h1>
