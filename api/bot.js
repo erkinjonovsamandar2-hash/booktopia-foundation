@@ -287,8 +287,27 @@ async function handleCallbackQuery(update) {
           console.error('[Bot] ADMIN_GROUP_ID is not set — delivery dispute for order',
             orderId, 'was NOT reported to the team');
         } else {
+          // The original order message has already run out of buttons by the
+          // time a delivery is disputed, so the alert carries its own. Without
+          // them the team is told there is a problem and given nothing to do.
           const res = await sendMessage(ADMIN_GROUP_ID,
-            `⚠️ <b>Yetkazish tasdiqlanmadi</b>\n\nBuyurtma <code>#${String(orderId).slice(0, 8)}</code> — mijoz kitobni pochtadan olmaganini bildirdi.\nHolat "Yo'lda" ga qaytarildi.`);
+            `⚠️ <b>Yetkazish tasdiqlanmadi</b>\n\n` +
+            `Buyurtma <code>#${String(orderId).slice(0, 8)}</code> — mijoz kitobni pochtadan olmaganini bildirdi.\n` +
+            `Holat "Yo'lda" ga qaytarildi.\n\n` +
+            `Pochta bilan tekshiring, so'ng quyidagidan birini tanlang:`,
+            {
+              reply_markup: {
+                inline_keyboard: [
+                  [
+                    { text: '📦 Yetkazildi', callback_data: `delivered_${orderId}` },
+                    { text: '❌ Bekor qilish', callback_data: `cancel_${orderId}` },
+                  ],
+                  [
+                    { text: '📤 Pochta varaqasi', callback_data: `slip_${orderId}` },
+                  ],
+                ],
+              },
+            });
           if (!res?.ok) {
             console.error('[Bot] Dispute alert to group failed:', JSON.stringify(res));
           }

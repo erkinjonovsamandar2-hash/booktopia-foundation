@@ -289,7 +289,7 @@ async function performTransaction({ id }) {
           `💰 <b>Jami: ${fullOrder.total_uzs.toLocaleString('ru-RU')} so'm</b>\n\n` +
           `📊 <a href="${ADMIN_DASHBOARD_URL}">Admin panelda ko'rish</a>`;
 
-        await fetch(`${TG_API}/sendMessage`, {
+        const sent = await fetch(`${TG_API}/sendMessage`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -298,18 +298,26 @@ async function performTransaction({ id }) {
             parse_mode: 'HTML',
             disable_web_page_preview: true,
           }),
-        });
+        }).then(r => r.json()).catch(() => null);
 
-        // A Telegram location message the courier can open in their maps app
-        // and follow turn by turn — far more useful than printed coordinates.
+        const orderMessageId = sent?.result?.message_id;
+
+        // The pin is sent as a venue, not a bare location: a bare pin carries no
+        // order number, so with several orders in the group nobody can tell which
+        // customer it belongs to. As a venue it shows the order id as its title,
+        // and it is posted as a reply to that order's message so the two stay
+        // visually attached in the thread.
         if (fullOrder.delivery_lat != null && fullOrder.delivery_lng != null) {
-          await fetch(`${TG_API}/sendLocation`, {
+          await fetch(`${TG_API}/sendVenue`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               chat_id: ADMIN_GROUP_ID,
               latitude: fullOrder.delivery_lat,
               longitude: fullOrder.delivery_lng,
+              title: `Buyurtma #${String(fullOrder.id).slice(0, 8)} — ${fullOrder.full_name || 'Mijoz'}`,
+              address: fullOrder.delivery_address || 'Manzil kiritilmagan',
+              ...(orderMessageId ? { reply_to_message_id: orderMessageId } : {}),
             }),
           });
         }
