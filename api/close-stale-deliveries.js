@@ -16,6 +16,7 @@ const SUPABASE_URL         = process.env.VITE_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 const BOT_TOKEN            = process.env.TELEGRAM_BOT_TOKEN || process.env.BOT_TOKEN;
 const CRON_SECRET          = process.env.CRON_SECRET;
+const ADMIN_GROUP_ID       = process.env.ADMIN_GROUP_ID;
 const TG_API               = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
 const REMINDER_AFTER_DAYS = 3;
@@ -45,7 +46,7 @@ export default async function handler(req, res) {
   }
 
   const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-  const summary = { reminded: 0, closed: 0 };
+  const summary = { reminded: 0, closed: 0, escalated: 0 };
 
   // ── Stage 1: remind ────────────────────────────────────────────────────────
   const { data: toRemind } = await db
@@ -80,7 +81,45 @@ export default async function handler(req, res) {
     .is('archived_at', null)
     .lt('updated_at', daysAgo(AUTO_CLOSE_AFTER_DAYS));
 
+  // An order the customer actively disputed must never be auto-closed as
+  // delivered — they told us it did not arrive. Closing it would bury a real
+  // problem and record a delivery that never happened. Escalate instead.
+  const closeIds = (toClose ?? []).map((o) => o.id);
+  const disputed = new Set();
+  if (closeIds.length) {
+    const { data: disputeEvents } = await db
+      .from('miniapp_order_events')
+      .select('order_id')
+      .eq('status', 'delivery_disputed')
+      .in('order_id', closeIds);
+    for (const e of disputeEvents ?? []) disputed.add(e.order_id);
+  }
+
   for (const order of toClose ?? []) {
+    if (disputed.has(order.id)) {
+      summary.escalated++;
+      if (ADMIN_GROUP_ID) {
+        await tg('sendMessage', {
+          chat_id: ADMIN_GROUP_ID,
+          parse_mode: 'HTML',
+          text: `🔴 <b>Hal qilinmagan yetkazish</b>
+
+` +
+                `Buyurtma <code>#${String(order.id).slice(0, 8)}</code> — mijoz olmaganini bildirgan, ` +
+                `${AUTO_CLOSE_AFTER_DAYS} kundan beri hal qilinmagan.
+` +
+                `Avtomatik yopilmadi. Iltimos, qo'lda hal qiling.`,
+          reply_markup: {
+            inline_keyboard: [[
+              { text: '📦 Yetkazildi', callback_data: `delivered_${order.id}` },
+              { text: '❌ Bekor qilish', callback_data: `cancel_${order.id}` },
+            ]],
+          },
+        });
+      }
+      continue;
+    }
+
     const now = new Date().toISOString();
     const { error } = await db
       .from('miniapp_orders')
