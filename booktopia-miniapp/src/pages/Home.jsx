@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
+import { getBooks } from '../lib/booksCache';
 import { formatPrice, haptic, tg } from '../lib/utils';
 import { useLang } from '../context/LangContext';
 import { useCart } from '../context/CartContext';
@@ -97,7 +98,7 @@ export default function Home() {
     try {
       const uid = tg()?.initDataUnsafe?.user?.id ?? null;
       const queries = [
-        supabase.from('books').select('*').order('sort_order', { ascending: true, nullsFirst: false }),
+        getBooks(),
         supabase.from('blog_posts').select('id,slug,title,excerpt,reading_time,image_url,published_at').eq('published', true).order('published_at', { ascending: false }).limit(4),
       ];
       if (uid) {
@@ -105,8 +106,9 @@ export default function Home() {
           supabase.rpc('get_my_orders', { p_telegram_user_id: uid })
         );
       }
-      const [booksRes, articlesRes, ordersRes] = await Promise.all(queries);
-      if (booksRes.data)    setBooks(booksRes.data);
+      const [bookRows, articlesRes, ordersRes] = await Promise.all(queries);
+      // getBooks resolves to rows directly; the others are Supabase responses.
+      if (bookRows)         setBooks(bookRows);
       if (articlesRes.data) setArticles(articlesRes.data);
       if (ordersRes?.data)  setMyOrders((ordersRes.data ?? []).slice(0, 3));
     } catch (e) { console.error(e); }

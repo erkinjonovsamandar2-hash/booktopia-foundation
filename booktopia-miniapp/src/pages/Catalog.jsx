@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { supabase } from '../lib/supabase';
+import { getBooks } from '../lib/booksCache';
 import { getCategoryLabel, CATEGORIES, haptic } from '../lib/utils';
 import { useLang } from '../context/LangContext';
 import BookCard from '../components/BookCard';
@@ -19,8 +19,6 @@ const T = {
   clear:    { uz: 'Tozalash',          ru: 'Очистить',   en: 'Clear' },
 };
 
-// Only the columns the grid actually renders.
-const BOOK_COLUMNS = 'id, title, title_ru, title_en, author, author_ru, author_en, cover_url, price, stock, category, featured, shop_visible, sort_order';
 
 export default function Catalog() {
   const navigate = useNavigate();
@@ -37,11 +35,8 @@ export default function Catalog() {
   const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
-    supabase.from('books').select(BOOK_COLUMNS).order('sort_order', { ascending: true, nullsFirst: false })
-      .then(({ data, error: err }) => {
-        if (err) { setError(err); return; }
-        setBooks(data ?? []);
-      })
+    getBooks()
+      .then((rows) => { setBooks(rows ?? []); })
       .catch(err => setError(err))
       .finally(() => setLoading(false));
   }, [reloadKey]);
