@@ -189,6 +189,7 @@ const AppLoader = ({ children }: { children: React.ReactNode }) => {
 // ── Inner app — needs useLocation which requires BrowserRouter context ────────
 const AppInner = () => {
   const location = useLocation();
+  const isAdminArea = location.pathname.startsWith("/admin");
 
   return (
     <>
@@ -197,7 +198,9 @@ const AppInner = () => {
       <ScrollToTop />
       <GlobalEffects />
       <Navbar />
-      <MiniCart />
+      {/* The storefront cart is for shoppers. Inside the admin it is noise, and
+          a floating "1 · 65 000 so'm" over a dashboard reads like data. */}
+      {!isAdminArea && <MiniCart />}
 
       {/* FIX: AnimatePresence wraps AnimatedRoutes DIRECTLY as its only child.
           No Suspense between AnimatePresence and Routes — the pipeline can

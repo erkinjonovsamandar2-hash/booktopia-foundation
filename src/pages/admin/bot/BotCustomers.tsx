@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Users, Search, Phone, User, ShoppingBag } from "lucide-react";
 
@@ -11,10 +12,12 @@ interface Customer {
   orderCount: number;
   totalSpent: number;
   lastOrderDate: string;
+  phones: string[];
 }
 
 const BotCustomers = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -33,28 +36,44 @@ const BotCustomers = () => {
         return;
       }
 
-      // Aggregate orders by phone number (as unique identifier)
+      // Group by Telegram id first, falling back to phone. Grouping on phone
+      // alone split one person into several customers whenever they ordered
+      // with a different number — the same Telegram account appearing three
+      // times as three "different" people.
       const customerMap = new Map<string, Customer>();
 
       (data || []).forEach((order: any) => {
-        const phone = order.phone || "Noma'lum";
-        if (!customerMap.has(phone)) {
-          customerMap.set(phone, {
-            id: phone,
+        const key = order.telegram_user_id
+          ? `tg:${order.telegram_user_id}`
+          : `phone:${order.phone || "unknown"}`;
+
+        if (!customerMap.has(key)) {
+          customerMap.set(key, {
+            id: key,
             name: order.full_name || "Noma'lum",
-            phone: phone,
+            phone: order.phone || "Noma'lum",
             tgId: order.telegram_user_id,
             tgUsername: order.telegram_username,
             orderCount: 0,
             totalSpent: 0,
             lastOrderDate: order.created_at,
+            phones: [],
           });
         }
-        
-        const cust = customerMap.get(phone)!;
+
+        const cust = customerMap.get(key)!;
         cust.orderCount += 1;
         if (order.payment_status === 'paid') {
           cust.totalSpent += order.total_uzs || 0;
+        }
+        // Keep every number they have ordered with, so support can reach them.
+        if (order.phone && !cust.phones.includes(order.phone)) {
+          cust.phones.push(order.phone);
+        }
+        // Newest order wins for the display name and the last-order date.
+        if (order.created_at > cust.lastOrderDate) {
+          cust.lastOrderDate = order.created_at;
+          if (order.full_name) cust.name = order.full_name;
         }
       });
 
@@ -67,6 +86,7 @@ const BotCustomers = () => {
 
   const filtered = customers.filter(c => 
     c.name.toLowerCase().includes(search.toLowerCase()) || 
+    c.phones.some((p) => p.includes(search)) ||
     c.phone.includes(search)
   );
 
@@ -144,12 +164,25 @@ const BotCustomers = () => {
                           </a>
                         </div>
                       )}
+                      {c.phones.length > 1 && (
+                        <div className="text-[11px] text-muted-foreground mt-1">
+                          +{c.phones.length - 1} boshqa raqam
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 font-semibold text-xs">
+                      {/* Reading that someone has 3 orders is only half useful
+                          if you cannot then go and look at them. This carries
+                          the customer's phone into the orders search. */}
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/admin/bot?q=${encodeURIComponent(c.phones[0] || c.phone)}`)}
+                        title="Buyurtmalarini ko'rish"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 font-semibold text-xs hover:bg-blue-100 transition-colors cursor-pointer"
+                      >
                         <ShoppingBag className="h-3 w-3" />
                         {c.orderCount} ta
-                      </div>
+                      </button>
                     </td>
                     <td className="px-4 py-3 text-right font-bold text-foreground">
                       {c.totalSpent.toLocaleString('ru-RU')} so'm

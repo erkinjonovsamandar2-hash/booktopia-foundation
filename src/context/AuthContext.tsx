@@ -64,6 +64,10 @@ const clearAdminCache = () => {
   try { localStorage.removeItem(ADMIN_CACHE_KEY); } catch { /* ignore */ }
 };
 
+// Shared in-flight role checks, so concurrent callers await one query rather
+// than one of them being told "no" while the real answer is still loading.
+const inFlightAdminChecks = new Map<string, Promise<boolean>>();
+
 // Fetches the admin role for a given userId from user_roles.
 // Has its own try/catch — auth flow must never crash over a role check.
 // Uses a ref guard to prevent duplicate fetches for the same userId.
@@ -75,12 +79,18 @@ const fetchIsAdmin = async (
   const cached = readAdminCache(userId);
   if (cached !== null) return cached;
 
-  // Skip if we already fetched for this exact userId this session
-  if (lastCheckedRef.current === userId) return false;
+  // Two callers race on sign-in: initializeSession and onAuthStateChange. The
+  // previous guard returned false to the second one, so whichever resolved last
+  // set isAdmin=false and the first login attempt was rejected — while the
+  // second attempt worked because the cache was warm by then.
+  //
+  // Share the in-flight promise instead, so every caller gets the real answer.
+  const existing = inFlightAdminChecks.get(userId);
+  if (existing) return existing;
 
-  // Mark as in-flight BEFORE the await — prevents concurrent duplicate calls
   lastCheckedRef.current = userId;
 
+  const run = (async (): Promise<boolean> => {
   try {
     // Use .limit(1) instead of .maybeSingle() — avoids the 406 "Not Acceptable"
     // error that .maybeSingle() returns when zero rows exist, which was causing
@@ -117,6 +127,15 @@ const fetchIsAdmin = async (
   } catch (err) {
     console.warn("[AuthContext] fetchIsAdmin unexpected:", err);
     return false;
+  }
+  })();
+
+  inFlightAdminChecks.set(userId, run);
+  try {
+    return await run;
+  } finally {
+    // Cleared either way: a failed check must not be cached as a permanent no.
+    inFlightAdminChecks.delete(userId);
   }
 };
 

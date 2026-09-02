@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Package, Phone, MapPin, CreditCard, ChevronDown, ChevronUp, Search, Filter, Download, Trash2 } from "lucide-react";
 
@@ -340,7 +341,8 @@ export default function OrdersManager() {
   const [orders, setOrders]       = useState<Order[]>([]);
   const [loading, setLoading]     = useState(true);
   const [tab, setTab]             = useState("all");
-  const [search, setSearch]       = useState("");
+  const [searchParams] = useSearchParams();
+  const [search, setSearch]       = useState(searchParams.get("q") ?? "");
   const [expanded, setExpanded]   = useState<string | null>(null);
   const [working, setWorking]     = useState(false);
   const [confirm, setConfirm]     = useState<{ order: Order; nextStatus: string; label: string } | null>(null);
