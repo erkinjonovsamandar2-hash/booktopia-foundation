@@ -279,9 +279,19 @@ async function handleCallbackQuery(update) {
           `🙏 <b>Xabar berganingiz uchun rahmat</b>\n\nPochta bilan tekshirib, tezda bogʻlanamiz.\nShoshilinch boʻlsa: @white_crow_8`,
           { reply_markup: { inline_keyboard: [] } });
 
-        if (ADMIN_GROUP_ID) {
-          await sendMessage(ADMIN_GROUP_ID,
+        // This is the only place bot.js sends *to* the group rather than
+        // replying into the chat an update arrived from, so it is the only
+        // place that needs ADMIN_GROUP_ID. Fail loudly when it is missing: a
+        // silent skip means nobody learns that a delivery was disputed.
+        if (!ADMIN_GROUP_ID) {
+          console.error('[Bot] ADMIN_GROUP_ID is not set — delivery dispute for order',
+            orderId, 'was NOT reported to the team');
+        } else {
+          const res = await sendMessage(ADMIN_GROUP_ID,
             `⚠️ <b>Yetkazish tasdiqlanmadi</b>\n\nBuyurtma <code>#${String(orderId).slice(0, 8)}</code> — mijoz kitobni pochtadan olmaganini bildirdi.\nHolat "Yo'lda" ga qaytarildi.`);
+          if (!res?.ok) {
+            console.error('[Bot] Dispute alert to group failed:', JSON.stringify(res));
+          }
         }
       }
     } catch (err) {
