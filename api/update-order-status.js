@@ -55,7 +55,7 @@ export default async function handler(req, res) {
     return res.status(403).json({ error: 'Admin access required' });
   }
 
-  const { order_id, status } = req.body || {};
+  const { order_id, status, cancel_reason } = req.body || {};
   const VALID_STATUSES = ['approved', 'delivering', 'delivered', 'cancelled'];
 
   if (!order_id || !VALID_STATUSES.includes(status)) {
@@ -75,10 +75,17 @@ export default async function handler(req, res) {
     return res.status(404).json({ error: 'Order not found' });
   }
 
-  // Update status in Supabase
+  // Update status in Supabase. The reason is recorded only on a cancellation,
+  // and only when one was given — it must never overwrite an earlier reason
+  // with null on an unrelated status change.
+  const patch = { status, updated_at: new Date().toISOString() };
+  if (status === 'cancelled' && typeof cancel_reason === 'string' && cancel_reason.trim()) {
+    patch.cancel_reason = cancel_reason.trim().slice(0, 500);
+  }
+
   const { error: updateErr } = await supabase
     .from('miniapp_orders')
-    .update({ status, updated_at: new Date().toISOString() })
+    .update(patch)
     .eq('id', order_id);
 
   if (updateErr) {

@@ -91,13 +91,24 @@ function fmtDate(s: string) {
 }
 
 // ── Confirm Dialog ─────────────────────────────────────────────────────────────
+// Preset reasons cover what actually happens; the free-text box handles the
+// rest. A cancellation with no reason is a data point you cannot act on later.
+const CANCEL_REASONS = [
+  "Mijoz bekor qildi",
+  "To'lov amalga oshmadi",
+  "Kitob qolmagan",
+  "Aloqaga chiqmadi",
+];
+
 function ConfirmDialog({
   order, nextStatus, label, onConfirm, onCancel, working
 }: {
   order: Order; nextStatus: string; label: string;
-  onConfirm: () => void; onCancel: () => void; working: boolean;
+  onConfirm: (reason?: string) => void; onCancel: () => void; working: boolean;
 }) {
   const meta = STATUS_META[nextStatus];
+  const needsReason = nextStatus === "cancelled";
+  const [reason, setReason] = useState("");
   return (
     <div style={{
       position: "fixed", inset: 0, zIndex: 10000,
@@ -126,9 +137,45 @@ function ConfirmDialog({
         }}>
           → {meta.label}
         </div>
-        <p style={{ margin: "0 0 24px", fontSize: 12, color: "#9ca3af" }}>
+        <p style={{ margin: "0 0 16px", fontSize: 12, color: "#9ca3af" }}>
           Mijozga Telegram orqali xabar yuboriladi.
         </p>
+
+        {needsReason && (
+          <div style={{ textAlign: "left", marginBottom: 20 }}>
+            <label style={{ fontSize: 12, fontWeight: 700, color: "#374151", display: "block", marginBottom: 8 }}>
+              Bekor qilish sababi
+            </label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
+              {CANCEL_REASONS.map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setReason(r)}
+                  style={{
+                    padding: "5px 10px", borderRadius: 8, fontSize: 12, fontWeight: 600,
+                    cursor: "pointer",
+                    border: reason === r ? "1px solid #ef4444" : "1px solid #e5e7eb",
+                    background: reason === r ? "#fef2f2" : "#fff",
+                    color: reason === r ? "#b91c1c" : "#6b7280",
+                  }}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+            <input
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Yoki o'zingiz yozing..."
+              style={{
+                width: "100%", padding: "9px 11px", borderRadius: 9,
+                border: "1px solid #e5e7eb", fontSize: 13, boxSizing: "border-box",
+              }}
+            />
+          </div>
+        )}
+
         <div style={{ display: "flex", gap: 10 }}>
           <button onClick={onCancel} disabled={working} style={{
             flex: 1, padding: "10px", borderRadius: 10,
@@ -137,12 +184,17 @@ function ConfirmDialog({
           }}>
             Bekor
           </button>
-          <button onClick={onConfirm} disabled={working} style={{
-            flex: 1, padding: "10px", borderRadius: 10, border: "none",
-            background: nextStatus === "cancelled" ? "#ef4444" : "#38A169",
-            color: "#fff", fontWeight: 700, cursor: "pointer", fontSize: 14,
-            opacity: working ? 0.6 : 1,
-          }}>
+          <button
+            onClick={() => onConfirm(needsReason ? reason.trim() : undefined)}
+            disabled={working || (needsReason && !reason.trim())}
+            style={{
+              flex: 1, padding: "10px", borderRadius: 10, border: "none",
+              background: nextStatus === "cancelled" ? "#ef4444" : "#38A169",
+              color: "#fff", fontWeight: 700, fontSize: 14,
+              cursor: working || (needsReason && !reason.trim()) ? "not-allowed" : "pointer",
+              opacity: working || (needsReason && !reason.trim()) ? 0.6 : 1,
+            }}
+          >
             {working ? "..." : label}
           </button>
         </div>
@@ -347,6 +399,7 @@ export default function OrdersManager() {
   const [working, setWorking]     = useState(false);
   const [confirm, setConfirm]     = useState<{ order: Order; nextStatus: string; label: string } | null>(null);
   const [toast, setToast]         = useState<{ msg: string; type: "success" | "error" } | null>(null);
+  const [queue, setQueue]         = useState<string | null>(null);
   const [pageSize, setPageSize]   = useState<number>(5);
   const [visibleCount, setVisibleCount] = useState<number>(5);
 
@@ -383,7 +436,7 @@ export default function OrdersManager() {
   }
 
   // ── Update order status via secure API ───────────────────────────────────
-  const updateStatus = useCallback(async (orderId: string, nextStatus: string) => {
+  const updateStatus = useCallback(async (orderId: string, nextStatus: string, cancelReason?: string) => {
     setWorking(true);
     try {
       // The endpoint verifies this token and the caller's admin role.
@@ -393,7 +446,7 @@ export default function OrdersManager() {
       const res = await fetch("/api/update-order-status", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify({ order_id: orderId, status: nextStatus }),
+        body: JSON.stringify({ order_id: orderId, status: nextStatus, cancel_reason: cancelReason }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -442,21 +495,65 @@ export default function OrdersManager() {
     };
   };
 
+  // ── Action queue ──────────────────────────────────────────────────────────
+  // Derived from the orders already in state, so this costs no extra query.
+  // Thresholds match api/close-stale-deliveries.js on purpose: the panel and the
+  // daily Telegram digest must not disagree about what is overdue.
+  const daysSince = (iso?: string | null) =>
+    iso ? (Date.now() - new Date(iso).getTime()) / 86400000 : 0;
+
+  const QUEUES: {
+    key: string; label: string; hint: string; color: string; bg: string;
+    match: (o: Order) => boolean;
+  }[] = [
+    {
+      key: "unposted",
+      label: "Pochtaga topshirilmagan",
+      hint: "To'langan, 2 kundan beri jo'natilmagan",
+      color: "#b45309", bg: "#FFFBEB",
+      match: (o) => (o as any).payment_status === "paid"
+        && ["pending", "approved"].includes(o.status)
+        && daysSince(o.created_at) >= 2,
+    },
+    {
+      key: "unpaid",
+      label: "To'lov kutilmoqda",
+      hint: "Buyurtma bor, to'lov yo'q",
+      color: "#1d4ed8", bg: "#EFF6FF",
+      match: (o) => (o as any).payment_status !== "paid" && o.status === "pending",
+    },
+    {
+      key: "silent",
+      label: "Javob yo'q",
+      hint: "Yo'lda, 3 kundan beri tasdiqlanmagan",
+      color: "#b91c1c", bg: "#FEF2F2",
+      match: (o) => o.status === "delivering" && daysSince((o as any).updated_at) >= 3,
+    },
+  ];
+
   // ── Filter logic ──────────────────────────────────────────────────────────
   // Pre-launch orders carry archived_at; they are kept in full but excluded
   // from the working lists, exactly like a manually archived order.
   const isArchived = (o: Order) => o.status === "archived" || !!(o as any).archived_at;
 
+  function matchesSearch(o: Order) {
+    const q = search.toLowerCase();
+    if (!q) return true;
+    return (o.full_name || "").toLowerCase().includes(q)
+      || (o.phone || "").includes(q)
+      || (o.telegram_username || "").toLowerCase().includes(q)
+      || (o.items || []).some((i) => i.title?.toLowerCase().includes(q));
+  }
+
+  const activeQueue = QUEUES.find((q) => q.key === queue) ?? null;
+
   const filtered = orders.filter((o) => {
     if (isArchived(o) && tab !== "archived") return false; // hide archived unless on archived tab
+    // A queue is a cross-status question ("what is overdue?"), so while one is
+    // active it replaces the status tab rather than combining with it.
+    if (activeQueue) return activeQueue.match(o) && matchesSearch(o);
     const matchTab = tab === "all" || o.status === tab || (tab === "archived" && isArchived(o));
-    const q = search.toLowerCase();
-    const matchSearch = !q ||
-      (o.full_name || "").toLowerCase().includes(q) ||
-      (o.phone || "").includes(q) ||
-      (o.telegram_username || "").toLowerCase().includes(q) ||
-      (o.items || []).some((i) => i.title?.toLowerCase().includes(q));
-    return matchTab && matchSearch;
+    return matchTab && matchesSearch(o);
   });
 
   const countByTab = (key: string) =>
@@ -508,7 +605,7 @@ export default function OrdersManager() {
           nextStatus={confirm.nextStatus}
           label={confirm.label}
           working={working}
-          onConfirm={() => updateStatus(confirm.order.id, confirm.nextStatus)}
+          onConfirm={(reason) => updateStatus(confirm.order.id, confirm.nextStatus, reason)}
           onCancel={() => setConfirm(null)}
         />
       )}
@@ -520,6 +617,70 @@ export default function OrdersManager() {
           Bot orqali kelgan buyurtmalarni boshqarish
         </p>
       </div>
+
+      {/* Action queue — what needs attention today */}
+      {!loading && (() => {
+        const live = orders.filter((o) => !isArchived(o));
+        const rows = QUEUES.map((q) => ({ ...q, count: live.filter(q.match).length }));
+        const anything = rows.some((r) => r.count > 0);
+        if (!anything) {
+          return (
+            <div style={{
+              marginBottom: 16, padding: "12px 14px", borderRadius: 12,
+              background: "#F0FDF4", border: "1px solid #BBF7D0",
+              fontSize: 13, fontWeight: 600, color: "#15803d",
+            }}>
+              ✅ Hammasi joyida — kechikkan buyurtma yo'q.
+            </div>
+          );
+        }
+        return (
+          <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
+            {rows.filter((r) => r.count > 0).map((r) => {
+              const active = queue === r.key;
+              return (
+                <button
+                  key={r.key}
+                  onClick={() => { setQueue(active ? null : r.key); setVisibleCount(pageSize || 9999); }}
+                  style={{
+                    flex: "1 1 190px", textAlign: "left", cursor: "pointer",
+                    padding: "12px 14px", borderRadius: 12,
+                    background: r.bg,
+                    border: active ? `2px solid ${r.color}` : "1px solid transparent",
+                  }}
+                >
+                  <div style={{ fontSize: 20, fontWeight: 800, color: r.color, lineHeight: 1.1 }}>
+                    {r.count} ta
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#111827", marginTop: 3 }}>
+                    {r.label}
+                  </div>
+                  <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>{r.hint}</div>
+                </button>
+              );
+            })}
+          </div>
+        );
+      })()}
+
+      {activeQueue && (
+        <div style={{
+          display: "flex", alignItems: "center", gap: 10, marginBottom: 12,
+          padding: "8px 12px", borderRadius: 10, background: "#F3F4F6",
+          fontSize: 13, fontWeight: 600, color: "#374151",
+        }}>
+          <span>Faqat: {activeQueue.label} ({filtered.length} ta)</span>
+          <button
+            onClick={() => setQueue(null)}
+            style={{
+              marginLeft: "auto", border: "none", background: "none",
+              color: "#265999", fontWeight: 700, cursor: "pointer", fontSize: 13,
+            }}
+          >
+            Tozalash
+          </button>
+        </div>
+      )}
 
       {/* Search + Export */}
       <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
@@ -554,7 +715,7 @@ export default function OrdersManager() {
           return (
             <button
               key={t.key}
-              onClick={() => { setTab(t.key); setVisibleCount(pageSize || 9999); }}
+              onClick={() => { setTab(t.key); setQueue(null); setVisibleCount(pageSize || 9999); }}
               style={{
                 padding: "6px 12px", borderRadius: 20, border: "none",
                 background: active ? "#265999" : "#f3f4f6",
@@ -752,6 +913,9 @@ function OrderFullDetail({ order, customer }: { order: Order; customer?: Custome
         <Field label="YARATILGAN">{dt(order.created_at)}</Field>
         <Field label="YANGILANGAN">{dt(order.updated_at)}</Field>
 
+        {(order as any).cancel_reason && (
+          <Field label="BEKOR QILISH SABABI" wide>{(order as any).cancel_reason}</Field>
+        )}
         {order.archived_at && (
           <Field label="ARXIVLANGAN" wide>{dt(order.archived_at)}</Field>
         )}

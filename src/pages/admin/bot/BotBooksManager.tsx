@@ -27,17 +27,25 @@ const imgUrl = (url: string | null) => {
 const fmt = (n: number) => n ? `${n.toLocaleString("ru-RU")} so'm` : "—";
 
 // ── KPI Card ──────────────────────────────────────────────────────────────────
-function KpiCard({ title, value, icon: Icon, color, bg }: { title: string; value: string; icon: any; color: string; bg: string }) {
+// An alert tile that cannot take you to the thing it is warning about is
+// decoration, so a card with an onClick renders as a button.
+function KpiCard({ title, value, icon: Icon, color, bg, onClick, hint }: { title: string; value: string; icon: any; color: string; bg: string; onClick?: () => void; hint?: string }) {
+  const Tag: any = onClick ? "button" : "div";
   return (
-    <div style={{ background: "#fff", borderRadius: 16, padding: "20px 22px", border: "1px solid #f0f0f0", display: "flex", alignItems: "center", gap: 16, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+    <Tag
+      onClick={onClick}
+      type={onClick ? "button" : undefined}
+      title={hint}
+      style={{ background: "#fff", borderRadius: 16, padding: "20px 22px", border: "1px solid #f0f0f0", display: "flex", alignItems: "center", gap: 16, boxShadow: "0 1px 3px rgba(0,0,0,0.04)", width: "100%", textAlign: "left", cursor: onClick ? "pointer" : "default", font: "inherit" }}>
       <div style={{ width: 48, height: 48, borderRadius: 14, background: bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
         <Icon style={{ width: 22, height: 22, color }} />
       </div>
       <div>
         <p style={{ fontSize: 12, fontWeight: 600, color: "#9ca3af", margin: 0 }}>{title}</p>
         <p style={{ fontSize: 20, fontWeight: 800, color: "#111827", margin: "2px 0 0" }}>{value}</p>
+        {hint && <p style={{ fontSize: 11, color: "#9ca3af", margin: "2px 0 0" }}>{hint}</p>}
       </div>
-    </div>
+    </Tag>
   );
 }
 
@@ -227,6 +235,7 @@ export default function BotBooksManager() {
   const shopCount = books.filter(b => b.shop_visible).length;
   const totalValue = books.filter(b => b.shop_visible).reduce((s, b) => s + (b.price ?? 0), 0);
   const outOfStock = books.filter(b => b.stock === 0).length;
+  const neverSold = books.filter(b => b.shop_visible && getSales(b.title).qty === 0).length;
   const avgPrice = shopCount > 0 ? Math.round(totalValue / shopCount) : 0;
 
   const toggleSort = (col: "title" | "price" | "sales") => {
@@ -257,8 +266,22 @@ export default function BotBooksManager() {
       {/* KPI Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginBottom: 24 }}>
         <KpiCard title="Do'kondagi kitoblar" value={`${shopCount} ta`} icon={BookOpen} color="#38A169" bg="#EBF8F0" />
-        <KpiCard title="Katalog qiymati" value={fmt(totalValue)} icon={DollarSign} color="#265999" bg="#EBF4FF" />
-        <KpiCard title="Tugagan kitoblar" value={`${outOfStock} ta`} icon={AlertTriangle} color={outOfStock > 0 ? "#dc2626" : "#6b7280"} bg={outOfStock > 0 ? "#fef2f2" : "#f3f4f6"} />
+        <KpiCard
+          title="Sotilmagan kitoblar"
+          value={`${neverSold} ta`}
+          hint={neverSold > 0 ? "Ro'yxatni sotuv bo'yicha saralash" : undefined}
+          icon={DollarSign} color="#265999" bg="#EBF4FF"
+          onClick={neverSold > 0 ? () => { setSortBy("sales"); setSortDir("asc"); } : undefined}
+        />
+        <KpiCard
+          title="Tugagan kitoblar"
+          value={`${outOfStock} ta`}
+          hint={outOfStock > 0 ? "Faqat tugaganlarni ko'rish" : undefined}
+          icon={AlertTriangle}
+          color={outOfStock > 0 ? "#dc2626" : "#6b7280"}
+          bg={outOfStock > 0 ? "#fef2f2" : "#f3f4f6"}
+          onClick={outOfStock > 0 ? () => setFilterStock("out") : undefined}
+        />
         <KpiCard title="O'rtacha narx" value={fmt(avgPrice)} icon={TrendingUp} color="#7c3aed" bg="#f5f3ff" />
       </div>
 
