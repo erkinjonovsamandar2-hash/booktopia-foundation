@@ -167,6 +167,7 @@ interface DataContextType {
   deleteArticle: (id: string, coverUrl?: string | null) => Promise<void>;
   updateQuizConfig: (config: QuizConfig) => Promise<void>;
   updateSiteSettings: (settings: SiteSettings) => Promise<void>;
+  refreshSiteSettings: () => Promise<void>;
   refreshBooks: () => Promise<void>;
   refreshNewBooks: () => Promise<void>;
   refreshArticles: () => Promise<void>;
@@ -488,10 +489,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   }, [fetchNewBooks]);
 
   useEffect(() => {
-    // Only subscribe in dev mode or in admin/bot areas to keep the console clean in production
-    const shouldSubscribe = import.meta.env.DEV || window.location.pathname.includes("/admin") || window.location.pathname.includes("/bot");
-    if (!shouldSubscribe) return;
-
+    // Listen for site_settings changes in real-time so live pages update immediately
     const channel = supabase
       .channel("site_settings_realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "site_settings" }, () => { fetchSiteSettings(); })
@@ -879,7 +877,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         throw new Error(error.message);
       }
     }
-  }, []);
+    await fetchSiteSettings();
+  }, [fetchSiteSettings]);
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -891,6 +890,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         addNewBook, updateNewBook, deleteNewBook,
         addArticle, updateArticle, deleteArticle,
         updateQuizConfig, updateSiteSettings,
+        refreshSiteSettings: fetchSiteSettings,
         refreshBooks: fetchBooks,
         refreshNewBooks: fetchNewBooks,
         refreshArticles: fetchBlogPosts,

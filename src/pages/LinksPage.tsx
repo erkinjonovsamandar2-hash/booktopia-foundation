@@ -90,8 +90,14 @@ const DefaultBooktopiaEmblem = () => (
 );
 
 const LinksPage: React.FC<LinksPageProps> = ({ previewMode = false, customSettings }) => {
-  const { siteSettings } = useData();
+  const { siteSettings, refreshSiteSettings } = useData();
   const [copied, setCopied] = useState(false);
+
+  React.useEffect(() => {
+    if (!previewMode && refreshSiteSettings) {
+      refreshSiteSettings();
+    }
+  }, [previewMode, refreshSiteSettings]);
 
   const linksData =
     customSettings ||
