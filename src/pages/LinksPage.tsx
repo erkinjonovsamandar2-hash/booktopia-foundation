@@ -195,35 +195,32 @@ const LinksPage: React.FC<LinksPageProps> = ({ previewMode = false, customSettin
             {/* Subtle animated border sheen overlay */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-sky-400/15 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none" />
 
-            <div className="flex items-center gap-3.5 min-w-0 z-10">
-              <div className="relative">
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-sky-500/30 group-hover:scale-105 transition-transform duration-300">
-                  <Bot className="h-6 w-6" />
-                </div>
-                {/* Pulse Status Dot */}
-                <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-sky-400 border border-[#0e2445]" />
-                </span>
+            {/* Floating Top Badge */}
+            <div className="absolute top-2.5 right-3.5 z-10 flex items-center gap-1.5 bg-sky-500/15 border border-sky-400/30 px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider text-sky-300 whitespace-nowrap pointer-events-none">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-sky-400" />
+              </span>
+              <span>Tezkor Xarid</span>
+            </div>
+
+            <div className="flex items-center gap-3.5 min-w-0 z-10 pt-1">
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-sky-500/30 group-hover:scale-105 transition-transform duration-300 flex-shrink-0">
+                <Bot className="h-6 w-6" />
               </div>
 
               <div className="min-w-0 text-left">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <h2 className="text-sm sm:text-base font-black text-white group-hover:text-sky-300 transition-colors">
-                    Telegram MiniApp
-                  </h2>
-                  <span className="text-[10px] font-extrabold uppercase bg-sky-500/20 text-sky-300 border border-sky-400/30 px-2 py-0.5 rounded-full tracking-wider">
-                    TEZKOR XARID
-                  </span>
-                </div>
-                <p className="text-xs text-slate-300 font-medium truncate">
+                <h2 className="text-sm sm:text-base font-black text-white group-hover:text-sky-300 transition-colors truncate pr-20">
+                  Telegram MiniApp
+                </h2>
+                <p className="text-xs text-slate-300 font-medium truncate mt-0.5">
                   Kitob do'koni va katalog (Bot)
                 </p>
               </div>
             </div>
 
-            <div className="z-10 pl-2">
-              <div className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-sky-400 to-blue-500 text-slate-950 font-black text-xs flex items-center gap-1 shadow-md shadow-sky-500/25 group-hover:from-sky-300 group-hover:to-blue-400 transition-all">
+            <div className="z-10 pl-2 pt-5 sm:pt-0">
+              <div className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-sky-400 to-blue-500 text-slate-950 font-black text-xs flex items-center gap-1 shadow-md shadow-sky-500/25 group-hover:from-sky-300 group-hover:to-blue-400 transition-all whitespace-nowrap">
                 <span>Ochish</span>
                 <ArrowUpRight className="h-3.5 w-3.5" />
               </div>
@@ -240,26 +237,26 @@ const LinksPage: React.FC<LinksPageProps> = ({ previewMode = false, customSettin
             }}
             className="group relative flex items-center justify-between p-4 rounded-2xl bg-[#0d203b]/90 hover:bg-[#122a4d] border border-amber-400/25 hover:border-amber-400/50 shadow-lg backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 overflow-hidden"
           >
-            <div className="flex items-center gap-3.5 min-w-0 z-10">
-              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-slate-950 shadow-md shadow-amber-500/20 group-hover:scale-105 transition-transform duration-300">
+            {/* Top Badge */}
+            <div className="absolute top-2.5 right-3.5 z-10 bg-amber-500/15 border border-amber-400/30 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider text-amber-300 whitespace-nowrap pointer-events-none">
+              Veb-sayt
+            </div>
+
+            <div className="flex items-center gap-3.5 min-w-0 z-10 pt-1">
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-slate-950 shadow-md shadow-amber-500/20 group-hover:scale-105 transition-transform duration-300 flex-shrink-0">
                 <Globe className="h-5 w-5" />
               </div>
               <div className="min-w-0 text-left">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <h2 className="text-sm sm:text-base font-bold text-white group-hover:text-amber-300 transition-colors">
-                    Booktopia Portal
-                  </h2>
-                  <span className="text-[10px] font-semibold uppercase bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full tracking-wider">
-                    VEB-SAYT
-                  </span>
-                </div>
-                <p className="text-xs text-slate-300/80 font-normal truncate">
+                <h2 className="text-sm sm:text-base font-bold text-white group-hover:text-amber-300 transition-colors truncate pr-16">
+                  Booktopia Portal
+                </h2>
+                <p className="text-xs text-slate-300/80 font-normal truncate mt-0.5">
                   Asosiy rasmiy saytga o'tish
                 </p>
               </div>
             </div>
 
-            <div className="z-10 pl-2">
+            <div className="z-10 pl-2 pt-5 sm:pt-0">
               <div className="w-8 h-8 rounded-full bg-white/5 group-hover:bg-amber-500/20 flex items-center justify-center text-white/40 group-hover:text-amber-300 transition-all duration-300">
                 <ChevronRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
               </div>
