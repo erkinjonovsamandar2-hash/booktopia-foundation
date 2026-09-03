@@ -535,6 +535,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       price: book.price,
       enable_3d_flip: book.enable_3d_flip,
       featured: book.featured,
+      is_new: book.is_new,
+      coming_soon: book.coming_soon,
       sort_order: book.sort_order,
       excerpt_url: book.excerpt_url ?? null,
       slug: uniqueSlug,
@@ -547,6 +549,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   }, [fetchBooks]);
 
   const updateBook = useCallback(async (id: string, data: Partial<Book>) => {
+    // Explicit allow-list: anything not named here is silently discarded, so a
+    // new form field needs a line below or it will appear to save and revert.
     const payload: Record<string, unknown> = {};
     if (data.title !== undefined) payload.title = data.title;
     if (data.title_en !== undefined) payload.title_en = data.title_en;
@@ -563,6 +567,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     if (data.price !== undefined) payload.price = data.price;
     if (data.enable_3d_flip !== undefined) payload.enable_3d_flip = data.enable_3d_flip;
     if (data.featured !== undefined) payload.featured = data.featured;
+    if (data.is_new !== undefined) payload.is_new = data.is_new;
+    if (data.coming_soon !== undefined) payload.coming_soon = data.coming_soon;
     if (data.sort_order !== undefined) payload.sort_order = data.sort_order;
     if (data.excerpt_url !== undefined) payload.excerpt_url = data.excerpt_url;
 
