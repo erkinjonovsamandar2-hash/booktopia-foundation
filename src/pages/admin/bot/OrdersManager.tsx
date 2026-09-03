@@ -643,7 +643,9 @@ export default function OrdersManager() {
                   key={r.key}
                   onClick={() => { setQueue(active ? null : r.key); setVisibleCount(pageSize || 9999); }}
                   style={{
-                    flex: "1 1 190px", textAlign: "left", cursor: "pointer",
+                    // Grow, but not without limit: a single overdue queue
+                    // stretched edge to edge and read as a banner, not a card.
+                    flex: "1 1 190px", maxWidth: 300, textAlign: "left", cursor: "pointer",
                     padding: "12px 14px", borderRadius: 12,
                     background: r.bg,
                     border: active ? `2px solid ${r.color}` : "1px solid transparent",

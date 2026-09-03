@@ -10,11 +10,17 @@ const PERIODS = [
   { key: "today", label: "Bugun", days: 1 },
   { key: "7d",    label: "7 kun", days: 7 },
   { key: "30d",   label: "30 kun", days: 30 },
+  { key: "1y",    label: "1 yil",  days: 365 },
   { key: "all",   label: "Hammasi", days: null as number | null },
 ];
 
-const CHART_DAYS = 14;
+// Below this many days the chart draws one bar per day; above it, one per
+// month. A year of daily bars is 365 slivers nobody can read.
+const DAILY_CHART_MAX = 31;
+const MIN_CHART_BARS = 7;
 const DAY_MS = 86400000;
+
+const monthKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 
 const startOfDay = (d: Date) => { const c = new Date(d); c.setHours(0, 0, 0, 0); return c; };
 
@@ -48,10 +54,12 @@ const EMPTY = {
   ordersPaid: 0,
   conversion: 0,
   avgCheck: 0,
+  medianCheck: 0,
   medianDeliveryDays: null as number | null,
   repeatRate: null as number | null,
   topBooks: [] as { title: string; count: number }[],
-  chart: [] as { day: string; placed: number; paid: number }[],
+  chartByMonth: false,
+  chart: [] as { day: string; label: string; placed: number; paid: number }[],
 };
 
 const BotStats = () => {
@@ -71,7 +79,7 @@ const BotStats = () => {
       // The chart always shows a fortnight, so the window is never narrower
       // than that even when the tiles are showing a single day. One fetch
       // serves both — the alternative was a second round-trip for the chart.
-      const windowDays = cfg.days === null ? null : Math.max(cfg.days, CHART_DAYS);
+      const windowDays = cfg.days === null ? null : Math.max(cfg.days, MIN_CHART_BARS);
       const since = windowDays === null
         ? null
         : startOfDay(new Date(Date.now() - (windowDays - 1) * DAY_MS));
@@ -120,7 +128,12 @@ const BotStats = () => {
         ? all.filter((o) => new Date(o.created_at) >= periodStart)
         : all;
 
-      const paid = inPeriod.filter((o) => o.payment_status === "paid");
+      // Paid AND not cancelled. Nothing stopped a paid-then-cancelled order
+      // counting towards revenue, which would have inflated both the takings
+      // and the average basket the first time anyone refunded one.
+      const paid = inPeriod.filter(
+        (o) => o.payment_status === "paid" && o.status !== "cancelled"
+      );
       const revenue = paid.reduce((s, o) => s + (o.total_uzs || 0), 0);
 
       // ── Top books, from paid orders only ──
@@ -151,19 +164,47 @@ const BotStats = () => {
       const buyers = perCustomer.size;
       const repeaters = [...perCustomer.values()].filter((n) => n > 1).length;
 
-      // ── Last 14 days, whatever the tiles are showing ──
-      const chartStart = startOfDay(new Date(Date.now() - (CHART_DAYS - 1) * DAY_MS));
-      const buckets = new Map<string, { placed: number; paid: number }>();
-      for (let i = 0; i < CHART_DAYS; i++) {
-        const d = new Date(chartStart.getTime() + i * DAY_MS);
-        buckets.set(dayKey(d), { placed: 0, paid: 0 });
+      // ── Chart, on the same period as the tiles ──
+      // One control, not two: a separate chart filter would let the graph and
+      // the numbers above it describe different stretches of time.
+      const byMonth = cfg.days === null || cfg.days > DAILY_CHART_MAX;
+      const buckets = new Map<string, { label: string; placed: number; paid: number }>();
+
+      if (!byMonth) {
+        const n = Math.max(cfg.days!, MIN_CHART_BARS);
+        const from = startOfDay(new Date(Date.now() - (n - 1) * DAY_MS));
+        for (let i = 0; i < n; i++) {
+          const d = new Date(from.getTime() + i * DAY_MS);
+          buckets.set(dayKey(d), { label: dayKey(d).slice(8), placed: 0, paid: 0 });
+        }
+      } else {
+        // "Hammasi" runs from the first order on record; a year runs 12 back.
+        const earliest = all.length
+          ? new Date(all.reduce((m, o) => (o.created_at < m ? o.created_at : m), all[0].created_at))
+          : new Date();
+        const monthsBack = cfg.days === null
+          ? Math.min(
+              24,
+              Math.max(
+                MIN_CHART_BARS,
+                (new Date().getFullYear() - earliest.getFullYear()) * 12
+                  + (new Date().getMonth() - earliest.getMonth()) + 1
+              )
+            )
+          : 12;
+        const now = new Date();
+        for (let i = monthsBack - 1; i >= 0; i--) {
+          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          buckets.set(monthKey(d), { label: monthKey(d).slice(5), placed: 0, paid: 0 });
+        }
       }
+
       for (const o of all) {
-        const key = dayKey(new Date(o.created_at));
-        const b = buckets.get(key);
+        const created = new Date(o.created_at);
+        const b = buckets.get(byMonth ? monthKey(created) : dayKey(created));
         if (!b) continue;
         b.placed += 1;
-        if (o.payment_status === "paid") b.paid += 1;
+        if (o.payment_status === "paid" && o.status !== "cancelled") b.paid += 1;
       }
 
       setStats({
@@ -172,12 +213,14 @@ const BotStats = () => {
         ordersPaid: paid.length,
         conversion: inPeriod.length ? Math.round((paid.length / inPeriod.length) * 100) : 0,
         avgCheck: paid.length ? Math.round(revenue / paid.length) : 0,
+        medianCheck: Math.round(median(paid.map((o) => o.total_uzs || 0)) ?? 0),
         medianDeliveryDays: median(spans),
         repeatRate: buyers ? Math.round((repeaters / buyers) * 100) : null,
         topBooks: [...bookCounts.entries()]
           .map(([title, count]) => ({ title, count }))
           .sort((a, b) => b.count - a.count)
           .slice(0, 5),
+        chartByMonth: byMonth,
         chart: [...buckets.entries()].map(([day, v]) => ({ day, ...v })),
       });
       setLoading(false);
@@ -255,7 +298,7 @@ const BotStats = () => {
         <StatCard
           title="O'rtacha chek"
           value={fmtSum(stats.avgCheck)}
-          sub="To'langan buyurtmalar bo'yicha"
+          sub={`Median ${fmtSum(stats.medianCheck)} · yetkazish narxisiz`}
           icon={TrendingUp}
           color="bg-orange-100 text-orange-600"
         />
@@ -273,7 +316,9 @@ const BotStats = () => {
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-primary" />
-            <h3 className="text-lg font-bold">Oxirgi {CHART_DAYS} kun</h3>
+            <h3 className="text-lg font-bold">
+              {stats.chartByMonth ? "Oylar bo'yicha" : "Kunlar bo'yicha"}
+            </h3>
           </div>
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
             <span className="flex items-center gap-1.5">
@@ -290,23 +335,38 @@ const BotStats = () => {
         ) : stats.chart.every((d) => d.placed === 0) ? (
           <p className="text-muted-foreground text-sm">Bu davrda buyurtma bo'lmagan.</p>
         ) : (
-          <div className="flex items-end gap-1.5 h-36">
-            {stats.chart.map((d) => (
-              <div key={d.day} className="flex-1 flex flex-col items-center gap-1.5 min-w-0">
+          <>
+            {/* Bars and labels are separate rows on purpose. When the label sat
+                inside the column, the column's height was set by its content,
+                and a percentage height resolves to zero against an indefinite
+                parent — so every bar collapsed and the chart looked empty. */}
+            <div className="flex gap-1.5 h-36">
+              {stats.chart.map((d) => (
                 <div
-                  className="w-full bg-blue-200 rounded-sm relative flex items-end"
-                  style={{ height: `${(d.placed / chartMax) * 100}%` }}
+                  key={d.day}
+                  className="flex-1 h-full flex flex-col justify-end min-w-0"
                   title={`${d.day}: ${d.placed} ta buyurtma, ${d.paid} ta to'langan`}
                 >
                   <div
-                    className="w-full bg-blue-600 rounded-sm"
-                    style={{ height: d.placed ? `${(d.paid / d.placed) * 100}%` : "0%" }}
-                  />
+                    className="w-full bg-blue-200 rounded-sm flex items-end"
+                    style={{ height: `${Math.max((d.placed / chartMax) * 100, d.placed ? 4 : 0)}%` }}
+                  >
+                    <div
+                      className="w-full bg-blue-600 rounded-sm"
+                      style={{ height: d.placed ? `${(d.paid / d.placed) * 100}%` : "0%" }}
+                    />
+                  </div>
                 </div>
-                <span className="text-[10px] text-muted-foreground">{d.day.slice(8)}</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+            <div className="flex gap-1.5 mt-1.5">
+              {stats.chart.map((d) => (
+                <span key={d.day} className="flex-1 text-center text-[10px] text-muted-foreground">
+                  {d.label}
+                </span>
+              ))}
+            </div>
+          </>
         )}
       </div>
 
