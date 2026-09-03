@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { getBooks } from '../lib/booksCache';
 import { formatPrice, haptic, tg, getCategoryLabel } from '../lib/utils';
+import useDragScroll from '../hooks/useDragScroll';
 import { useLang } from '../context/LangContext';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
@@ -88,6 +89,14 @@ function SectionTitle({ Icon, color, light, children, action }) {
       {action}
     </div>
   );
+}
+
+// A card row that can be dragged with a mouse. It exists as a component rather
+// than a hook call at each row because several rows render conditionally, and a
+// hook must not sit inside a branch.
+function CardRow({ style, children }) {
+  const ref = useDragScroll();
+  return <div ref={ref} className="h-scroll" style={style}>{children}</div>;
 }
 
 export default function Home() {
@@ -297,7 +306,7 @@ export default function Home() {
           <SectionTitle Icon={SquaresFour} color="#265999" light="#E8F4FD">
             {t('categories')}
           </SectionTitle>
-          <div className="h-scroll" style={{ paddingBottom: 8 }}>
+          <CardRow style={{ paddingBottom: 8 }}>
             {HOME_CATEGORIES.map(({ key, Icon, color, light }) => (
               <motion.button
                 key={key}
@@ -328,7 +337,7 @@ export default function Home() {
                 </span>
               </motion.button>
             ))}
-          </div>
+          </CardRow>
         </div>
 
         {/* ── 1b. MY ORDERS WIDGET (only when user has orders) ─────────────────── */}
@@ -354,7 +363,7 @@ export default function Home() {
         {recentlyViewed.length > 0 && (
           <div style={{ paddingTop: 20, paddingBottom: 8 }}>
             <SectionTitle Icon={Eye} color="#805AD5" light="#F5F0FF">{t('recentTitle')}</SectionTitle>
-            <div className="h-scroll" style={{ paddingBottom: 12 }}>
+            <CardRow style={{ paddingBottom: 12 }}>
               {recentlyViewed.map((book, i) => (
                 <PortraitCard
                   key={book.id} book={book} lang={lang} index={i}
@@ -362,7 +371,7 @@ export default function Home() {
                   onBuy={(e) => { e.stopPropagation(); handleAddToCart(book); }}
                 />
               ))}
-            </div>
+            </CardRow>
             <div className="divider" />
           </div>
         )}
@@ -376,7 +385,7 @@ export default function Home() {
                 style={{ fontSize: 12, fontWeight: 800, color: 'var(--blue-500)', background: 'none', border: 'none', cursor: 'pointer' }}
               >{t('seeAll')}</button>
             }>{t('bestsellers')}</SectionTitle>
-            <div className="h-scroll" style={{ paddingBottom: 12 }}>
+            <CardRow style={{ paddingBottom: 12 }}>
               {loading
                 ? Array.from({ length: 4 }).map((_, i) => <PortraitSkeleton key={i} />)
                 : bestsellers.map((book, i) => (
@@ -387,7 +396,7 @@ export default function Home() {
                     />
                   ))
               }
-            </div>
+            </CardRow>
           </div>
         )}
 
@@ -405,7 +414,7 @@ export default function Home() {
                 </button>
               }>{t('newBooks')}</SectionTitle>
             </div>
-            <div className="h-scroll" style={{ paddingBottom: 12 }}>
+            <CardRow style={{ paddingBottom: 12 }}>
               {loading
                 ? Array.from({ length: 4 }).map((_, i) => <PortraitSkeleton key={i} />)
                 : newReleases.map((book, i) => (
@@ -416,7 +425,7 @@ export default function Home() {
                     />
                   ))
               }
-            </div>
+            </CardRow>
           </div>
         )}
 

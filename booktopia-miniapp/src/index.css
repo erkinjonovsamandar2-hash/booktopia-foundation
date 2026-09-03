@@ -140,7 +140,16 @@ h1, h2, h3, h4 {
   padding: 0 16px 8px;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
+  /* Cards in these rows are a uniform width, so mandatory snapping always
+     lands on a card edge rather than mid-cover. */
+  scroll-snap-type: x mandatory;
+  scroll-padding-left: 16px;
+  /* Without this, swiping past the end of a row bubbles up and Telegram reads
+     it as its own back/close gesture. */
+  overscroll-behavior-x: contain;
 }
+
+.h-scroll > * { scroll-snap-align: start; }
 .h-scroll::-webkit-scrollbar { display: none; }
 
 /* ── Section ────────────────────────────────────────────────────────────────── */
