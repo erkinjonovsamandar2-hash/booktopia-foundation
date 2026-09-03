@@ -145,6 +145,12 @@ h1, h2, h3, h4 {
      while a long fling works. Control matters more than a tidy resting
      position, and proximity only assists when the row is already near one. */
   scroll-snap-type: x proximity;
+  /* Snapping aligns a card to the scrollport edge, which swallows the 16px
+     gutter above and leaves the first cover flush against the screen. This
+     keeps the snap position inside the padding. It was dropped along with
+     `mandatory`, but mandatory was the thing fighting the finger — this line
+     was never the problem. */
+  scroll-padding-left: 16px;
   /* Without this, swiping past the end of a row bubbles up and Telegram reads
      it as its own back/close gesture. */
   overscroll-behavior-x: contain;
@@ -705,16 +711,20 @@ h1, h2, h3, h4 {
 }
 
 /* ── Grid layouts ────────────────────────────────────────────────────────────── */
+/* minmax(0, 1fr), not 1fr. A bare 1fr is minmax(auto, 1fr), so a card whose
+   content cannot shrink — the price and cart button sit on one unwrappable
+   row — widens its own track and eats the gutter beside it. That is why the
+   two columns measured 160px and 177px with only 10px left at the edge. */
 .books-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   padding: 0 16px;
 }
 
 .books-grid-3 {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   padding: 0 16px;
 }
