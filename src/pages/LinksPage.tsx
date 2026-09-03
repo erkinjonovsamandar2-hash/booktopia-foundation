@@ -184,7 +184,7 @@ const LinksPage: React.FC<LinksPageProps> = ({ previewMode = false, customSettin
         <div className="w-full space-y-3.5 mb-6 px-1">
           {/* Card 1: Telegram MiniApp for Sales */}
           <a
-            href="https://t.me/booktopia_bot"
+            href="https://t.me/Booktopiapress_bot/app"
             target={previewMode ? "_self" : "_blank"}
             rel="noopener noreferrer"
             onClick={(e) => {

@@ -135,7 +135,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
         id: "5",
         title: "Booktopia Bot",
         subtitle: "Kitob buyurtma va katalog",
-        url: "https://t.me/booktopia_bot",
+        url: "https://t.me/Booktopiapress_bot/app",
         icon: "bot",
         is_visible: true,
       },
