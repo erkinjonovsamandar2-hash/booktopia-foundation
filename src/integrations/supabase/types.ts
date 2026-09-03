@@ -87,6 +87,8 @@ export type Database = {
           description_en: string | null
           description_ru: string | null
           enable_3d_flip: boolean | null
+          is_new: boolean
+          coming_soon: boolean
           featured: boolean | null
           id: string
           price: number | null
@@ -108,6 +110,8 @@ export type Database = {
           description_en?: string | null
           description_ru?: string | null
           enable_3d_flip?: boolean | null
+          is_new?: boolean
+          coming_soon?: boolean
           featured?: boolean | null
           id?: string
           price?: number | null
@@ -129,6 +133,8 @@ export type Database = {
           description_en?: string | null
           description_ru?: string | null
           enable_3d_flip?: boolean | null
+          is_new?: boolean
+          coming_soon?: boolean
           featured?: boolean | null
           id?: string
           price?: number | null

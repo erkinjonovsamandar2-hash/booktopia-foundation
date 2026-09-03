@@ -5,7 +5,7 @@ import type { Book } from "@/context/DataContext";
 import { Plus, Pencil, Trash2, X, BookOpen } from "lucide-react";
 import ImageCropper from "@/components/admin/ImageCropper";
 import PdfUploader from "@/components/admin/PdfUploader";
-import { LIBRARY_FILTER_KEYS, LIBRARY_FILTER_MAP } from "@/lib/constants";
+import { GENRE_KEYS, LIBRARY_FILTER_MAP } from "@/lib/constants";
 
 const getImageUrl = (url: string | null | undefined): string => {
   if (!url) return "";
@@ -27,7 +27,8 @@ const bgColorOptions = [
   { label: "Jigarrang", value: "45 30% 12%" },
 ];
 
-// category defaults to the raw DB key "new", never a translated label
+// category defaults to a genre. It used to default to "new", which quietly
+// filed every new book under a lifecycle value instead of a genre.
 const emptyBook: Omit<Book, "id" | "created_at" | "updated_at"> = {
   title: "",
   slug: "",
@@ -41,9 +42,11 @@ const emptyBook: Omit<Book, "id" | "created_at" | "updated_at"> = {
   description_ru: null,
   cover_url: null,
   bg_color: "210 60% 15%",
-  category: "new",
+  category: "jahon",
   price: null,
   enable_3d_flip: false,
+  is_new: false,
+  coming_soon: false,
   featured: false,
   sort_order: 0,
   img_focus_x: 50,
@@ -291,7 +294,7 @@ const BookManager = () => {
                   onChange={(e) => setForm({ ...form, category: e.target.value })}
                   className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-amber-200 focus:border-amber-400 outline-none bg-white"
                 >
-                  {LIBRARY_FILTER_KEYS.map((key) => (
+                  {GENRE_KEYS.map((key) => (
                     <option key={key} value={key}>
                       {LIBRARY_FILTER_MAP[key]}
                     </option>
@@ -311,6 +314,30 @@ const BookManager = () => {
                     <option key={opt.value} value={opt.value}>{opt.label}</option>
                   ))}
                 </select>
+              </div>
+
+              {/* Lifecycle. Separate from the genre above on purpose: a book can
+                  be a new release AND world literature, and the old single
+                  field forced a choice between the two. */}
+              <div className="flex flex-wrap items-center gap-6">
+                <label className="flex items-center gap-2 text-sm text-foreground/80 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.is_new ?? false}
+                    onChange={(e) => setForm({ ...form, is_new: e.target.checked })}
+                    className="rounded border-gray-300 text-accent focus:ring-amber-200"
+                  />
+                  Yangi nashr
+                </label>
+                <label className="flex items-center gap-2 text-sm text-foreground/80 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.coming_soon ?? false}
+                    onChange={(e) => setForm({ ...form, coming_soon: e.target.checked })}
+                    className="rounded border-gray-300 text-accent focus:ring-amber-200"
+                  />
+                  Tez kunda
+                </label>
               </div>
 
               <div className="flex items-center gap-6">

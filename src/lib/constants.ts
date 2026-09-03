@@ -8,6 +8,11 @@
 // ── Library category filter mapping ───────────────────────────────────────────
 export const LIBRARY_FILTER_KEYS = ["jahon", "ilmiy", "new", "amir-temur", "erkin-millat"] as const;
 
+// Genres a book can actually be filed under. "new" is deliberately absent:
+// it is a lifecycle flag (books.is_new), and offering it as a genre is what
+// stripped four books of theirs.
+export const GENRE_KEYS = ["jahon", "ilmiy", "amir-temur", "erkin-millat"] as const;
+
 export type LibraryFilterKey = (typeof LIBRARY_FILTER_KEYS)[number];
 
 export const LIBRARY_FILTER_MAP: Record<LibraryFilterKey, string> = {

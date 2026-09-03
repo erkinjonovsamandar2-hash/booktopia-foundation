@@ -78,7 +78,8 @@ const CuratedLibrary = () => {
   const filtered = useMemo(() => {
     return books.filter((b) => {
       if (activeTab === "all") return true;
-      return b.category === activeTab;
+      // The "Yangi nashrlar" tab reads the flag; the rest are genres.
+      return activeTab === "new" ? !!b.is_new : b.category === activeTab;
     });
   }, [books, activeTab]);
 

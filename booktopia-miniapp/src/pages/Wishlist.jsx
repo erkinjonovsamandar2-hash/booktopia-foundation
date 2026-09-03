@@ -44,7 +44,7 @@ export default function Wishlist() {
       if (fetchedIds.length === 0) { if (!cancelled) setBooks([]); return; }
       const { data, error: err } = await supabase
         .from('books')
-        .select('id, title, title_ru, title_en, author, author_ru, author_en, cover_url, price, stock, category, featured, shop_visible')
+        .select('id, title, title_ru, title_en, author, author_ru, author_en, cover_url, price, stock, category, featured, is_new, coming_soon, shop_visible')
         .in('id', fetchedIds);
       if (err) throw err;
       if (!cancelled) setBooks((data ?? []).filter(b => b.shop_visible !== false));

@@ -144,7 +144,7 @@ export default function Home() {
     return acc;
   }, { seen: new Set(), list: [] }).list;
 
-  const newReleases   = uniqueBooks.filter(b => b.category === 'new').slice(0, 6);
+  const newReleases   = uniqueBooks.filter(b => b.is_new).slice(0, 6);
   // Bestsellers: featured books ordered by sort_order (lowest = most popular)
   const bestsellers   = uniqueBooks.filter(b => b.featured && b.price).slice(0, 6);
   // Recently viewed: match stored IDs to loaded books, keep order
@@ -577,7 +577,7 @@ function PortraitCard({ book, lang, index, onNavigate, onBuy }) {
             fontSize: 9, fontWeight: 900, padding: '2px 7px',
             borderRadius: 20, letterSpacing: '0.05em',
           }}>{T.outOfStock[lang] || T.outOfStock.uz}</div>
-        ) : book.category === 'new' && (
+        ) : book.is_new && (
           <div style={{
             position: 'absolute', top: 8, right: 8,
             background: '#FF6B35', color: '#fff',

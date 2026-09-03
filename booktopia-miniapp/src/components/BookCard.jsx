@@ -33,8 +33,8 @@ export default function BookCard({ book, lang = 'uz', onNavigate, index = 0 }) {
   const title  = book[`title_${lang}`]  || book.title  || '—';
   const author = book[`author_${lang}`] || book.author || '—';
   const price  = book.price;
-  const isNew  = book.category === 'new' || book.featured;
-  const isSoon = book.category === 'soon';
+  const isNew  = !!book.is_new;
+  const isSoon = !!book.coming_soon;
   const isOutOfStock = book.stock === 0 || (book.stock != null && book.stock <= 0);
 
   const handleBuy = (e) => {

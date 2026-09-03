@@ -64,7 +64,10 @@ export default function Catalog() {
       b.author, b.author_ru, b.author_en,
     ].filter(Boolean).join(' ').toLowerCase();
     const matchQ = !q || haystack.includes(q);
-    const matchC = category === 'all' || b.category === category;
+    // 'new' is a lifecycle flag rather than a genre, so it cannot be
+    // compared against b.category like the others.
+    const matchC = category === 'all'
+      || (category === 'new' ? !!b.is_new : b.category === category);
     return matchQ && matchC;
   });
 
