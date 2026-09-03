@@ -42,7 +42,18 @@
     content="«Booktopia» nashriyotining rasmiy veb-sayti. Yangi nashrlar, jahon adabiyoti durdonalari va o'zbek tilidagi eng yaxshi tarjimalar bilan tanishing." />
   <meta name="twitter:image" content="https://www.booktopia.uz/booktopia-logo_dark.jpg" />
 
-  <script>window.process = { env: { NODE_ENV: 'production' } }</script>
+  <script>
+    window.process = { env: { NODE_ENV: 'production' } };
+    window.addEventListener('error', function (e) {
+      var msg = (e && e.message) ? String(e.message).toLowerCase() : '';
+      if (msg.indexOf('failed to fetch dynamically imported module') !== -1 || msg.indexOf('expected a javascript') !== -1) {
+        if (!sessionStorage.getItem('chunkReloaded')) {
+          sessionStorage.setItem('chunkReloaded', 'true');
+          window.location.reload();
+        }
+      }
+    }, true);
+  </script>
 </head>
 
 <body>
