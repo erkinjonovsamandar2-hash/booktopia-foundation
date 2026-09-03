@@ -5,16 +5,21 @@ import { supabase } from '../lib/supabase';
 import { formatPrice, haptic, getCategoryLabel } from '../lib/utils';
 import { useLang } from '../context/LangContext';
 import { useCart } from '../context/CartContext';
+import { useToast } from '../context/ToastContext';
 import { useWishlist } from '../context/WishlistContext';
 import CheckoutSheet from '../components/CheckoutSheet';
 import PageTransition from '../components/PageTransition';
-import { Books, FileText, Heart } from '@phosphor-icons/react';
+import { Books, FileText, Heart, ShoppingCart, Check } from '@phosphor-icons/react';
 import LoadError from '../components/LoadError';
 
 const T = {
   back:     { uz: '← Orqaga',   ru: '← Назад',    en: '← Back' },
   buy:      { uz: 'Sotib olish', ru: 'Купить', en: 'Buy now' },
   added:    { uz: 'Savatga qo\'shildi', ru: 'В корзине', en: 'In cart' },
+  addToCart:{ uz: 'Savat',              ru: 'В корзину',  en: 'Cart' },
+  viewCart: { uz: 'Savatda',            ru: 'В корзине',  en: 'In cart' },
+  addedMsg: { uz: 'Savatga qo\'shildi', ru: 'Добавлено в корзину', en: 'Added to cart' },
+  addedSub: { uz: 'Yana kitob tanlashingiz mumkin', ru: 'Можно выбрать ещё книги', en: 'You can keep browsing' },
   author:   { uz: 'Muallif',    ru: 'Автор',       en: 'Author' },
   desc:     { uz: 'Tavsif',     ru: 'Описание',    en: 'Description' },
   category: { uz: 'Tur',        ru: 'Жанр',        en: 'Category' },
@@ -34,6 +39,7 @@ export default function BookDetail() {
   const navigate = useNavigate();
   const { lang } = useLang();
   const { addItem, items } = useCart();
+  const { showToast } = useToast();
   const { isSaved, toggle } = useWishlist();
 
   const [book, setBook] = useState(null);
@@ -93,6 +99,23 @@ export default function BookDetail() {
     if (!inCart) addItem(book);
     setShowSheet(true);
   };
+
+  // Adding to the cart must not drag you into checkout. Buying was the only
+  // action this page offered, so the only way to keep browsing was to back out
+  // of an order form you never meant to open.
+  const handleAddToCart = () => {
+    if (isOutOfStock) return;
+    if (inCart) { haptic('light'); navigate('/cart'); return; }
+    haptic('success');
+    addItem(book);
+    showToast(t('addedMsg'), t('addedSub'));
+  };
+
+  // Checkout takes the whole cart, not just this book, so the button has to
+  // quote what will actually be charged. It showed this book's price while the
+  // sheet behind it totalled several.
+  const cartTotal  = items.reduce((s, i) => s + (i.price || 0) * (i.qty || 1), 0);
+  const orderTotal = inCart ? cartTotal : cartTotal + (book.price || 0);
 
   return (
     <PageTransition>
@@ -267,25 +290,57 @@ export default function BookDetail() {
           background: 'linear-gradient(to top, var(--bg) 85%, transparent)',
           zIndex: 99,
         }}>
-          <motion.button
-            className="btn-primary"
-            onClick={handleBuy}
-            disabled={isOutOfStock}
-            whileTap={isOutOfStock ? {} : { scale: 0.97, y: 1 }}
-            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-            style={isOutOfStock ? { background: 'var(--surface-2)', color: 'var(--text-3)', cursor: 'not-allowed' } : undefined}
-          >
-            {isOutOfStock
-              ? t('outOfStock')
-              : inCart
-              ? (lang === 'ru' ? 'Оформить заказ' : lang === 'en' ? 'Place order' : 'Buyurtma berish')
-              : t('buy')} {!isOutOfStock && <>&nbsp;·&nbsp; {formatPrice(book.price)}</>}
-          </motion.button>
+          <div style={{ display: 'flex', gap: 10 }}>
+            {/* Secondary: add and stay on the page. */}
+            <motion.button
+              onClick={handleAddToCart}
+              disabled={isOutOfStock}
+              whileTap={isOutOfStock ? {} : { scale: 0.97, y: 1 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+              aria-label={inCart ? t('viewCart') : t('addToCart')}
+              style={{
+                flex: '0 0 auto', minWidth: 104, whiteSpace: 'nowrap',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                padding: '14px', borderRadius: 14,
+                background: 'var(--surface)',
+                border: '1.5px solid ' + (inCart ? 'var(--success)' : 'var(--blue-500)'),
+                color: inCart ? 'var(--success)' : 'var(--blue-500)',
+                fontSize: 14, fontWeight: 800,
+                cursor: isOutOfStock ? 'not-allowed' : 'pointer',
+                opacity: isOutOfStock ? 0.5 : 1,
+              }}
+            >
+              {inCart ? <Check size={16} weight="bold" /> : <ShoppingCart size={16} weight="bold" />}
+              {inCart ? t('viewCart') : t('addToCart')}
+            </motion.button>
+
+            <motion.button
+              className="btn-primary"
+              onClick={handleBuy}
+              disabled={isOutOfStock}
+              whileTap={isOutOfStock ? {} : { scale: 0.97, y: 1 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+              style={isOutOfStock
+                ? { flex: 1, minWidth: 0, whiteSpace: 'nowrap', fontSize: 14, background: 'var(--surface-2)', color: 'var(--text-3)', cursor: 'not-allowed' }
+                : { flex: 1, minWidth: 0, whiteSpace: 'nowrap', fontSize: 14 }}
+            >
+              {isOutOfStock
+                ? t('outOfStock')
+                : inCart
+                ? (lang === 'ru' ? 'Заказать' : lang === 'en' ? 'Order' : 'Buyurtma')
+                : t('buy')} {!isOutOfStock && <>&nbsp;·&nbsp; {formatPrice(orderTotal)}</>}
+            </motion.button>
+          </div>
         </div>
       )}
 
       {showSheet && (
-        <CheckoutSheet book={book} lang={lang} onClose={() => setShowSheet(false)} />
+        <CheckoutSheet
+          book={book}
+          lang={lang}
+          onClose={() => setShowSheet(false)}
+          onAddMore={() => { setShowSheet(false); navigate('/catalog'); }}
+        />
       )}
     </>
     </PageTransition>

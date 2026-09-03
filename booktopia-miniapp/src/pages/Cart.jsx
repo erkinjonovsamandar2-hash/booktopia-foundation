@@ -215,7 +215,13 @@ export default function Cart() {
         </div>
       </div>
 
-        {showSheet && <CheckoutSheet lang={lang} onClose={() => setShowSheet(false)} />}
+        {showSheet && (
+          <CheckoutSheet
+            lang={lang}
+            onClose={() => setShowSheet(false)}
+            onAddMore={() => { setShowSheet(false); navigate('/catalog'); }}
+          />
+        )}
     </>
     </PageTransition>
   );

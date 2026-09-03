@@ -70,13 +70,14 @@ const T = {
   successDesc:  { uz: 'Tez orada menejerimiz siz bilan bog\'lanadi.', ru: 'Наш менеджер свяжется с вами.', en: 'Our manager will contact you shortly.' },
   close:        { uz: 'Yopish',              ru: 'Закрыть',             en: 'Close' },
   total:        { uz: 'Jami:',               ru: 'Итого:',              en: 'Total:' },
+  addMore:      { uz: '+ Yana kitob qo\'shish', ru: '+ Добавить ещё книгу', en: '+ Add another book' },
 };
 
 // Spring configs
 const sheetSpring   = { type: 'spring', stiffness: 420, damping: 38 };
 const overlayFade   = { duration: 0.22 };
 
-export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
+export default function CheckoutSheet({ book, lang = 'uz', onClose, onAddMore }) {
   const { items, markAwaitingPayment } = useCart();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('+998 ');
@@ -387,6 +388,23 @@ export default function CheckoutSheet({ book, lang = 'uz', onClose }) {
                       <span>{t('total')}</span>
                       <span className="price" style={{ color: 'var(--blue-500)' }}>{formatPrice(total)}</span>
                     </div>
+                  )}
+
+                  {/* Reaching checkout should not be a dead end. Everything
+                      listed above is already in the cart, so going back for
+                      another book loses nothing. */}
+                  {onAddMore && (
+                    <button
+                      type="button"
+                      onClick={onAddMore}
+                      style={{
+                        marginTop: 4, padding: '6px 0', background: 'none', border: 'none',
+                        color: 'var(--blue-500)', fontSize: 13, fontWeight: 700,
+                        cursor: 'pointer', textAlign: 'left',
+                      }}
+                    >
+                      {t('addMore')}
+                    </button>
                   )}
                 </div>
 
