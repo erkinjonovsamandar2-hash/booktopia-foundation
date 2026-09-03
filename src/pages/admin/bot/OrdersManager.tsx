@@ -405,7 +405,11 @@ export default function OrdersManager() {
     setConfirm(null);
   }, []);
 
-  // ── Archive order (soft delete — sets status to 'archived') ─────────────
+  // ── Archive order (soft delete) ─────────────────────────────────────────
+  // Sets both columns. Every statistic, badge and customer list asks
+  // `archived_at is null`, so setting only the status left the order counted
+  // as live — which is how five archived test orders kept appearing in the
+  // sales totals.
   const archiveOrder = useCallback(async (order: Order) => {
     // window.confirm — the local `confirm` state shadows the global here.
     if (!window.confirm(`"${order.full_name}" ning buyurtmasini arxivlaysizmi? Bu buyurtma statistikaga kirmaydi.`)) return;
@@ -413,7 +417,7 @@ export default function OrdersManager() {
     try {
       const { error } = await (supabase as any)
         .from("miniapp_orders")
-        .update({ status: "archived" })
+        .update({ status: "archived", archived_at: new Date().toISOString() })
         .eq("id", order.id);
       if (error) throw error;
       showToast(`Arxivlandi: ${order.full_name}`);

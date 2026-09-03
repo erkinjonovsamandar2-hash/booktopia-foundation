@@ -54,7 +54,10 @@ export default async function handler(req, res) {
     const { data: orders, error } = await supabase
       .from('miniapp_orders')
       .select('telegram_user_id')
-      .not('telegram_user_id', 'is', null);
+      .not('telegram_user_id', 'is', null)
+      // Archived orders are pre-launch and test data — those people are not
+      // customers and must not receive broadcasts.
+      .is('archived_at', null);
 
     if (error) throw error;
 

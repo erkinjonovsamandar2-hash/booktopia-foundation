@@ -414,6 +414,7 @@ async function handleCallbackQuery(update) {
     const { data: orders } = await supabase.from('miniapp_orders')
       .select('id, status, total_uzs, created_at, items')
       .eq('telegram_user_id', userId)
+      .is('archived_at', null)
       .order('created_at', { ascending: false })
       .limit(5);
     if (!orders || orders.length === 0) {
@@ -469,6 +470,7 @@ async function handleAdminCommand(msg) {
     const { data: pendingOrders } = await supabase.from('miniapp_orders')
       .select('id, full_name, phone, total_uzs, created_at')
       .eq('status', 'pending')
+      .is('archived_at', null)
       .order('created_at', { ascending: true })
       .limit(10);
       
@@ -479,7 +481,8 @@ async function handleAdminCommand(msg) {
 
     const { count: totalPending } = await supabase.from('miniapp_orders')
       .select('*', { count: 'exact', head: true })
-      .eq('status', 'pending');
+      .eq('status', 'pending')
+      .is('archived_at', null);
 
     let pendingMsg = `⏳ <b>Kutilayotgan buyurtmalar (${totalPending} ta):</b>\n\n`;
     pendingOrders.forEach((o, i) => {
@@ -497,11 +500,14 @@ async function handleAdminCommand(msg) {
   }
 
   if (cmd === '/stats') {
-    const { count: totalOrders } = await supabase.from('miniapp_orders').select('*', { count: 'exact', head: true });
+    const { count: totalOrders } = await supabase.from('miniapp_orders')
+      .select('*', { count: 'exact', head: true })
+      .is('archived_at', null);
     
     const { data: revData } = await supabase.from('miniapp_orders')
       .select('total_uzs')
-      .in('status', ['approved', 'delivering', 'delivered']);
+      .in('status', ['approved', 'delivering', 'delivered'])
+      .is('archived_at', null);
     
     const totalRev = revData ? revData.reduce((acc, curr) => acc + (Number(curr.total_uzs) || 0), 0) : 0;
 
