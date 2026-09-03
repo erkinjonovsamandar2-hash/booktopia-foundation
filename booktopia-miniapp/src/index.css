@@ -952,6 +952,38 @@ h1, h2, h3, h4 {
 /* Bottom-nav items get a full-height target. */
 .nav-item { min-height: 48px; }
 
+/* ── Touch feedback ───────────────────────────────────────────────────────────
+   The cards already have a designed press state: the cover lifts and rotates
+   on :active. On top of that the browser painted its own translucent blue box
+   on every tap, and dragging a row selected the title underneath the finger —
+   a second blue. Both are defaults, and both fight the interaction rather than
+   describing it.
+
+   Only the crude feedback is removed. The keyboard focus ring below is
+   deliberately untouched: it is the one outline that has to stay. */
+.book-card,
+.h-scroll > *,
+button,
+[role='button'] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Card chrome is a control, not prose — selecting it has no use, and doing so
+   mid-swipe looks like a bug. Article and description text stays selectable. */
+.book-card,
+.h-scroll > * {
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Stops the cover being dragged as a ghost image instead of scrolling the row. */
+.book-card img,
+.h-scroll img {
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+
 /* Visible focus for keyboard users — there was effectively none before. */
 :where(button, a, input, [role='button'], [tabindex]):focus-visible {
   outline: 2px solid var(--blue-500);

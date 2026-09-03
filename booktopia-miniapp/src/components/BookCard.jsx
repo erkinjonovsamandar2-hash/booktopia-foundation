@@ -78,6 +78,7 @@ export default function BookCard({ book, lang = 'uz', onNavigate, index = 0 }) {
               alt=""
               loading="lazy"
               decoding="async"
+              draggable={false}
               width="300"
               height="400"
               style={{
