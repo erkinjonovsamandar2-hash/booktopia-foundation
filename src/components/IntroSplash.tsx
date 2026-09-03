@@ -26,8 +26,14 @@ const IntroSplash = () => {
 
   const [show, setShow] = useState(() => {
     if (typeof window === "undefined") return false;
-    // Don't intro-splash admin/bot areas — only the public site.
-    if (window.location.pathname.startsWith("/admin")) return false;
+    // Don't intro-splash admin/bot/links areas — only the storefront homepage.
+    const path = window.location.pathname;
+    if (
+      path.startsWith("/admin") ||
+      path.startsWith("/bot") ||
+      path === "/links" ||
+      path === "/social"
+    ) return false;
     return sessionStorage.getItem(SPLASH_KEY) !== "true";
   });
   const [minPassed, setMinPassed] = useState(false);

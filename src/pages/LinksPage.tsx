@@ -95,18 +95,37 @@ const LinksPage: React.FC<LinksPageProps> = ({ previewMode = false, customSettin
 
   useEffect(() => {
     if (!previewMode && refreshSiteSettings) {
-      refreshSiteSettings();
+      refreshSiteSettings().catch(() => {});
     }
-  }, [previewMode, refreshSiteSettings]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const linksData =
     customSettings ||
     siteSettings?.linksPage ||
     DEFAULT_SITE_SETTINGS.linksPage;
 
-  const visibleLinks = (linksData?.links || []).filter(
-    (item: any) => previewMode || item.is_visible !== false
+  const rawLinks = Array.isArray(linksData?.links)
+    ? linksData.links
+    : Array.isArray(DEFAULT_SITE_SETTINGS.linksPage?.links)
+    ? DEFAULT_SITE_SETTINGS.linksPage.links
+    : [];
+
+  const visibleLinks = rawLinks.filter(
+    (item: any) => Boolean(item) && (previewMode || item.is_visible !== false)
   );
+
+  const pageTitle = typeof linksData?.title === "string" && linksData.title.trim() !== ""
+    ? linksData.title
+    : "Booktopia Books";
+
+  const titleParts = pageTitle.split(" ");
+  const firstTitleWord = titleParts[0] || "Booktopia";
+  const remainingTitleWords = titleParts.slice(1).join(" ") || "Books";
+
+  const pageSubtitle = typeof linksData?.subtitle === "string" && linksData.subtitle.trim() !== ""
+    ? linksData.subtitle
+    : "NASHRIYOT · PUBLISHER";
 
   const handleShare = () => {
     if (navigator.clipboard) {
@@ -169,14 +188,14 @@ const LinksPage: React.FC<LinksPageProps> = ({ previewMode = false, customSettin
         <div className="text-center mb-7 px-4">
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white mb-1.5">
             <span>
-              {linksData?.title?.split(" ")[0] || "Booktopia"}{" "}
+              {firstTitleWord}{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-blue-300 to-amber-300">
-                {linksData?.title?.split(" ").slice(1).join(" ") || "Books"}
+                {remainingTitleWords}
               </span>
             </span>
           </h1>
           <p className="text-xs font-bold tracking-[0.25em] text-[#D5AD36] uppercase">
-            {linksData?.subtitle || "NASHRIYOT · PUBLISHER"}
+            {pageSubtitle}
           </p>
         </div>
 
