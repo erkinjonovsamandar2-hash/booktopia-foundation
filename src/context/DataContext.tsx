@@ -110,6 +110,24 @@ export interface QuizConfig {
   browseBooks?: Record<string, string[]>; // archetype key → up to 6 pinned book IDs
 }
 
+export interface SocialLinkItem {
+  id: string;
+  title: string;
+  subtitle?: string;
+  url: string;
+  icon: "instagram" | "telegram" | "facebook" | "youtube" | "bot" | "contact" | "website" | "link";
+  is_visible: boolean;
+  accent_color?: string;
+}
+
+export interface LinksPageSettings {
+  logo_url?: string;
+  title: string;
+  subtitle: string;
+  section_title: string;
+  links: SocialLinkItem[];
+}
+
 export interface SiteSettings {
   hero: { motto: string; subtitle: string; cta_text: string };
   footer: { phone: string; email: string; address: string; telegram: string; instagram: string };
@@ -117,6 +135,7 @@ export interface SiteSettings {
   bookOfMonth: { quote: string; quote_author: string; badge: string };
   theme: { primary_color: "blue" | "sky" | "gold" };
   yangiNashrlar: { bg_image_url: string };
+  linksPage?: LinksPageSettings;
 }
 
 // ── Context shape ─────────────────────────────────────────────────────────────

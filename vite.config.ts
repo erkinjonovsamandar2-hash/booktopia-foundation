@@ -41,24 +41,14 @@ export default defineConfig(({ mode }) => ({
   build: {
     rollupOptions: {
       output: {
-        // Split heavy vendor libraries into separate cacheable chunks.
-        // This breaks the monolithic 761KB index.js into smaller pieces
-        // that browsers can cache independently and download in parallel.
-        manualChunks: {
-          "vendor-motion": ["framer-motion"],
-          "vendor-supabase": ["@supabase/supabase-js"],
-          "vendor-radix": [
-            "@radix-ui/react-dialog",
-            "@radix-ui/react-dropdown-menu",
-            "@radix-ui/react-popover",
-            "@radix-ui/react-tooltip",
-            "@radix-ui/react-tabs",
-            "@radix-ui/react-toast",
-            "@radix-ui/react-scroll-area",
-            "@radix-ui/react-select",
-            "@radix-ui/react-accordion",
-          ],
-          "vendor-charts": ["recharts"],
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('framer-motion')) return 'vendor-motion';
+            if (id.includes('@supabase')) return 'vendor-supabase';
+            if (id.includes('@radix-ui')) return 'vendor-radix';
+            if (id.includes('recharts')) return 'vendor-charts';
+            return 'vendor';
+          }
         },
       },
     },

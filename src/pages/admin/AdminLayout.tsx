@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   BookOpen, FileText, Sparkles, Menu, X,
-  Home, LogOut, Settings, ShieldCheck, MessageSquare, Newspaper, Users, GalleryHorizontal, Handshake, Library, ArrowLeftRight,
+  Home, LogOut, Settings, ShieldCheck, MessageSquare, Newspaper, Users, GalleryHorizontal, Handshake, Library, ArrowLeftRight, Link as LinkIcon,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,6 +38,7 @@ const AdminLayout = () => {
     { label: "Quiz", to: "/admin/quiz", icon: Sparkles },
     { label: "Jamoa", to: "/admin/team", icon: Users },
     { label: "Hamkorlar", to: "/admin/partners", icon: Handshake },
+    { label: "Links Sahifasi", to: "/admin/links", icon: LinkIcon },
     { label: "Hero Tartibi", to: "/admin/hero-order", icon: GalleryHorizontal },
     { label: "Sharhlar", to: "/admin/reviews", icon: MessageSquare, badge: pendingCount },
     { label: "Sozlamalar", to: "/admin/settings", icon: Settings },

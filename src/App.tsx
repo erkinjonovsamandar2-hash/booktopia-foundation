@@ -54,6 +54,8 @@ const HeroOrderManager = lazy(() => import("./pages/admin/HeroOrderManager"));
 const Hamkorlar = lazy(() => import("./pages/Hamkorlar"));
 const PartnerManager = lazy(() => import("./pages/admin/PartnerManager"));
 const CuratedLibraryManager = lazy(() => import("./pages/admin/CuratedLibraryManager"));
+const LinksPage = lazy(() => import("./pages/LinksPage"));
+const LinksManager = lazy(() => import("./pages/admin/LinksManager"));
 // Bot Sales
 const BotLayout = lazy(() => import("./pages/admin/bot/BotLayout"));
 const OrdersManager = lazy(() => import("./pages/admin/bot/OrdersManager"));
@@ -246,6 +248,8 @@ const AppInner = () => {
           <Route path="/quiz" element={<Lazy component={QuizPage} />} />
           <Route path="/spotlight" element={<Lazy component={SpotlightPage} />} />
           <Route path="/hamkorlar" element={<Lazy component={Hamkorlar} />} />
+          <Route path="/links" element={<Lazy component={LinksPage} />} />
+          <Route path="/social" element={<Lazy component={LinksPage} />} />
 
           {/* LAZY — legal pages */}
           <Route
@@ -320,6 +324,7 @@ const AppInner = () => {
             <Route path="hero-order" element={<Lazy component={HeroOrderManager} />} />
             <Route path="partners" element={<Lazy component={PartnerManager} />} />
             <Route path="curated" element={<Lazy component={CuratedLibraryManager} />} />
+            <Route path="links" element={<Lazy component={LinksManager} />} />
           </Route>
 
           {/* Bot Sales Admin */}
