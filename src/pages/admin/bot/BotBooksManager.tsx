@@ -179,6 +179,11 @@ export default function BotBooksManager() {
     const { data } = await (supabase as any)
       .from("miniapp_orders")
       .select("items, total_uzs, status")
+      // Paid only. Counting every non-cancelled order meant a book read as
+      // "1 ta sotildi" the moment someone opened a checkout — before any money
+      // arrived, and while the order could still fall through. This now matches
+      // how the statistics page counts revenue.
+      .eq("payment_status", "paid")
       .neq("status", "cancelled")
       .neq("status", "archived")
       // Pre-launch orders are archived; per-book sales start from zero too.
@@ -340,7 +345,7 @@ export default function BotBooksManager() {
                   {/* Cover */}
                   <div>
                     {book.cover_url ? (
-                      <img src={`${imgUrl(book.cover_url)}?t=${Date.now()}`} alt="" style={{ width: 32, height: 44, borderRadius: 4, objectFit: "cover" }} />
+                      <img src={imgUrl(book.cover_url)} alt="" loading="lazy" decoding="async" style={{ width: 32, height: 44, borderRadius: 4, objectFit: "cover" }} />
                     ) : (
                       <div style={{ width: 32, height: 44, borderRadius: 4, background: "#e5e7eb", display: "flex", alignItems: "center", justifyContent: "center" }}>
                         <BookOpen style={{ width: 14, height: 14, color: "#9ca3af" }} />

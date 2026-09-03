@@ -124,7 +124,7 @@ const BookManager = () => {
                   <td className="px-4 py-3">
                     {book.cover_url ? (
                       <img
-                        src={`${getImageUrl(book.cover_url)}?t=${Date.now()}`}
+                        src={getImageUrl(book.cover_url)}
                         alt={book.title}
                         className="h-12 w-8 rounded object-cover"
                       />
