@@ -209,6 +209,7 @@ const AppLoader = ({ children }: { children: React.ReactNode }) => {
 const AppInner = () => {
   const location = useLocation();
   const isAdminArea = location.pathname.startsWith("/admin");
+  const isLinksPage = location.pathname === "/links" || location.pathname === "/social";
 
   return (
     <>
@@ -216,10 +217,9 @@ const AppInner = () => {
       <IntroSplash />
       <ScrollToTop />
       <GlobalEffects />
-      <Navbar />
-      {/* The storefront cart is for shoppers. Inside the admin it is noise, and
-          a floating "1 · 65 000 so'm" over a dashboard reads like data. */}
-      {!isAdminArea && <MiniCart />}
+      {!isLinksPage && <Navbar />}
+      {/* The storefront cart is for shoppers. Inside admin & links page it is noise. */}
+      {!isAdminArea && !isLinksPage && <MiniCart />}
 
       {/* FIX: AnimatePresence wraps AnimatedRoutes DIRECTLY as its only child.
           No Suspense between AnimatePresence and Routes — the pipeline can
