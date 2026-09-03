@@ -43,8 +43,6 @@ export default function useDragScroll() {
       if (!dragged) {
         dragged = true;
         el.style.cursor = 'grabbing';
-        // Snapping mid-drag drifts the row under the cursor.
-        el.style.scrollSnapType = 'none';
       }
       el.scrollLeft = startScroll - dx;
     };
@@ -53,7 +51,6 @@ export default function useDragScroll() {
       if (!pointerDown) return;
       pointerDown = false;
       el.style.cursor = '';
-      el.style.scrollSnapType = '';
     };
 
     // Capture phase: the card's own onClick must not run for a drag.

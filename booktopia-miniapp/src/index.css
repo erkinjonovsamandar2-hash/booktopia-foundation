@@ -140,10 +140,11 @@ h1, h2, h3, h4 {
   padding: 0 16px 8px;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
-  /* Cards in these rows are a uniform width, so mandatory snapping always
-     lands on a card edge rather than mid-cover. */
-  scroll-snap-type: x mandatory;
-  scroll-padding-left: 16px;
+  /* proximity, not mandatory. Mandatory snap fights the finger: a short drag
+     gets pulled back to the card it started on, so the row reads as broken
+     while a long fling works. Control matters more than a tidy resting
+     position, and proximity only assists when the row is already near one. */
+  scroll-snap-type: x proximity;
   /* Without this, swiping past the end of a row bubbles up and Telegram reads
      it as its own back/close gesture. */
   overscroll-behavior-x: contain;
