@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { coverFocus } from "@/lib/coverFocus";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { BookOpen, ChevronRight, AlertTriangle } from "lucide-react";
@@ -433,7 +434,7 @@ export default function GlobalClassics() {
                     <img
                       src={getImageUrl(book.cover_url)}
                       alt={book.title}
-                      className="img-fade w-full h-full object-cover"
+                      className="img-fade w-full h-full object-cover" style={coverFocus(book)}
                       loading="lazy"
                       onLoad={(e) => (e.currentTarget as HTMLImageElement).classList.add('loaded')}
                     />

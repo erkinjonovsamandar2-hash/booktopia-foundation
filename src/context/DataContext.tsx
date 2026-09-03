@@ -537,6 +537,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       featured: book.featured,
       is_new: book.is_new,
       coming_soon: book.coming_soon,
+      img_focus_x: book.img_focus_x,
+      img_focus_y: book.img_focus_y,
       sort_order: book.sort_order,
       excerpt_url: book.excerpt_url ?? null,
       slug: uniqueSlug,
@@ -569,6 +571,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     if (data.featured !== undefined) payload.featured = data.featured;
     if (data.is_new !== undefined) payload.is_new = data.is_new;
     if (data.coming_soon !== undefined) payload.coming_soon = data.coming_soon;
+    if (data.img_focus_x !== undefined) payload.img_focus_x = data.img_focus_x;
+    if (data.img_focus_y !== undefined) payload.img_focus_y = data.img_focus_y;
     if (data.sort_order !== undefined) payload.sort_order = data.sort_order;
     if (data.excerpt_url !== undefined) payload.excerpt_url = data.excerpt_url;
 

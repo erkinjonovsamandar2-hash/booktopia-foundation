@@ -24,6 +24,7 @@ export const BOOK_LIST_COLUMNS = [
   'id', 'title', 'title_ru', 'title_en',
   'author', 'author_ru', 'author_en',
   'cover_url', 'price', 'stock', 'category', 'featured', 'is_new', 'coming_soon',
+  'img_focus_x', 'img_focus_y',
   'shop_visible', 'sort_order', 'created_at', 'slug',
 ].join(', ');
 

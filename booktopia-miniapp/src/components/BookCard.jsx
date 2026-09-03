@@ -80,7 +80,12 @@ export default function BookCard({ book, lang = 'uz', onNavigate, index = 0 }) {
               decoding="async"
               width="300"
               height="400"
-              style={isOutOfStock ? { filter: 'grayscale(0.5)', opacity: 0.85 } : undefined}
+              style={{
+                // The wrapper crops to 2/3; without a focal point a centred
+                // crop cuts the title off covers that carry it near the top.
+                objectPosition: `${book.img_focus_x ?? 50}% ${book.img_focus_y ?? 20}%`,
+                ...(isOutOfStock ? { filter: 'grayscale(0.5)', opacity: 0.85 } : null),
+              }}
             />
           ) : (
             <div className="book-card__cover-placeholder" aria-hidden="true">
