@@ -9,6 +9,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'node:crypto';
+import { postOrderCard } from './_orderCard.js';
 
 const SUPABASE_URL         = process.env.VITE_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
@@ -286,57 +287,8 @@ export default async function handler(req, res) {
   // ── Send immediate Telegram Admin / Sales Group Notification ───────────────────
   if (BOT_TOKEN && ADMIN_GROUP_ID) {
     try {
-      const shortId = order.id?.toString().slice(0, 8) ?? '—';
-      const itemLines = orderItems.map(i =>
-        `  • ${i.title} × ${i.qty} — ${(i.price * i.qty).toLocaleString('ru-RU')} so'm`
-      ).join('\n');
-
-      const tgHandle = verifiedUsername ? ` (@${verifiedUsername})` : '';
-      const tgLink = verifiedUserId
-        ? `\n👤 TG: <a href="tg://user?id=${verifiedUserId}">${name || 'Mijoz'}${tgHandle}</a>`
-        : '';
-
-      const locationText = address
-        ? `📍 Manzil: ${address}`
-        : (typeof lat === 'number' && typeof lng === 'number')
-          ? `📍 GPS: <a href="https://maps.google.com/?q=${lat},${lng}">Google Maps Link</a>`
-          : '';
-
-      const paymentLabel = method === 'click' ? 'Click' : 'Payme';
-
-      const adminText =
-        `🛍 <b>YANGI BUYURTMA #${shortId}</b>\n\n` +
-        `👤 Ism: <b>${name || 'Noma\'lum'}</b>${tgLink}\n` +
-        `📞 Tel: <code>${phone}</code>\n` +
-        (locationText ? `${locationText}\n` : '') +
-        `💳 To'lov usuli: <b>${paymentLabel}</b>\n\n` +
-        `📚 <b>Buyurtma tarkibi:</b>\n${itemLines}\n\n` +
-        `💰 <b>Jami: ${total_uzs.toLocaleString('ru-RU')} so'm</b>\n\n` +
-        `📊 <a href="${ADMIN_DASHBOARD_URL}">Admin panelda ko'rish</a>`;
-
-      const keyboard = {
-        inline_keyboard: [
-          [
-            { text: '✅ Tasdiqlash', callback_data: `approve_${order.id}` },
-            { text: '❌ Bekor qilish', callback_data: `cancel_${order.id}` }
-          ],
-          [
-            { text: '🙋‍♂️ O\'zim olaman', callback_data: `assign_${order.id}` },
-            { text: '📤 Kuryer nusxasi', callback_data: `slip_${order.id}` },
-          ]
-        ]
-      };
-
-      await fetch(`${TG_API}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: ADMIN_GROUP_ID,
-          text: adminText,
-          parse_mode: 'HTML',
-          disable_web_page_preview: true,
-          reply_markup: keyboard,
-        }),
+      await postOrderCard({
+        tgApi: TG_API, chatId: ADMIN_GROUP_ID, supabase, order, adminUrl: ADMIN_DASHBOARD_URL,
       });
     } catch (notifErr) {
       console.error('[Checkout] Admin Telegram notification failed:', notifErr);

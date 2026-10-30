@@ -3,6 +3,7 @@
 
 import { Redis } from '@upstash/redis';
 import { createClient } from '@supabase/supabase-js';
+import { refreshOrderCard } from './_orderCard.js';
 
 const TOKEN                = process.env.BOT_TOKEN;
 const WEBAPP_URL           = process.env.WEBAPP_URL || 'https://booktopia-miniapp.vercel.app/';
@@ -336,10 +337,23 @@ async function handleCallbackQuery(update) {
       // Strip the confirmation warning from message text
       const cleanText = escapeHTML(query.message.text.split('\n\n⚠️')[0] || '');
 
-      const res = await editMessageText(chatId, msgId, cleanText + resultLine, {
-        reply_markup: { inline_keyboard: getButtonsForStatus(newStatus, orderId) },
-      });
-      if (!res.ok) console.error('[Bot] editMessageText step 2 failed:', res);
+      // Re-render the whole card (status, payment, timeline) from the DB. Older
+      // orders have no stored card id, so fall back to editing the clicked message.
+      const cardId = (SUPABASE_URL && SUPABASE_SERVICE_KEY)
+        ? await refreshOrderCard({
+            tgApi: API,
+            supabase: createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY),
+            orderId,
+            adminUrl: process.env.ADMIN_DASHBOARD_URL,
+            note: `${adminName}: ${resultLine.replace(/<[^>]+>/g, '').trim()}`,
+          })
+        : null;
+      if (cardId !== msgId) {
+        const res = await editMessageText(chatId, msgId, cleanText + resultLine, {
+          reply_markup: { inline_keyboard: getButtonsForStatus(newStatus, orderId) },
+        });
+        if (!res.ok) console.error('[Bot] editMessageText step 2 failed:', res);
+      }
     } catch (err) {
       console.error('[Bot] Confirm callback error:', err);
       const cleanText = escapeHTML(query.message.text.split('\n\n⚠️')[0] || '');

@@ -2,6 +2,7 @@
 // Secure API to update miniapp order status from admin dashboard
 // Also sends customer notification via Telegram bot
 import { createClient } from '@supabase/supabase-js';
+import { refreshOrderCard } from './_orderCard.js';
 
 const SUPABASE_URL        = process.env.VITE_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
@@ -91,6 +92,17 @@ export default async function handler(req, res) {
   if (updateErr) {
     console.error('[UpdateOrderStatus] Update error:', updateErr);
     return res.status(500).json({ error: 'Failed to update status' });
+  }
+
+  // Keep the group's order card in step with the new status
+  if (BOT_TOKEN) {
+    try {
+      await refreshOrderCard({
+        tgApi: TG_API, supabase, orderId: order_id, adminUrl: process.env.ADMIN_DASHBOARD_URL,
+      });
+    } catch (cardErr) {
+      console.warn('[UpdateOrderStatus] Order card refresh failed:', cardErr);
+    }
   }
 
   // Send notification to customer via Telegram (if they have a TG user ID)

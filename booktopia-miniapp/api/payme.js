@@ -15,6 +15,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { createClient } from '@supabase/supabase-js';
+import { refreshOrderCard } from './_orderCard.js';
 
 const SUPABASE_URL        = process.env.VITE_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
@@ -254,6 +255,12 @@ async function performTransaction({ id }) {
   // ── Send admin Telegram notification (only on confirmed payment) ─────────
   if (BOT_TOKEN && ADMIN_GROUP_ID) {
     try {
+      // Update the order's existing card in the group (one message per order).
+      // Returns null when no card is stored yet, then the old behaviour runs.
+      const cardId = await refreshOrderCard({
+        tgApi: TG_API, supabase: db, orderId: order.id, adminUrl: ADMIN_DASHBOARD_URL,
+      });
+
       // Fetch full order details for the notification
       const { data: fullOrder } = await db
         .from('miniapp_orders')
@@ -289,7 +296,7 @@ async function performTransaction({ id }) {
           `💰 <b>Jami: ${fullOrder.total_uzs.toLocaleString('ru-RU')} so'm</b>\n\n` +
           `📊 <a href="${ADMIN_DASHBOARD_URL}">Admin panelda ko'rish</a>`;
 
-        const sent = await fetch(`${TG_API}/sendMessage`, {
+        const sent = cardId ? { result: { message_id: cardId } } : await fetch(`${TG_API}/sendMessage`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
